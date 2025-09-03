@@ -1,0 +1,21 @@
+<% const l = listing; %>
+<h1 class="h4 mb-3">Edit Listing</h1>
+
+<form method="POST" action="/listings/<%= l.id %>/edit" class="row g-3">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="col-12">
+    <label class="form-label">Title</label>
+    <input class="form-control" name="title" required maxlength="255" value="<%= l.title %>">
+  </div>
+
+  <div class="col-12">
+    <label class="form-label">Description</label>
+    <textarea class="form-control" name="description" rows="6" required><%= l.description %></textarea>
+  </div>
+
+  <div class="col-12 d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-outline-secondary" href="/listings/<%= l.id %>">Cancel</a>
+  </div>
+</form>

@@ -1,0 +1,87 @@
+<%
+  const u = profileUser || {};
+  const skills = Array.isArray(u.userSkills) ? u.userSkills : [];
+  const avs = Array.isArray(u.availabilities) ? u.availabilities : [];
+%>
+
+<h1 class="h4 mb-1"><%= u.name || 'User' %></h1>
+<div class="text-muted mb-3">
+  <% if (u.location) { %><span class="me-2">Location: <%= u.location %></span><% } %>
+  <% if (u.isPublic === false) { %><span class="badge bg-warning text-dark">Private</span><% } %>
+</div>
+
+<% if (u.bio) { %>
+  <p class="mb-4"><%= u.bio %></p>
+<% } %>
+
+<div class="row g-3">
+  <div class="col-md-7">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6">Skills</h2>
+        <% if (skills.length) { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Skill</th>
+                  <th>Level</th>
+                  <th>Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% skills.forEach(us => { %>
+                  <tr>
+                    <td><span class="badge bg-secondary"><%= us.type %></span></td>
+                    <td><%= us.Skill ? us.Skill.name : '' %></td>
+                    <td><%= us.level || '' %></td>
+                    <td><%= (us.Skill && us.Skill.Category && us.Skill.Category.name) ? us.Skill.Category.name : '' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="alert alert-info mb-0">No skills listed.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-5">
+    <div class="card h-100">
+      <div class="card-body">
+        <h2 class="h6">Availability</h2>
+        <% if (avs.length) { %>
+          <ul class="list-group">
+            <% const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; %>
+            <% avs.forEach(a => { %>
+              <li class="list-group-item d-flex justify-content-between">
+                <span><%= (typeof a.dayOfWeek === 'number') ? days[a.dayOfWeek % 7] : a.day_of_week %></span>
+                <span class="text-muted">
+                  <% if (a.startTime || a.start_time) { %>
+                    <%= (a.startTime || a.start_time) %>–<%= (a.endTime || a.end_time) %>
+                  <% } else { %>
+                    -
+                  <% } %>
+                </span>
+              </li>
+            <% }) %>
+          </ul>
+        <% } else { %>
+          <div class="alert alert-info mb-0">No availability set.</div>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3 d-flex gap-2">
+  <a class="btn btn-outline-secondary" href="/browse">Back to browse</a>
+  <% if (isAuthenticated) { %>
+    <a class="btn btn-primary" href="/messages?to=<%= u.id %>">Message</a>
+  <% } else { %>
+    <a class="btn btn-primary" href="/auth/login">Login to message</a>
+  <% } %>
+</div>

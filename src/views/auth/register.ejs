@@ -1,0 +1,30 @@
+<%- include('../partials/header') %>
+<div class="container py-4">
+  <h1 class="h4 mb-3">Register</h1>
+
+  <% if (error)   { %><div class="alert alert-danger"><%= error %></div><% } %>
+  <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+
+  <form method="POST" action="/auth/register">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input class="form-control" name="name" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input class="form-control" type="email" name="email" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Password</label>
+      <input class="form-control" type="password" name="password" required minlength="8">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Confirm Password</label>
+      <input class="form-control" type="password" name="confirmPassword" required minlength="8">
+    </div>
+    <button class="btn btn-primary" type="submit">Create account</button>
+    <a class="btn btn-link" href="/auth/login">Login</a>
+  </form>
+</div>
+<%- include('../partials/footer') %>

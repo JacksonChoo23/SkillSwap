@@ -1,0 +1,127 @@
+<%
+const _skills = Array.isArray(skills) ? skills : [];
+const _categories = Array.isArray(categories) ? categories : [];
+const _result = (typeof result !== 'undefined' && result) ? result : null;
+
+// read last input when available (your service can set result.input)
+const prev = (_result && _result.input) ? _result.input : {};
+const valSkillAId = prev.skillAId != null ? String(prev.skillAId) : '';
+const valSkillBId = prev.skillBId != null ? String(prev.skillBId) : '';
+const valLevelA  = prev.levelA  || 'beginner';
+const valLevelB  = prev.levelB  || 'beginner';
+const valHoursA  = prev.hoursA  != null ? prev.hoursA  : 1;
+const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
+%>
+
+<h1 class="h4 mb-3">Skill Value Calculator</h1>
+
+<form class="row g-3" method="POST" action="/calculator/calculate">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <!-- Party A -->
+  <div class="col-12">
+    <h2 class="h6 mb-2">Party A</h2>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Skill A</label>
+    <select class="form-select" name="skillAId" required>
+      <option value="">Select a skill</option>
+      <% _skills.forEach(s => { %>
+        <option value="<%= s.id %>" <%= (valSkillAId===String(s.id) ? 'selected' : '') %>>
+          <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Level A</label>
+    <select class="form-select" name="levelA" required>
+      <option value="beginner"     <%= (valLevelA==='beginner'     ? 'selected' : '') %>>beginner</option>
+      <option value="intermediate" <%= (valLevelA==='intermediate' ? 'selected' : '') %>>intermediate</option>
+      <option value="advanced"     <%= (valLevelA==='advanced'     ? 'selected' : '') %>>advanced</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Hours A</label>
+    <input class="form-control" type="number" name="hoursA" min="0.5" step="0.5" value="<%= valHoursA %>" required>
+  </div>
+
+  <!-- Party B -->
+  <div class="col-12 pt-2">
+    <h2 class="h6 mb-2">Party B</h2>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Skill B</label>
+    <select class="form-select" name="skillBId" required>
+      <option value="">Select a skill</option>
+      <% _skills.forEach(s => { %>
+        <option value="<%= s.id %>" <%= (valSkillBId===String(s.id) ? 'selected' : '') %>>
+          <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Level B</label>
+    <select class="form-select" name="levelB" required>
+      <option value="beginner"     <%= (valLevelB==='beginner'     ? 'selected' : '') %>>beginner</option>
+      <option value="intermediate" <%= (valLevelB==='intermediate' ? 'selected' : '') %>>intermediate</option>
+      <option value="advanced"     <%= (valLevelB==='advanced'     ? 'selected' : '') %>>advanced</option>
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label class="form-label">Hours B</label>
+    <input class="form-control" type="number" name="hoursB" min="0.5" step="0.5" value="<%= valHoursB %>" required>
+  </div>
+
+  <div class="col-12">
+    <button class="btn btn-primary" type="submit">Calculate</button>
+  </div>
+</form>
+
+<% if (_result) { %>
+  <hr class="my-4">
+  <h2 class="h6">Result</h2>
+
+  <div class="row g-3">
+    <%
+      const fx = (_result.fair || _result.exchange || null);
+      const msg = _result.message || null;
+    %>
+    <% if (msg) { %>
+      <div class="col-12">
+        <div class="alert alert-info"><%= msg %></div>
+      </div>
+    <% } %>
+
+    <% if (fx && (fx.hoursA || fx.hoursB || fx.rate)) { %>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <div class="mb-1">Suggested exchange:</div>
+            <div>A: <strong><%= fx.hoursA != null ? fx.hoursA : '-' %></strong> hours</div>
+            <div>B: <strong><%= fx.hoursB != null ? fx.hoursB : '-' %></strong> hours</div>
+            <div class="mt-2 small text-muted">rate: <%= fx.rate != null ? fx.rate : '-' %></div>
+          </div>
+        </div>
+      </div>
+    <% } %>
+
+    <div class="col-12">
+      <details>
+        <summary>Debug data</summary>
+        <pre class="mt-2"><%= JSON.stringify(_result, null, 2) %></pre>
+      </details>
+    </div>
+  </div>
+<% } %>
+
+<% if (_categories.length) { %>
+  <hr class="my-4">
+  <h2 class="h6">Available categories</h2>
+  <ul class="list-inline">
+    <% _categories.forEach(c => { %>
+      <li class="list-inline-item badge bg-light text-dark border"><%= c.name %></li>
+    <% }) %>
+  </ul>
+<% } %>

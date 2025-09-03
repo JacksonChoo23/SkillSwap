@@ -1,0 +1,32 @@
+<%
+  const me = user || {};
+  const items = Array.isArray(threads) ? threads : [];
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Messages</h1>
+</div>
+
+<% if (items.length === 0) { %>
+  <div class="alert alert-light border">
+    No conversations yet.
+  </div>
+<% } else { %>
+  <div class="list-group">
+    <% items.forEach(t => { 
+         const partner = (t.creatorId === me.id) ? t.participant : t.creator;
+         const partnerName = partner?.name || 'Unknown';
+         const listingTitle = t.Listing?.title || 'Listing';
+    %>
+      <a href="/messages/thread/<%= t.id %>" class="list-group-item list-group-item-action d-flex justify-content-between align-items-start">
+        <div class="me-3">
+          <div class="fw-semibold"><%= listingTitle %></div>
+          <div class="text-muted small">With: <%= partnerName %></div>
+        </div>
+        <div class="text-muted small">
+          <%= new Date(t.updatedAt).toLocaleString() %>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+<% } %>

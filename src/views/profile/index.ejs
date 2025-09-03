@@ -1,0 +1,263 @@
+<%
+  const u = user || {};
+  const userSkills = Array.isArray(u.userSkills) ? u.userSkills : [];
+  const avails = Array.isArray(u.availabilities) ? u.availabilities : [];
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">My Profile</h1>
+</div>
+
+<div class="row g-3">
+  <!-- Left -->
+  <div class="col-12 col-lg-4">
+    <!-- Account -->
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Account</h2>
+        <div class="mb-2">
+          <div class="small text-muted">Name</div>
+          <div><%= u.name || '' %></div>
+        </div>
+        <div class="mb-2">
+          <div class="small text-muted">Email</div>
+          <div><%= u.email || '' %></div>
+        </div>
+        <div class="mb-2">
+          <div class="small text-muted">Location</div>
+          <div><%= u.location || '-' %></div>
+        </div>
+        <div class="mb-3">
+          <div class="small text-muted">Visibility</div>
+          <span class="badge <%= u.isPublic ? 'bg-success' : 'bg-secondary' %>">
+            <%= u.isPublic ? 'Public' : 'Private' %>
+          </span>
+        </div>
+
+        <form method="POST" action="/profile/privacy" class="d-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-outline-secondary btn-sm" type="submit">
+            Toggle Visibility
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Skills (list) -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Your Skills</h2>
+        <% if (userSkills.length === 0) { %>
+          <div class="text-muted small">No skills yet.</div>
+        <% } else { %>
+          <div class="vstack gap-2">
+            <% userSkills.forEach(s => { %>
+              <div class="border rounded px-2 py-2 d-flex justify-content-between align-items-center">
+                <div class="me-2">
+                  <span class="badge text-uppercase me-2 <%= s.type === 'teach' ? 'bg-primary' : 'bg-info' %>"><%= s.type %></span>
+                  <strong><%= s.Skill?.name || '-' %></strong>
+                  <span class="text-muted small ms-2">(<%= s.level || '-' %>)</span>
+                  <span class="small text-muted ms-2"><%= s.Skill?.Category?.name || '' %></span>
+                </div>
+                <button class="btn btn-outline-danger btn-sm js-delete-skill" data-id="<%= s.id %>">
+                  Delete
+                </button>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Availability (list) -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Availability</h2>
+        <% if (avails.length === 0) { %>
+          <div class="text-muted small">No availability set.</div>
+        <% } else { %>
+          <ul class="list-group list-group-flush">
+            <% avails.forEach(a => { %>
+              <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                <div>
+                  <strong class="me-2"><%= DAYS[a.dayOfWeek ?? a.day_of_week ?? 0] %></strong>
+                  <span class="text-muted">
+                    <%= (a.startTime || a.start_time || '').toString().slice(0,5) %>
+                    –
+                    <%= (a.endTime || a.end_time || '').toString().slice(0,5) %>
+                  </span>
+                </div>
+                <button class="btn btn-outline-danger btn-sm js-delete-availability" data-id="<%= a.id %>">
+                  Delete
+                </button>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right -->
+  <div class="col-12 col-lg-8">
+    <!-- Edit Profile -->
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Edit Profile</h2>
+        <form method="POST" action="/profile/update">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div class="mb-3">
+            <label class="form-label">Name</label>
+            <input class="form-control" name="name" required maxlength="100" value="<%= u.name || '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea class="form-control" name="bio" rows="4" maxlength="1000"><%= u.bio || '' %></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input class="form-control" name="location" maxlength="255" value="<%= u.location || '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Visibility</label>
+            <select class="form-select" name="isPublic">
+              <option value="true" <%= u.isPublic ? 'selected' : '' %>>Public</option>
+              <option value="false" <%= !u.isPublic ? 'selected' : '' %>>Private</option>
+            </select>
+          </div>
+
+          <button class="btn btn-primary">Save</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Skill -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Add Skill</h2>
+        <form method="POST" action="/profile/skills">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Skill</label>
+              <select class="form-select" name="skillId" required>
+                <option value="">Select a skill</option>
+                <% (skills || []).forEach(s => { %>
+                  <option value="<%= s.id %>">
+                    <%= s.name %> <%= s.Category ? '('+s.Category.name+')' : '' %>
+                  </option>
+                <% }) %>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Type</label>
+              <select class="form-select" name="type" required>
+                <option value="teach">teach</option>
+                <option value="learn">learn</option>
+              </select>
+            </div>
+
+            <div class="col-md-3">
+              <label class="form-label">Level</label>
+              <select class="form-select" name="level" required>
+                <option value="beginner">beginner</option>
+                <option value="intermediate">intermediate</option>
+                <option value="advanced">advanced</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Availability -->
+    <div class="card mt-3">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Add Availability</h2>
+        <form method="POST" action="/profile/availability">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+          <div class="row g-2">
+            <div class="col-md-4">
+              <label class="form-label">Day</label>
+              <select class="form-select" name="dayOfWeek" required>
+                <% DAYS.forEach((d, idx) => { %>
+                  <option value="<%= idx %>"><%= d %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Start</label>
+              <input type="time" class="form-control" name="startTime" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">End</label>
+              <input type="time" class="form-control" name="endTime" required>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <button class="btn btn-primary">Add</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-outline-primary btn-sm" href="/sessions">My Sessions</a>
+      <a class="btn btn-outline-primary btn-sm" href="/messages">Messages</a>
+      <a class="btn btn-outline-primary btn-sm" href="/listings/create">Create Listing</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Simple JS for DELETE actions with CSRF
+  const csrfToken = '<%= csrfToken %>';
+
+  document.addEventListener('click', async (e) => {
+    const btnSkill = e.target.closest('.js-delete-skill');
+    if (btnSkill) {
+      const id = btnSkill.dataset.id;
+      if (!confirm('Delete this skill?')) return;
+      try {
+        const res = await fetch('/profile/skills/' + id, {
+          method: 'DELETE',
+          headers: { 'CSRF-Token': csrfToken }
+        });
+        if (!res.ok) throw new Error('Failed');
+        location.reload();
+      } catch (err) {
+        alert('Error deleting skill.');
+      }
+    }
+
+    const btnAvail = e.target.closest('.js-delete-availability');
+    if (btnAvail) {
+      const id = btnAvail.dataset.id;
+      if (!confirm('Delete this availability?')) return;
+      try {
+        const res = await fetch('/profile/availability/' + id, {
+          method: 'DELETE',
+          headers: { 'CSRF-Token': csrfToken }
+        });
+        if (!res.ok) throw new Error('Failed');
+        location.reload();
+      } catch (err) {
+        alert('Error deleting availability.');
+      }
+    }
+  });
+</script>
