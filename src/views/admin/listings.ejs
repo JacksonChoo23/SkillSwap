@@ -1,0 +1,42 @@
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Manage Listings</h1>
+  <a class="btn btn-outline-secondary btn-sm" href="/admin">Back to Dashboard</a>
+</div>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Title</th>
+        <th>Owner</th>
+        <th>Status</th>
+        <th>Created</th>
+        <th class="text-end">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% listings.forEach(l => { %>
+        <tr>
+          <td><a href="/listings/<%= l.id %>"><%= l.title %></a></td>
+          <td><%= l.User?.name || 'User' %></td>
+          <td>
+            <span class="badge <%= l.status==='approved'?'bg-success':(l.status==='pending'?'bg-warning text-dark':'bg-secondary') %>">
+              <%= l.status %>
+            </span>
+          </td>
+          <td><%= new Date(l.createdAt).toLocaleString() %></td>
+          <td class="text-end">
+            <form method="POST" action="/admin/listings/<%= l.id %>/approve" class="d-inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-success" <%= l.status==='approved'?'disabled':'' %>>Approve</button>
+            </form>
+            <form method="POST" action="/admin/listings/<%= l.id %>/reject" class="d-inline ms-1">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button class="btn btn-sm btn-danger" <%= l.status==='rejected'?'disabled':'' %>>Reject</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,60 @@
+<% const l = listing; %>
+
+<div class="d-flex justify-content-between align-items-start mb-2">
+  <h1 class="h4 m-0"><%= l.title %></h1>
+  <% if (l.status) { %>
+    <span class="badge <%= l.status === 'approved' ? 'bg-success' : (l.status === 'pending' ? 'bg-warning text-dark' : 'bg-danger') %>">
+      <%= l.status %>
+    </span>
+  <% } %>
+</div>
+
+<% if (l.User) { %>
+  <div class="text-muted mb-3 small">
+    by <%= l.User.name %>
+    <% if (l.User.location) { %> · <%= l.User.location %><% } %>
+  </div>
+<% } %>
+
+<% if (l.description) { %>
+  <p class="mb-4"><%= l.description %></p>
+<% } %>
+
+<div class="d-flex gap-2 flex-wrap">
+  <a class="btn btn-outline-secondary" href="/listings">Back</a>
+  <% if (isAuthenticated) { %>
+    <a class="btn btn-primary" href="/history/messages">Message History</a>
+    <% if (l.User && (l.User.whatsapp_number || l.User.whatsappNumber)) { %>
+      <a class="btn btn-success" rel="noopener" href="/go/wa/<%= l.userId %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>">WhatsApp</a>
+    <% } %>
+  <% } else { %>
+    <a class="btn btn-primary" href="/auth/login">Login to message</a>
+  <% } %>
+  <% if (isAuthenticated && user && user.id === l.userId) { %>
+    <a class="btn btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
+    <button id="deleteBtn" class="btn btn-outline-danger">Delete</button>
+  <% } %>
+</div>
+
+<script>
+const delBtn = document.getElementById('deleteBtn');
+if (delBtn) {
+  delBtn.addEventListener('click', async () => {
+    if (!confirm('Delete this listing?')) return;
+    try {
+      const res = await fetch('/listings/<%= l.id %>', {
+        method: 'DELETE',
+        headers: { 'CSRF-Token': '<%= csrfToken %>' }
+      });
+      const data = await res.json();
+      if (res.ok && data && data.success) {
+        location.href = '/listings';
+      } else {
+        alert(data && data.error ? data.error : 'Delete failed.');
+      }
+    } catch (e) {
+      alert('Delete failed.');
+    }
+  });
+}
+</script>

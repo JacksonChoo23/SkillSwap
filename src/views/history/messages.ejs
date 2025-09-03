@@ -1,0 +1,47 @@
+<% layout('layouts/main') %>
+
+<div class="container py-4">
+  <h1 class="mb-4">Message History</h1>
+
+  <% if (!rows || rows.length === 0) { %>
+    <div class="alert alert-info">
+      No WhatsApp contacts yet.<br/>
+      在用户资料页点击 WhatsApp 开始联系，这里会自动记录。
+    </div>
+  <% } else { %>
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>WhatsApp</th>
+            <th>First</th>
+            <th>Last</th>
+            <th>Count</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(r => { %>
+            <tr>
+              <td><a href="/browse/user/<%= r.peer.id %>"><%= r.peer.name %></a></td>
+              <td><%= r.peer.whatsapp_number || '-' %></td>
+              <td><%= new Date(r.firstContactedAt).toLocaleString() %></td>
+              <td><%= new Date(r.lastContactedAt).toLocaleString() %></td>
+              <td><%= r.count %></td>
+              <td class="d-flex gap-2">
+                <a class="btn btn-success btn-sm" href="/go/wa/<%= r.peer.id %>?text=<%- encodeURIComponent('Hi!') %>">WhatsApp</a>
+                <form method="post" action="/history/messages/<%= r.id %>/delete" onsubmit="return confirm('Delete this entry?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button class="btn btn-outline-danger btn-sm">Delete</button>
+                </form>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</div>
+
+

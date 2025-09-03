@@ -1,0 +1,63 @@
+<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/sessions/request">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="teacherId" id="reqTeacherId">
+        <div class="modal-header">
+          <h5 class="modal-title">Request Session</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Skill</label>
+            <select class="form-select" name="skillId" id="reqSkill" required></select>
+          </div>
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label">Start</label>
+              <input type="datetime-local" class="form-control" name="startAt" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End</label>
+              <input type="datetime-local" class="form-control" name="endAt" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" type="submit">Send Request</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const modalEl = document.getElementById('requestModal');
+    let bsModal;
+    function ensure(){ if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.js-request');
+      if (!btn) return;
+      const uid = parseInt(btn.dataset.user, 10);
+      const skillsJson = btn.getAttribute('data-teach-skills');
+      let teachSkills = [];
+      try { teachSkills = JSON.parse(skillsJson || '[]'); } catch(e) {}
+      const sel = document.getElementById('reqSkill');
+      sel.innerHTML = '';
+      teachSkills.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = String(s.id);
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+      document.getElementById('reqTeacherId').value = String(uid);
+      ensure();
+      bsModal.show();
+    });
+  })();
+</script>
+
+

@@ -1,0 +1,181 @@
+<%
+  const s = session || {};
+  const fmt = d => d ? new Date(d).toLocaleString() : '';
+  const badge = st => (
+    st === 'requested'  ? 'bg-warning text-dark' :
+    st === 'confirmed'  ? 'bg-primary' :
+    st === 'completed'  ? 'bg-success' :
+    st === 'cancelled'  ? 'bg-secondary' : 'bg-light text-dark'
+  );
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+  <div>
+    <a class="btn btn-link p-0 me-2" href="/sessions">&larr; Back</a>
+    <h1 class="h5 d-inline align-middle mb-0"><%= s.Skill?.name || 'Session' %></h1>
+    <span class="badge ms-2 <%= badge(s.status) %> text-uppercase"><%= s.status %></span>
+  </div>
+</div>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="small text-muted">Teacher</div>
+        <div><%= s.teacher?.name || 'User' %></div>
+      </div>
+      <div class="col-md-4">
+        <div class="small text-muted">Learner</div>
+        <div><%= s.learner?.name || 'User' %></div>
+      </div>
+      <div class="col-md-4">
+        <div class="small text-muted">Skill</div>
+        <div><%= s.Skill?.name || '-' %></div>
+      </div>
+      <div class="col-md-6">
+        <div class="small text-muted">Start</div>
+        <div><%= fmt(s.startAt) %></div>
+      </div>
+      <div class="col-md-6">
+        <div class="small text-muted">End</div>
+        <div><%= fmt(s.endAt) %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Actions -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex flex-wrap gap-2">
+      <% if (s.status === 'requested' && user && s.teacherId === user.id) { %>
+        <form method="POST" action="/sessions/<%= s.id %>/confirm" class="d-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-primary">Confirm</button>
+        </form>
+      <% } %>
+
+      <% if (s.status === 'confirmed' && user && (s.teacherId === user.id || s.learnerId === user.id)) { %>
+        <form method="POST" action="/sessions/<%= s.id %>/complete" class="d-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-success">Complete</button>
+        </form>
+      <% } %>
+
+      <% if (s.status !== 'completed' && user && (s.teacherId === user.id || s.learnerId === user.id)) { %>
+        <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button class="btn btn-outline-danger">Cancel</button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Ratings (read-only if present) -->
+<div class="card">
+  <div class="card-body">
+    <h2 class="h6 text-muted mb-3">Ratings</h2>
+    <% if (s.status === 'completed' && user && (s.teacherId === user.id || s.learnerId === user.id)) { %>
+      <form method="POST" action="/ratings/<%= s.id %>" class="mb-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="rateeId" value="<%= user && s.teacherId === user.id ? s.learnerId : s.teacherId %>">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <label class="form-label">Communication</label>
+            <select class="form-select" name="communication" required>
+              <option value="">Select</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label">Skill</label>
+            <select class="form-select" name="skill" required>
+              <option value="">Select</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label">Attitude</label>
+            <select class="form-select" name="attitude" required>
+              <option value="">Select</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label class="form-label">Punctuality</label>
+            <select class="form-select" name="punctuality" required>
+              <option value="">Select</option>
+              <option>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Comment (optional)</label>
+            <textarea class="form-control" name="comment" rows="2" maxlength="500"></textarea>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary">Submit Rating</button>
+          </div>
+        </div>
+      </form>
+    <% } %>
+    <% if (!Array.isArray(s.ratings) || s.ratings.length === 0) { %>
+      <div class="text-muted small">No ratings yet.</div>
+    <% } else { %>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead>
+            <tr>
+              <th>From</th>
+              <th>To</th>
+              <th>Communication</th>
+              <th>Skill</th>
+              <th>Attitude</th>
+              <th>Punctuality</th>
+              <th>Comment</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% s.ratings.forEach(r => { %>
+              <tr>
+                <td><%= r.rater?.name || '-' %></td>
+                <td><%= r.ratee?.name || '-' %></td>
+                <td><%= r.communication %></td>
+                <td><%= r.skill %></td>
+                <td><%= r.attitude %></td>
+                <td><%= r.punctuality %></td>
+                <td style="white-space: pre-wrap;"><%= r.comment || '' %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<!-- Tip Modal Trigger -->
+<div class="mt-3">
+  <% if (user && (s.teacherId === user.id || s.learnerId === user.id)) { %>
+    <% const otherUserId = (user.id === s.teacherId) ? s.learnerId : s.teacherId; %>
+    <button class="btn btn-outline-secondary js-tip" data-user-id="<%= otherUserId %>" data-user-name="<%= (user.id === s.teacherId ? s.learner?.name : s.teacher?.name) %>">Tip</button>
+    <button class="btn btn-outline-danger js-report" data-target-id="<%= otherUserId %>" data-target-name="<%= (user.id === s.teacherId ? s.learner?.name : s.teacher?.name) %>" data-session-id="<%= s.id %>">Report</button>
+  <% } %>
+  <a class="btn btn-outline-primary" href="/tips">My Tips</a>
+  </div>
