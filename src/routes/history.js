@@ -15,13 +15,19 @@ router.get('/history/messages', ensureAuth, async (req, res, next) => {
   try {
     const rows = await ContactHistory.findAll({
       where: { user_id: req.user.id },
-      include: [
-        { model: User, as: 'peer', attributes: ['id','name','whatsapp_number','location'] }
-      ],
-      order: [['last_contacted_at','DESC']]
+      include: [{ model: User, as: 'peer', attributes: ['id', 'name', 'whatsapp_number'] }],
+      order: [['last_contacted_at', 'DESC']]
     });
+
+    if (!rows.length) {
+      req.session.info = 'No message history found.';
+      return res.redirect('/profile');
+    }
+
     res.render('history/messages', { title: 'Message History', rows });
-  } catch (e) { next(e); }
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.post('/history/messages/:id/delete', ensureAuth, async (req, res, next) => {

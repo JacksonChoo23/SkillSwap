@@ -42,8 +42,8 @@ router.get('/go/wa/:peerId', ensureAuth, async (req, res, next) => {
       return res.status(429).send('Too many requests');
     }
 
-    const peer = await User.findByPk(peerId, { attributes: ['id','name','whatsapp_number'] });
-    if (!peer || !peer.whatsapp_number) {
+    const peer = await User.findByPk(peerId, { attributes: ['id','name','whatsappNumber'] });
+    if (!peer || !peer.whatsappNumber) {
       return res.status(400).send('Peer has no WhatsApp number');
     }
 
@@ -75,9 +75,14 @@ router.get('/go/wa/:peerId', ensureAuth, async (req, res, next) => {
     }
 
     const base = 'https://wa.me';
-    const phone = peer.whatsapp_number.replace(/[^+\d]/g, '');
+    // Normalize to digits only for wa.me (no plus sign)
+    const normalized = peer.whatsappNumber.replace(/[^+\d]/g, '');
+    const phone = normalized.replace(/^\+/, '');
+    if (!/^\d{6,15}$/.test(phone)) {
+      return res.status(400).send('Peer has no WhatsApp number');
+    }
     const qp = text ? `?text=${encodeURIComponent(text)}` : '';
-    return res.redirect(302, `${base}/${encodeURIComponent(phone)}${qp}`);
+    return res.redirect(302, `${base}/${phone}${qp}`);
   } catch (e) {
     next(e);
   }

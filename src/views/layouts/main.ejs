@@ -13,6 +13,7 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -36,10 +37,14 @@
                         <a class="nav-link" href="/listings">Listings</a>
                     </li>
                     <li class="nav-item">
+                      <% if (isAuthenticated) { %>
                         <a class="nav-link" href="/browse">Browse</a>
+                      <% } %>
                     </li>
                     <li class="nav-item">
+                      <% if (isAuthenticated) { %>
                         <a class="nav-link" href="/calculator">Calculator</a>
+                      <% } %>
                     </li>
                     <% if (isAuthenticated) { %>
                         <li class="nav-item">
@@ -87,24 +92,39 @@
 
     <!-- Flash Messages -->
     <% if (success) { %>
-        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-            <%= success %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+      <script>
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: '<%= success %>',
+          timer: 3000,
+          showConfirmButton: false
+        });
+      </script>
     <% } %>
-    
+
     <% if (error) { %>
-        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-            <%= error %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+      <script>
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: '<%= error %>',
+          timer: 3000,
+          showConfirmButton: false
+        });
+      </script>
     <% } %>
-    
+
     <% if (info) { %>
-        <div class="alert alert-info alert-dismissible fade show m-3" role="alert">
-            <%= info %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+      <script>
+        Swal.fire({
+          icon: 'info',
+          title: 'Info',
+          text: '<%= info %>',
+          timer: 3000,
+          showConfirmButton: false
+        });
+      </script>
     <% } %>
 
     <!-- Main Content -->
@@ -139,4 +159,4 @@
     <!-- Custom JS -->
     <script src="/js/app.js"></script>
 </body>
-</html> 
+</html>

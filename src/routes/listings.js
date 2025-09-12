@@ -1,7 +1,9 @@
+// Added: require adult content detection util
 const express = require('express');
 const { Listing, User } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const moderationService = require('../services/moderationService');
+const checkAdultContent = require('../../utils/checkAdultContent'); // <-- Add this line
 
 const router = express.Router();
 
@@ -31,7 +33,7 @@ router.get('/create', (req, res) => {
     req.session.error = 'Please log in to create a listing.';
     return res.redirect('/auth/login');
   }
-  
+
   res.render('listings/create', {
     title: 'Create Listing - SkillSwap MY'
   });
@@ -42,7 +44,14 @@ router.post('/create', validate(schemas.listing), async (req, res) => {
   try {
     const { title, description } = req.body;
 
-    // Moderate content
+    // Step 1: Adult content moderation
+    const adultResult = await checkAdultContent(description);
+    if (adultResult.adult) {
+      req.session.error = 'Your description contains adult content.';
+      return res.redirect('/listings/create');
+    }
+
+    // Step 2: Custom moderation logic
     const moderation = moderationService.validateListingContent(title, description);
     if (!moderation.isValid) {
       req.session.error = moderation.errors.join(', ');
@@ -71,7 +80,7 @@ router.post('/create', validate(schemas.listing), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const listing = await Listing.findByPk(id, {
       include: [{ model: User, attributes: ['id', 'name', 'bio', 'location'] }]
     });
@@ -101,9 +110,9 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/edit', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const listing = await Listing.findByPk(id);
-    
+
     if (!listing) {
       req.session.error = 'Listing not found.';
       return res.redirect('/listings');
@@ -125,14 +134,14 @@ router.get('/:id/edit', async (req, res) => {
   }
 });
 
-// Update listing
+// Update listing POST
 router.post('/:id/edit', validate(schemas.listing), async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description } = req.body;
-    
+
     const listing = await Listing.findByPk(id);
-    
+
     if (!listing) {
       req.session.error = 'Listing not found.';
       return res.redirect('/listings');
@@ -143,7 +152,14 @@ router.post('/:id/edit', validate(schemas.listing), async (req, res) => {
       return res.redirect('/listings');
     }
 
-    // Moderate content
+    // Step 1: Check adult content again
+    const adultResult = await checkAdultContent(description);
+    if (adultResult.adult) {
+      req.session.error = 'Your description contains adult content.';
+      return res.redirect(`/listings/${id}/edit`);
+    }
+
+    // Step 2: Standard moderation again
     const moderation = moderationService.validateListingContent(title, description);
     if (!moderation.isValid) {
       req.session.error = moderation.errors.join(', ');
@@ -156,8 +172,8 @@ router.post('/:id/edit', validate(schemas.listing), async (req, res) => {
       status: moderation.needsReview ? 'pending' : 'approved'
     });
 
-    req.session.success = moderation.needsReview 
-      ? 'Listing updated and submitted for approval.' 
+    req.session.success = moderation.needsReview
+      ? 'Listing updated and submitted for approval.'
       : 'Listing updated successfully.';
     res.redirect(`/listings/${id}`);
   } catch (error) {
@@ -171,9 +187,9 @@ router.post('/:id/edit', validate(schemas.listing), async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const listing = await Listing.findByPk(id);
-    
+
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found.' });
     }
@@ -190,4 +206,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

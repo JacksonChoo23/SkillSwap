@@ -106,7 +106,7 @@
           <div class="card-footer d-flex justify-content-end gap-2">
             <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>" data-user-name="<%= u.name %>">Tip</button>
             <% if (u.whatsapp_number || u.whatsappNumber) { %>
-              <a class="btn btn-sm btn-success" rel="noopener" href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>">WhatsApp</a>
+              <a class="btn btn-sm btn-success" rel="noopener" href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>" target="_blank">WhatsApp</a>
             <% } %>
             <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
           </div>
