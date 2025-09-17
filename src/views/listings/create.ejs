@@ -5,12 +5,56 @@
 
   <div class="col-12">
     <label class="form-label">Title</label>
-    <input class="form-control" name="title" required maxlength="255" placeholder="Your listing title">
+    <input
+      class="form-control"
+      name="title"
+      required
+      maxlength="255"
+      value="<%= (form && form.title) || (aiRewrite && aiRewrite.title) || '' %>"
+      placeholder="Your listing title">
   </div>
 
   <div class="col-12">
     <label class="form-label">Description</label>
-    <textarea class="form-control" name="description" rows="6" required placeholder="What do you teach or want to learn? Any details."></textarea>
+    <textarea
+      class="form-control"
+      name="description"
+      rows="6"
+      required
+      placeholder="What do you teach or want to learn? Any details."><%= (form && form.description) || (aiRewrite && aiRewrite.description) || '' %></textarea>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Skill</label>
+    <select class="form-select" name="skill_id" required>
+      <option value="">Select a skill</option>
+      <% (Array.isArray(skills) ? skills : []).forEach(s => { %>
+        <option
+          value="<%= s.id %>"
+          <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
+          <%= s.name %>
+        </option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Price / hour (RM)</label>
+    <input
+      class="form-control"
+      name="price_per_hour"
+      type="number"
+      step="0.01"
+      min="0"
+      value="<%= form && form.price_per_hour ? form.price_per_hour : '' %>">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Visibility</label>
+    <select class="form-select" name="visibility">
+      <option value="public"  <%= (!form || form.visibility === 'public') ? 'selected' : '' %> >public</option>
+      <option value="private" <%= (form && form.visibility === 'private') ? 'selected' : '' %> >private</option>
+    </select>
   </div>
 
   <div class="col-12 d-flex gap-2">
@@ -18,3 +62,44 @@
     <a class="btn btn-outline-secondary" href="/listings">Cancel</a>
   </div>
 </form>
+
+<% if (typeof moderationFlagged !== 'undefined' && moderationFlagged) { %>
+  <div class="alert alert-warning mt-3">
+    <strong><%= moderationFlagged.message %></strong>
+  </div>
+<% } %>
+
+<% if (typeof aiSuggestions !== 'undefined' || typeof aiRewrite !== 'undefined') { %>
+  <div class="card mt-3">
+    <div class="card-header">AI Suggestions</div>
+    <div class="card-body">
+      <% if (aiSuggestions) { %>
+        <% if (aiSuggestions.title) { %>
+          <p class="mb-1"><strong>Title suggestion:</strong> <%= aiSuggestions.title %></p>
+        <% } %>
+        <% if (aiSuggestions.description) { %>
+          <p class="mb-1"><strong>Description suggestion:</strong> <%= aiSuggestions.description %></p>
+        <% } %>
+        <% if (Array.isArray(aiSuggestions.notes) && aiSuggestions.notes.length) { %>
+          <ul class="small text-muted mb-2">
+            <% aiSuggestions.notes.forEach(n => { %><li><%= n %></li><% }) %>
+          </ul>
+        <% } %>
+      <% } %>
+
+      <% if (aiRewrite && (aiRewrite.title || aiRewrite.description)) { %>
+        <button id="applyRewrite" class="btn btn-sm btn-outline-primary">Apply rewrite</button>
+        <script>
+          document.getElementById('applyRewrite')?.addEventListener('click', function () {
+            const t = <%- JSON.stringify(aiRewrite.title || "") %>;
+            const d = <%- JSON.stringify(aiRewrite.description || "") %>;
+            const titleEl = document.querySelector('input[name="title"]');
+            const descEl  = document.querySelector('textarea[name="description"]');
+            if (t && titleEl) titleEl.value = t;
+            if (d && descEl)  descEl.value = d;
+          });
+        </script>
+      <% } %>
+    </div>
+  </div>
+<% } %>

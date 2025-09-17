@@ -1,2 +1,15 @@
-<h1>Forgot Password</h1>
-<p>Form to reset password will appear here.</p>
+<%- include('../partials/header') %>
+<div class="container py-4">
+  <h1 class="h4 mb-3">Forgot Password</h1>
+  
+  <form method="POST" action="/auth/forgot">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="mb-3">
+      <label class="form-label">Email</label>
+      <input class="form-control" type="email" name="email" required>
+    </div>
+    <button class="btn btn-primary" type="submit">Send reset email</button>
+    <a class="btn btn-link" href="/auth/login">Back to login</a>
+  </form>
+</div>
+<%- include('../partials/footer') %>

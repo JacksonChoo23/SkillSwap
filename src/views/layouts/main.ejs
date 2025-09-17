@@ -91,41 +91,17 @@
     </nav>
 
     <!-- Flash Messages -->
-    <% if (success) { %>
-      <script>
-        Swal.fire({
-          icon: 'success',
-          title: 'Success',
-          text: '<%= success %>',
-          timer: 3000,
-          showConfirmButton: false
-        });
-      </script>
-    <% } %>
+    <% (Array.isArray(success) ? success : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
 
-    <% if (error) { %>
-      <script>
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: '<%= error %>',
-          timer: 3000,
-          showConfirmButton: false
-        });
-      </script>
-    <% } %>
+    <% (Array.isArray(error) ? error : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
 
-    <% if (info) { %>
-      <script>
-        Swal.fire({
-          icon: 'info',
-          title: 'Info',
-          text: '<%= info %>',
-          timer: 3000,
-          showConfirmButton: false
-        });
-      </script>
-    <% } %>
+    <% (Array.isArray(info) ? info : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
 
     <!-- Main Content -->
     <main class="container my-4">

@@ -16,6 +16,12 @@ const _list = Array.isArray(listings) ? listings : [];
         <div class="card h-100">
           <div class="card-body">
             <h2 class="h5 m-0"><a href="/listings/<%= l.id %>"><%= l.title %></a></h2>
+            <div class="small text-muted mt-1">
+              <% if (l.Skill) { %><span class="badge bg-secondary"><%= l.Skill.name %></span><% } %>
+              <% if (typeof l.pricePerHour !== 'undefined' && l.pricePerHour !== null) { %>
+                <span class="badge bg-info text-dark ms-2">RM <%= l.pricePerHour %> / hr</span>
+              <% } %>
+            </div>
             <% if (l.description) { %><p class="text-muted mt-2 mb-0"><%= l.description %></p><% } %>
           </div>
           <div class="card-footer d-flex justify-content-between align-items-center">

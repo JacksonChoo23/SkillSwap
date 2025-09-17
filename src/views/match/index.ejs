@@ -1,115 +1,26 @@
-<%
-  const meSkillsTeach = (me?.userSkills || []).filter(u => u.type === 'teach').map(u => ({ id: u.skillId, name: u.Skill?.name }));
-  const meSkillsLearn = (me?.userSkills || []).filter(u => u.type === 'learn').map(u => ({ id: u.skillId, name: u.Skill?.name }));
-  const pct = x => Math.round((x || 0) * 100);
-%>
+<h1 class="text-center mb-4">Find Matches</h1>
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h4 mb-0">Your Matches</h1>
-  <a class="btn btn-outline-secondary" href="/browse">Back to Browse</a>
-  </div>
-
-<% if (!matches || matches.length === 0) { %>
-  <div class="alert alert-info">No matches yet. Add some availability and skills to improve results.</div>
-<% } else { %>
-  <div class="vstack gap-3">
-    <% matches.forEach(m => { 
-         const u = m.user;
-         const theirTeach = (u.userSkills || []).filter(s => s.type === 'teach').map(s => ({ id: s.skillId, name: s.Skill?.name }));
-         const theirLearn = (u.userSkills || []).filter(s => s.type === 'learn').map(s => ({ id: s.skillId, name: s.Skill?.name }));
-         const iLearnTheyTeach = meSkillsLearn.filter(ms => theirTeach.some(ts => ts.id === ms.id));
-         const iTeachTheyLearn = meSkillsTeach.filter(ms => theirLearn.some(ts => ts.id === ms.id));
-    %>
-      <div class="card">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-              <h2 class="h5 m-0"><%= u.name %></h2>
-              <div class="text-muted small"><%= u.location || '' %></div>
-            </div>
-            <div class="text-end">
-              <div class="badge bg-primary">Score <%= pct(m.score) %>%</div>
-              <div class="small mt-1">
-                <span class="badge bg-secondary">Tags <%= pct(m.tagOverlapScore) %>%</span>
-                <span class="badge bg-info text-dark ms-1">Time <%= pct(m.availabilityOverlapScore) %>%</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="row mt-3">
-            <div class="col-md-6">
-              <div class="fw-semibold mb-1">What I want to learn vs they can teach</div>
-              <% if (iLearnTheyTeach.length === 0) { %>
-                <div class="text-muted small">No overlapping skills yet.</div>
-              <% } else { %>
-                <ul class="list-inline mb-0">
-                  <% iLearnTheyTeach.forEach(s => { %>
-                    <li class="list-inline-item badge bg-light text-dark border"><%= s.name %></li>
-                  <% }) %>
-                </ul>
-              <% } %>
-            </div>
-            <div class="col-md-6">
-              <div class="fw-semibold mb-1">What I can teach vs they want to learn</div>
-              <% if (iTeachTheyLearn.length === 0) { %>
-                <div class="text-muted small">No overlapping skills yet.</div>
-              <% } else { %>
-                <ul class="list-inline mb-0">
-                  <% iTeachTheyLearn.forEach(s => { %>
-                    <li class="list-inline-item badge bg-light text-dark border"><%= s.name %></li>
-                  <% }) %>
-                </ul>
-              <% } %>
-            </div>
-          </div>
-
-          <div class="d-flex gap-2 mt-3">
-            <a class="btn btn-outline-primary" href="/messages?to=<%= u.id %>">Message</a>
-            <button class="btn btn-primary js-request" data-user="<%= u.id %>" data-teach-skills='<%- JSON.stringify((u.userSkills || []).filter(s => s.type === "teach" && s.Skill).map(s => ({ id: s.skillId, name: s.Skill.name }))) %>'>Request Session</button>
-          </div>
-        </div>
-      </div>
-    <% }) %>
-  </div>
-<% } %>
-
-<!-- Request Session Modal -->
-<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <form method="POST" action="/sessions/request">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="teacherId" id="reqTeacherId">
-        <div class="modal-header">
-          <h5 class="modal-title">Request Session</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Skill</label>
-            <select class="form-select" name="skillId" id="reqSkill" required></select>
-            <div class="form-text">Select one of their teach skills you want to learn.</div>
-          </div>
-          <div class="row g-2">
-            <div class="col-md-6">
-              <label class="form-label">Start</label>
-              <input type="datetime-local" class="form-control" name="startAt" required>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label">End</label>
-              <input type="datetime-local" class="form-control" name="endAt" required>
+<% if (matches.length > 0) { %>
+  <div class="container">
+    <div class="row">
+      <% matches.forEach(match => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title"><%= match.user.name %></h5>
+              <p class="card-text">Score: <strong><%= match.score.toFixed(2) %></strong></p>
+              <p class="card-text">Teach Overlap: <%= match.teachOverlap %></p>
+              <p class="card-text">Learn Overlap: <%= match.learnOverlap %></p>
+              <p class="card-text">Tag Overlap Score: <%= (match.tagOverlapScore * 100).toFixed(2) %>%</p>
+              <p class="card-text">Availability Overlap Score: <%= (match.availabilityOverlapScore * 100).toFixed(2) %>%</p>
             </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">Send Request</button>
-        </div>
-      </form>
+      <% }); %>
     </div>
   </div>
- </div>
-
-<script>
-  // Request session modal handled by shared partial
-</script>
+<% } else { %>
+  <div class="alert alert-warning text-center" role="alert">
+    No matches found. Try updating your skills or availability.
+  </div>
+<% } %>

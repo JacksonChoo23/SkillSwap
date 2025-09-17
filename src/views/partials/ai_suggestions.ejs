@@ -1,0 +1,34 @@
+<% if (typeof aiSuggestions !== 'undefined' || typeof aiRewrite !== 'undefined') { %>
+  <div class="card mt-3">
+    <div class="card-header">AI Suggestions</div>
+    <div class="card-body">
+      <% if (aiSuggestions) { %>
+        <% if (aiSuggestions.title) { %>
+          <p class="mb-1"><strong>Title suggestion:</strong> <%= aiSuggestions.title %></p>
+        <% } %>
+        <% if (aiSuggestions.description) { %>
+          <p class="mb-1"><strong>Description suggestion:</strong> <%= aiSuggestions.description %></p>
+        <% } %>
+        <% if (Array.isArray(aiSuggestions.notes) && aiSuggestions.notes.length) { %>
+          <ul class="small text-muted mb-2">
+            <% aiSuggestions.notes.forEach(n => { %><li><%= n %></li><% }) %>
+          </ul>
+        <% } %>
+      <% } %>
+
+      <% if (aiRewrite && (aiRewrite.title || aiRewrite.description)) { %>
+        <button id="applyRewrite" class="btn btn-sm btn-outline-primary">Apply rewrite</button>
+        <script>
+          document.getElementById('applyRewrite')?.addEventListener('click', function () {
+            const t = <%- JSON.stringify(aiRewrite.title || "") %>;
+            const d = <%- JSON.stringify(aiRewrite.description || "") %>;
+            const titleEl = document.querySelector('input[name="title"]');
+            const descEl  = document.querySelector('textarea[name="description"]');
+            if (t && titleEl) titleEl.value = t;
+            if (d && descEl)  descEl.value = d;
+          });
+        </script>
+      <% } %>
+    </div>
+  </div>
+<% } %>

@@ -3,9 +3,18 @@
 <div class="d-flex justify-content-between align-items-start mb-2">
   <h1 class="h4 m-0"><%= l.title %></h1>
   <% if (l.status) { %>
-    <span class="badge <%= l.status === 'approved' ? 'bg-success' : (l.status === 'pending' ? 'bg-warning text-dark' : 'bg-danger') %>">
+    <span class="badge <%= l.status === 'active' ? 'bg-success' : (l.status === 'paused' ? 'bg-warning text-dark' : 'bg-danger') %>">
       <%= l.status %>
     </span>
+  <% } %>
+</div>
+
+<div class="text-muted mb-2 small">
+  <% if (l.Skill) { %>
+    <span class="badge bg-secondary me-2"><%= l.Skill.name %></span>
+  <% } %>
+  <% if (typeof l.pricePerHour !== 'undefined' && l.pricePerHour !== null) { %>
+    <span class="badge bg-info text-dark">RM <%= l.pricePerHour %> / hr</span>
   <% } %>
 </div>
 
@@ -22,14 +31,16 @@
 
 <div class="d-flex gap-2 flex-wrap">
   <a class="btn btn-outline-secondary" href="/listings">Back</a>
+
   <% if (isAuthenticated) { %>
     <a class="btn btn-primary" href="/history/messages">Message History</a>
-    <% if (l.User && (l.User.whatsapp_number || l.User.whatsappNumber)) { %>
+    <% if (l.User && (l.User.whatsappNumber)) { %>
       <a class="btn btn-success" rel="noopener" href="/go/wa/<%= l.userId %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>" target="_blank">WhatsApp</a>
     <% } %>
   <% } else { %>
     <a class="btn btn-primary" href="/auth/login">Login to message</a>
   <% } %>
+
   <% if (isAuthenticated && user && user.id === l.userId) { %>
     <a class="btn btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
     <button id="deleteBtn" class="btn btn-outline-danger">Delete</button>
