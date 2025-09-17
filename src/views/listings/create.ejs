@@ -59,9 +59,140 @@
 
   <div class="col-12 d-flex gap-2">
     <button class="btn btn-primary" type="submit">Submit</button>
+    <button class="btn btn-outline-info" type="button" onclick="togglePreview()">
+      <i class="fas fa-eye me-1"></i>Preview Listing
+    </button>
     <a class="btn btn-outline-secondary" href="/listings">Cancel</a>
   </div>
 </form>
+
+<!-- Quick Preview Section -->
+<div class="card mt-4" id="quickPreview" style="display: none;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-eye me-2"></i>Quick Preview</span>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleQuickPreview()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-8">
+        <h6 class="fw-bold" id="quickPreviewTitle">Your listing title...</h6>
+        <p class="text-muted mb-0" id="quickPreviewDescription">Your description...</p>
+      </div>
+      <div class="col-md-4 text-end">
+        <div class="fw-bold text-success" id="quickPreviewPrice">Free</div>
+        <small class="text-muted" id="quickPreviewSkill">Select a skill</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Listing Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="previewModalLabel">
+          <i class="fas fa-eye me-2"></i>Listing Preview
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          This is how your listing will appear to other users on SkillSwap MY.
+        </div>
+        
+        <!-- Preview Content -->
+        <div class="card border-primary" id="listingPreview">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h6 class="mb-0" id="previewTitle">Your listing title will appear here</h6>
+            <span class="badge bg-light text-primary" id="previewSkill">Skill Category</span>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-8">
+                <h6 class="text-muted mb-2">Description:</h6>
+                <p id="previewDescription" class="mb-3">Your listing description will appear here...</p>
+              </div>
+              <div class="col-md-4">
+                <div class="d-flex flex-column gap-2">
+                  <div>
+                    <strong class="text-success" id="previewPrice">Free</strong>
+                    <small class="text-muted"> / hour</small>
+                  </div>
+                  <div>
+                    <span class="badge bg-success" id="previewVisibility">Public</span>
+                  </div>
+                  <div class="mt-2">
+                    <small class="text-muted">
+                      <i class="fas fa-user me-1"></i>Posted by You
+                    </small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>Just now
+              </small>
+              <div>
+                <button class="btn btn-primary btn-sm" disabled>
+                  <i class="fas fa-envelope me-1"></i>Contact
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" disabled>
+                  <i class="fas fa-heart me-1"></i>Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+        <button type="button" class="btn btn-primary" onclick="submitForm()">
+          <i class="fas fa-check me-1"></i>Looks Good - Submit
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Saved Suggestions Modal -->
+<div class="modal fade" id="savedSuggestionsModal" tabindex="-1" aria-labelledby="savedSuggestionsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="savedSuggestionsModalLabel">
+          <i class="fas fa-history me-2"></i>Saved Suggestions
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex gap-2 mb-3">
+          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('all')">All</button>
+          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('teach')">Teaching</button>
+          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('learn')">Learning</button>
+          <button class="btn btn-sm btn-outline-warning" onclick="loadSuggestions('favorites')">
+            <i class="fas fa-star me-1"></i>Favorites
+          </button>
+        </div>
+        
+        <div id="savedSuggestionsList">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+            <p>Loading suggestions...</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <% if (typeof moderationFlagged !== 'undefined' && moderationFlagged) { %>
   <div class="alert alert-warning mt-3">
@@ -69,37 +200,491 @@
   </div>
 <% } %>
 
-<% if (typeof aiSuggestions !== 'undefined' || typeof aiRewrite !== 'undefined') { %>
-  <div class="card mt-3">
-    <div class="card-header">AI Suggestions</div>
-    <div class="card-body">
-      <% if (aiSuggestions) { %>
-        <% if (aiSuggestions.title) { %>
-          <p class="mb-1"><strong>Title suggestion:</strong> <%= aiSuggestions.title %></p>
-        <% } %>
-        <% if (aiSuggestions.description) { %>
-          <p class="mb-1"><strong>Description suggestion:</strong> <%= aiSuggestions.description %></p>
-        <% } %>
-        <% if (Array.isArray(aiSuggestions.notes) && aiSuggestions.notes.length) { %>
-          <ul class="small text-muted mb-2">
-            <% aiSuggestions.notes.forEach(n => { %><li><%= n %></li><% }) %>
-          </ul>
-        <% } %>
+<% if (typeof aiSuggestions !== 'undefined' && aiSuggestions) { %>
+  <div class="card mt-3" id="aiSuggestionsCard">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-lightbulb text-warning me-2"></i>AI Suggestions Based on Your Skills</span>
+      <div class="d-flex gap-2">
+        <div class="btn-group btn-group-sm" role="group">
+          <input type="radio" class="btn-check" name="suggestionType" id="teachSuggestions" value="teach" checked>
+          <label class="btn btn-outline-primary" for="teachSuggestions">Teaching</label>
+          
+          <input type="radio" class="btn-check" name="suggestionType" id="learnSuggestions" value="learn">
+          <label class="btn btn-outline-primary" for="learnSuggestions">Learning</label>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="regenerateSuggestions">
+          <i class="fas fa-sync-alt me-1"></i>Regenerate
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success" id="saveSuggestion">
+          <i class="fas fa-bookmark me-1"></i>Save
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-info" id="loadSavedSuggestions">
+          <i class="fas fa-history me-1"></i>History
+        </button>
+      </div>
+    </div>
+    <div class="card-body" id="suggestionsContent">
+      <% if (aiSuggestions.title) { %>
+        <div class="mb-3">
+          <label class="fw-semibold text-primary">Suggested Title:</label>
+          <p class="mb-1 bg-light p-2 rounded"><%= aiSuggestions.title %></p>
+          <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('title', this)">
+            <i class="fas fa-check me-1"></i>Use This Title
+          </button>
+        </div>
       <% } %>
-
-      <% if (aiRewrite && (aiRewrite.title || aiRewrite.description)) { %>
-        <button id="applyRewrite" class="btn btn-sm btn-outline-primary">Apply rewrite</button>
-        <script>
-          document.getElementById('applyRewrite')?.addEventListener('click', function () {
-            const t = <%- JSON.stringify(aiRewrite.title || "") %>;
-            const d = <%- JSON.stringify(aiRewrite.description || "") %>;
-            const titleEl = document.querySelector('input[name="title"]');
-            const descEl  = document.querySelector('textarea[name="description"]');
-            if (t && titleEl) titleEl.value = t;
-            if (d && descEl)  descEl.value = d;
-          });
-        </script>
+      
+      <% if (aiSuggestions.description) { %>
+        <div class="mb-3">
+          <label class="fw-semibold text-primary">Suggested Description:</label>
+          <p class="mb-1 bg-light p-2 rounded"><%= aiSuggestions.description %></p>
+          <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('description', this)">
+            <i class="fas fa-check me-1"></i>Use This Description
+          </button>
+        </div>
+      <% } %>
+      
+      <% if (Array.isArray(aiSuggestions.notes) && aiSuggestions.notes.length) { %>
+        <div class="mb-0">
+          <label class="fw-semibold text-info">💡 Tips for a Great Listing:</label>
+          <ul class="small mb-0 mt-1">
+            <% aiSuggestions.notes.forEach(n => { %>
+              <li class="mb-1"><%= n %></li>
+            <% }) %>
+          </ul>
+        </div>
       <% } %>
     </div>
   </div>
 <% } %>
+
+<script>
+// Global variables for skills data
+let skillsData = {};
+
+// Initialize skills data
+<% if (Array.isArray(skills)) { %>
+  <% skills.forEach(skill => { %>
+    skillsData['<%= skill.id %>'] = '<%= skill.name %>';
+  <% }); %>
+<% } %>
+
+// Preview functionality
+function togglePreview() {
+  updatePreview();
+  const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+  modal.show();
+}
+
+function updatePreview() {
+  const title = document.querySelector('input[name="title"]').value.trim();
+  const description = document.querySelector('textarea[name="description"]').value.trim();
+  const skillId = document.querySelector('select[name="skill_id"]').value;
+  const price = document.querySelector('input[name="price_per_hour"]').value;
+  const visibility = document.querySelector('select[name="visibility"]').value;
+  
+  // Update preview elements
+  document.getElementById('previewTitle').textContent = title || 'Your listing title will appear here';
+  document.getElementById('previewDescription').textContent = description || 'Your listing description will appear here...';
+  document.getElementById('previewSkill').textContent = skillsData[skillId] || 'Skill Category';
+  
+  // Update price display
+  const priceDisplay = price && parseFloat(price) > 0 ? `RM ${parseFloat(price).toFixed(2)}` : 'Free';
+  document.getElementById('previewPrice').textContent = priceDisplay;
+  
+  // Update visibility badge
+  const visibilityBadge = document.getElementById('previewVisibility');
+  visibilityBadge.textContent = visibility.charAt(0).toUpperCase() + visibility.slice(1);
+  visibilityBadge.className = visibility === 'public' ? 'badge bg-success' : 'badge bg-warning';
+  
+  // Update card styling based on completeness
+  const previewCard = document.getElementById('listingPreview');
+  if (title && description && skillId) {
+    previewCard.className = 'card border-success';
+  } else {
+    previewCard.className = 'card border-warning';
+  }
+  
+  // Update quick preview if visible
+  updateQuickPreview(title, description, skillId, priceDisplay);
+}
+
+function updateQuickPreview(title, description, skillId, priceDisplay) {
+  const quickPreviewTitle = document.getElementById('quickPreviewTitle');
+  const quickPreviewDescription = document.getElementById('quickPreviewDescription');
+  const quickPreviewSkill = document.getElementById('quickPreviewSkill');
+  const quickPreviewPrice = document.getElementById('quickPreviewPrice');
+  
+  if (quickPreviewTitle) {
+    quickPreviewTitle.textContent = title || 'Your listing title...';
+    quickPreviewDescription.textContent = description ? 
+      (description.length > 100 ? description.substring(0, 100) + '...' : description) : 
+      'Your description...';
+    quickPreviewSkill.textContent = skillsData[skillId] || 'Select a skill';
+    quickPreviewPrice.textContent = priceDisplay;
+    
+    // Show quick preview if there's content
+    if (title || description) {
+      document.getElementById('quickPreview').style.display = 'block';
+    }
+  }
+}
+
+function toggleQuickPreview() {
+  const quickPreview = document.getElementById('quickPreview');
+  quickPreview.style.display = quickPreview.style.display === 'none' ? 'block' : 'none';
+}
+
+function submitForm() {
+  // Close modal and submit form
+  const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
+  modal.hide();
+  document.querySelector('form').submit();
+}
+
+// Auto-update preview when form fields change
+document.addEventListener('DOMContentLoaded', function() {
+  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'input[name="price_per_hour"]', 'select[name="visibility"]'];
+  
+  fields.forEach(selector => {
+    const element = document.querySelector(selector);
+    if (element) {
+      element.addEventListener('input', updatePreview);
+      element.addEventListener('change', updatePreview);
+    }
+  });
+  
+  // Initial preview update
+  updatePreview();
+  
+  // Add event listeners for saved suggestions
+  document.getElementById('saveSuggestion')?.addEventListener('click', saveSuggestion);
+  document.getElementById('loadSavedSuggestions')?.addEventListener('click', showSavedSuggestions);
+});
+
+// Apply AI suggestion to form fields
+function applySuggestion(type, button) {
+  const text = button.previousElementSibling.textContent.trim();
+  if (type === 'title') {
+    const titleInput = document.querySelector('input[name="title"]');
+    if (titleInput) {
+      titleInput.value = text;
+      titleInput.focus();
+      updatePreview(); // Update preview after applying suggestion
+    }
+  } else if (type === 'description') {
+    const descTextarea = document.querySelector('textarea[name="description"]');
+    if (descTextarea) {
+      descTextarea.value = text;
+      descTextarea.focus();
+      updatePreview(); // Update preview after applying suggestion
+    }
+  }
+  
+  // Show feedback
+  button.innerHTML = '<i class="fas fa-check text-success me-1"></i>Applied!';
+  button.classList.remove('btn-outline-success');
+  button.classList.add('btn-success');
+  
+  setTimeout(() => {
+    button.innerHTML = '<i class="fas fa-check me-1"></i>Use This ' + (type === 'title' ? 'Title' : 'Description');
+    button.classList.remove('btn-success');
+    button.classList.add('btn-outline-success');
+  }, 2000);
+}
+
+// Regenerate AI suggestions
+document.getElementById('regenerateSuggestions')?.addEventListener('click', async function() {
+  await regenerateSuggestions();
+});
+
+// Handle suggestion type change
+document.querySelectorAll('input[name="suggestionType"]').forEach(radio => {
+  radio.addEventListener('change', function() {
+    if (this.checked) {
+      regenerateSuggestions();
+    }
+  });
+});
+
+async function regenerateSuggestions() {
+  const button = document.getElementById('regenerateSuggestions');
+  const originalHTML = button.innerHTML;
+  
+  // Get selected suggestion type
+  const selectedType = document.querySelector('input[name="suggestionType"]:checked')?.value || 'teach';
+  
+  // Show loading state
+  button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
+  button.disabled = true;
+  
+  try {
+    // Add cache busting and no-cache headers for fresh suggestions
+    const timestamp = Date.now();
+    const response = await fetch(`/listings/ai-suggestions?type=${selectedType}&nocache=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+    const data = await response.json();
+    
+    if (data.suggestions) {
+      // Update the suggestions content
+      const content = document.getElementById('suggestionsContent');
+      let html = '';
+      
+      if (data.suggestions.title) {
+        html += `
+          <div class="mb-3">
+            <label class="fw-semibold text-primary">Suggested Title:</label>
+            <p class="mb-1 bg-light p-2 rounded">${data.suggestions.title}</p>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('title', this)">
+              <i class="fas fa-check me-1"></i>Use This Title
+            </button>
+          </div>
+        `;
+      }
+      
+      if (data.suggestions.description) {
+        html += `
+          <div class="mb-3">
+            <label class="fw-semibold text-primary">Suggested Description:</label>
+            <p class="mb-1 bg-light p-2 rounded">${data.suggestions.description}</p>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('description', this)">
+              <i class="fas fa-check me-1"></i>Use This Description
+            </button>
+          </div>
+        `;
+      }
+      
+      if (data.suggestions.notes && data.suggestions.notes.length) {
+        html += `
+          <div class="mb-0">
+            <label class="fw-semibold text-info">💡 Tips for a Great Listing:</label>
+            <ul class="small mb-0 mt-1">
+              ${data.suggestions.notes.map(note => `<li class="mb-1">${note}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+      
+      content.innerHTML = html;
+      
+      // Update preview if modal is open
+      if (document.getElementById('previewModal').classList.contains('show')) {
+        updatePreview();
+      }
+    }
+  } catch (error) {
+    console.error('Failed to regenerate suggestions:', error);
+    alert('Failed to generate new suggestions. Please try again.');
+  } finally {
+    // Restore button state
+    button.innerHTML = originalHTML;
+    button.disabled = false;
+  }
+}
+
+// Saved suggestions functionality
+async function saveSuggestion() {
+  try {
+    // Get current AI suggestions
+    const titleElement = document.querySelector('#suggestionsContent .bg-light p');
+    const descElement = document.querySelectorAll('#suggestionsContent .bg-light p')[1];
+    const notesElements = document.querySelectorAll('#suggestionsContent .small li');
+    
+    if (!titleElement || !descElement) {
+      alert('No AI suggestions to save. Generate suggestions first.');
+      return;
+    }
+    
+    const title = titleElement.textContent.trim();
+    const description = descElement.textContent.trim();
+    const notes = Array.from(notesElements).map(li => li.textContent.trim());
+    const suggestionType = document.querySelector('input[name="suggestionType"]:checked')?.value || 'teach';
+    const skillId = document.querySelector('select[name="skill_id"]').value;
+    const skillCategory = skillsData[skillId] || '';
+    
+    const response = await fetch('/listings/save-suggestion', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        title,
+        description,
+        suggestion_type: suggestionType,
+        skill_category: skillCategory,
+        notes
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Show success feedback
+      const button = document.getElementById('saveSuggestion');
+      const originalHTML = button.innerHTML;
+      button.innerHTML = '<i class="fas fa-check text-success me-1"></i>Saved!';
+      button.classList.add('btn-success');
+      
+      setTimeout(() => {
+        button.innerHTML = originalHTML;
+        button.classList.remove('btn-success');
+      }, 2000);
+    } else {
+      alert('Failed to save suggestion: ' + (data.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Save suggestion error:', error);
+    alert('Failed to save suggestion. Please try again.');
+  }
+}
+
+function showSavedSuggestions() {
+  const modal = new bootstrap.Modal(document.getElementById('savedSuggestionsModal'));
+  modal.show();
+  loadSuggestions('all');
+}
+
+async function loadSuggestions(type) {
+  try {
+    const listContainer = document.getElementById('savedSuggestionsList');
+    listContainer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    
+    let url = '/listings/saved-suggestions';
+    const params = new URLSearchParams();
+    
+    if (type === 'favorites') {
+      params.append('favorites_only', 'true');
+    } else if (type === 'teach' || type === 'learn') {
+      params.append('type', type);
+    }
+    
+    if (params.toString()) {
+      url += '?' + params.toString();
+    }
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.suggestions && data.suggestions.length > 0) {
+      listContainer.innerHTML = data.suggestions.map(suggestion => `
+        <div class="card mb-3" data-suggestion-id="${suggestion.id}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h6 class="card-title mb-1">${suggestion.title}</h6>
+              <div class="d-flex gap-1">
+                <button class="btn btn-sm ${suggestion.is_favorite ? 'btn-warning' : 'btn-outline-warning'}" 
+                        onclick="toggleFavorite(${suggestion.id}, this)">
+                  <i class="fas fa-star"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteSuggestion(${suggestion.id}, this)">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <p class="card-text small text-muted mb-2">${suggestion.description}</p>
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <span class="badge bg-${suggestion.suggestion_type === 'teach' ? 'primary' : 'info'}">${suggestion.suggestion_type}</span>
+                ${suggestion.skill_category ? `<span class="badge bg-secondary">${suggestion.skill_category}</span>` : ''}
+              </div>
+              <button class="btn btn-sm btn-outline-success" onclick="applySavedSuggestion('${suggestion.title}', '${suggestion.description}')">
+                <i class="fas fa-plus me-1"></i>Use
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      listContainer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No saved suggestions found.</p></div>';
+    }
+    
+    // Update active filter button
+    document.querySelectorAll('#savedSuggestionsModal .btn-outline-primary, #savedSuggestionsModal .btn-outline-warning').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+  } catch (error) {
+    console.error('Load suggestions error:', error);
+    document.getElementById('savedSuggestionsList').innerHTML = '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>Failed to load suggestions.</p></div>';
+  }
+}
+
+async function toggleFavorite(id, button) {
+  try {
+    const response = await fetch(`/listings/saved-suggestions/${id}/favorite`, {
+      method: 'PATCH',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      if (data.is_favorite) {
+        button.classList.remove('btn-outline-warning');
+        button.classList.add('btn-warning');
+      } else {
+        button.classList.remove('btn-warning');
+        button.classList.add('btn-outline-warning');
+      }
+    }
+  } catch (error) {
+    console.error('Toggle favorite error:', error);
+  }
+}
+
+async function deleteSuggestion(id, button) {
+  if (!confirm('Are you sure you want to delete this suggestion?')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch(`/listings/saved-suggestions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      const card = button.closest('.card');
+      card.remove();
+    }
+  } catch (error) {
+    console.error('Delete suggestion error:', error);
+    alert('Failed to delete suggestion.');
+  }
+}
+
+function applySavedSuggestion(title, description) {
+  // Apply to form fields
+  document.querySelector('input[name="title"]').value = title;
+  document.querySelector('textarea[name="description"]').value = description;
+  
+  // Update preview
+  updatePreview();
+  
+  // Close modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('savedSuggestionsModal'));
+  modal.hide();
+  
+  // Show feedback
+  const titleInput = document.querySelector('input[name="title"]');
+  titleInput.focus();
+  titleInput.style.border = '2px solid #28a745';
+  setTimeout(() => {
+    titleInput.style.border = '';
+  }, 2000);
+}
+</script>

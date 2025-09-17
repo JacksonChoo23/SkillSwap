@@ -79,4 +79,13 @@ const User = sequelize.define('User', {
   indexes: [{ unique: true, fields: ['email'] }]
 });
 
+// Define associations
+User.associate = function(models) {
+  // User has many saved suggestions
+  User.hasMany(models.SavedSuggestion, {
+    foreignKey: 'user_id',
+    as: 'savedSuggestions'
+  });
+};
+
 module.exports = User;
