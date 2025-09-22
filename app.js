@@ -33,6 +33,7 @@ const calculatorRoutes = require('./src/routes/calculator');
 const adminRoutes = require('./src/routes/admin');
 const tipsRoutes = require('./src/routes/tips');
 const reportsRoutes = require('./src/routes/reports');
+const aboutRouter = require('./src/routes/about');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -150,6 +151,14 @@ app.use((req, res, next) => {
   next();
 });
 
+// About page - before CSRF to allow guest access
+app.get('/about', (req, res) => {
+  res.render('about', { 
+    title: 'About - SkillSwap MY',
+    csrfToken: '' // No CSRF token needed for guest page
+  });
+});
+
 // CSRF (after session)
 app.use(csrf({ cookie: false }));
 app.use((req, res, next) => {
@@ -185,13 +194,9 @@ app.use('/calculator', calculatorRoutes);
 app.use('/tips', isAuthenticated, tipsRoutes);
 app.use('/reports', isAuthenticated, reportsRoutes);
 app.use('/admin', isAuthenticated, isAdmin, adminRoutes);
-
 // Pages
 app.get('/', (req, res) => {
   res.render('home', { title: 'SkillSwap MY - Peer Skill Exchange' });
-});
-app.get('/about', (req, res) => {
-  res.render('about', { title: 'About SkillSwap MY' });
 });
 
 // 404

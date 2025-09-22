@@ -235,6 +235,21 @@
       </div>
     </div>
 
+    <!-- Notification Center -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <h5 class="mb-0">Notification Center</h5>
+      </div>
+      <div class="card-body">
+        <div id="userNotificationList" class="list-group">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+            <p>Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick links -->
     <div class="d-flex flex-wrap gap-2 mt-3">
       <a class="btn btn-outline-primary btn-sm" href="/sessions">My Sessions</a>
@@ -286,4 +301,48 @@
       }
     }
   });
+
+  async function loadUserNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+
+      const list = document.getElementById('userNotificationList');
+      list.innerHTML = '';
+
+      if (data.notifications && data.notifications.length > 0) {
+        data.notifications.forEach(notification => {
+          const item = document.createElement('a');
+          item.href = '#';
+          item.className = `list-group-item list-group-item-action ${notification.status === 'unread' ? 'fw-bold' : ''}`;
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <span>${notification.title}</span>
+              <small class="text-muted">${new Date(notification.created_at).toLocaleString()}</small>
+            </div>
+            <p class="mb-0 small text-muted">${notification.message}</p>
+          `;
+          item.addEventListener('click', async () => {
+            await markUserNotificationAsRead(notification.id);
+            item.classList.remove('fw-bold');
+          });
+          list.appendChild(item);
+        });
+      } else {
+        list.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No notifications found.</p></div>';
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  }
+
+  async function markUserNotificationAsRead(id) {
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadUserNotifications);
 </script>

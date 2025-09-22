@@ -33,8 +33,13 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
                     </li>
+                    <% if (isAuthenticated) { %>
                     <li class="nav-item">
                         <a class="nav-link" href="/listings">Listings</a>
+                    </li>
+                    <% } %>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/about">About</a>
                     </li>
                     <li class="nav-item">
                       <% if (isAuthenticated) { %>
@@ -51,7 +56,7 @@
                             <a class="nav-link" href="/match">Find Matches</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/history/messages">Message History</a>
+                            <a class="nav-link" href="/notifications">Notification</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/sessions">My Sessions</a>

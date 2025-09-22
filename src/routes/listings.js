@@ -463,4 +463,72 @@ router.delete('/saved-suggestions/:id', isAuthenticated, async (req, res) => {
   }
 });
 
+// Add a new notification when a skill match or request occurs
+async function addNotification(userId, title, message) {
+  const { Notification } = require('../models');
+  await Notification.create({
+    user_id: userId,
+    title,
+    message
+  });
+}
+
+// API: Get all notifications for the logged-in user
+router.get('/api/notifications', isAuthenticated, async (req, res) => {
+  try {
+    const { Notification } = require('../models');
+    const userId = req.user?.id || req.session?.user?.id;
+
+    const notifications = await Notification.findAll({
+      where: { user_id: userId },
+      order: [['status', 'ASC'], ['created_at', 'DESC']]
+    });
+
+    res.json({ notifications });
+  } catch (error) {
+    console.error('Get notifications error:', error);
+    res.status(500).json({ error: 'Error fetching notifications' });
+  }
+});
+
+// API: Mark a notification as read
+router.post('/api/notifications/:id/read', isAuthenticated, async (req, res) => {
+  try {
+    const { Notification } = require('../models');
+    const userId = req.user?.id || req.session?.user?.id;
+    const { id } = req.params;
+
+    const notification = await Notification.findOne({
+      where: { id, user_id: userId }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    notification.status = 'read';
+    await notification.save();
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Mark notification as read error:', error);
+    res.status(500).json({ error: 'Error updating notification status' });
+  }
+});
+
+// Route to render the notifications page
+router.get('/notifications', isAuthenticated, async (req, res) => {
+  try {
+    res.render('history/messages', { title: 'Notifications' });
+  } catch (error) {
+    console.error('Error rendering notifications page:', error);
+    res.status(500).send('Error loading notifications page.');
+  }
+});
+
+// Route to handle requests to /.well-known/appspecific/com.chrome.devtools.json
+router.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
+  res.status(404).json({ error: 'Not Found' });
+});
+
 module.exports = router;
