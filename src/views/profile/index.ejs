@@ -16,6 +16,20 @@
     <div class="card">
       <div class="card-body">
         <h2 class="h6 text-muted mb-3">Account</h2>
+        <% if (progressSummary) { %>
+          <div class="mb-3">
+            <div class="small text-muted">Progress</div>
+            <div class="fw-semibold">Total Points: <%= progressSummary.totalPoints %></div>
+            <div class="small">Learn: <%= progressSummary.learnPoints %> • Teach: <%= progressSummary.teachPoints %></div>
+            <% if (Array.isArray(progressSummary.badges) && progressSummary.badges.length) { %>
+              <div class="mt-2 d-flex flex-wrap gap-1">
+                <% progressSummary.badges.forEach(b => { %>
+                  <span class="badge <%= b.class %>"><%= b.label %></span>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
         <div class="mb-2">
           <div class="small text-muted">Name</div>
           <div><%= u.name || '' %></div>
@@ -41,6 +55,7 @@
             Toggle Visibility
           </button>
         </form>
+        <a class="btn btn-outline-primary btn-sm ms-2" href="/profile/progress/export">Export Progress CSV</a>
       </div>
     </div>
 
@@ -121,6 +136,12 @@
           <div class="mb-3">
             <label class="form-label">Location</label>
             <input class="form-control" name="location" maxlength="255" value="<%= u.location || '' %>">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">WhatsApp Number (E.164)</label>
+            <input class="form-control" name="whatsappNumber" placeholder="+60123456789" value="<%= u.whatsappNumber || '' %>">
+            <div class="form-text">Format: +[country code][number], e.g. +60123456789</div>
           </div>
 
           <div class="mb-3">
@@ -214,11 +235,31 @@
       </div>
     </div>
 
+    <!-- Notification Center -->
+    <div class="card mt-3">
+      <div class="card-header">
+        <h5 class="mb-0">Notification Center</h5>
+      </div>
+      <div class="card-body">
+        <div id="userNotificationList" class="list-group">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+            <p>Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Quick links -->
     <div class="d-flex flex-wrap gap-2 mt-3">
       <a class="btn btn-outline-primary btn-sm" href="/sessions">My Sessions</a>
-      <a class="btn btn-outline-primary btn-sm" href="/messages">Messages</a>
+      <a class="btn btn-outline-primary btn-sm" href="/history/messages">Message History</a>
       <a class="btn btn-outline-primary btn-sm" href="/listings/create">Create Listing</a>
+      <form method="post" action="/history/wa/mark/<%= u.id %>" class="d-inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button class="btn btn-outline-secondary btn-sm">Mark contacted</button>
+      </form>
+      <button class="btn btn-outline-danger btn-sm js-report" data-target-id="<%= u.id %>" data-target-name="<%= u.name %>">Report</button>
     </div>
   </div>
 </div>
@@ -260,4 +301,48 @@
       }
     }
   });
+
+  async function loadUserNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+
+      const list = document.getElementById('userNotificationList');
+      list.innerHTML = '';
+
+      if (data.notifications && data.notifications.length > 0) {
+        data.notifications.forEach(notification => {
+          const item = document.createElement('a');
+          item.href = '#';
+          item.className = `list-group-item list-group-item-action ${notification.status === 'unread' ? 'fw-bold' : ''}`;
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <span>${notification.title}</span>
+              <small class="text-muted">${new Date(notification.created_at).toLocaleString()}</small>
+            </div>
+            <p class="mb-0 small text-muted">${notification.message}</p>
+          `;
+          item.addEventListener('click', async () => {
+            await markUserNotificationAsRead(notification.id);
+            item.classList.remove('fw-bold');
+          });
+          list.appendChild(item);
+        });
+      } else {
+        list.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No notifications found.</p></div>';
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  }
+
+  async function markUserNotificationAsRead(id) {
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadUserNotifications);
 </script>

@@ -1,5 +1,5 @@
 const express = require('express');
-const { Rating, Session, User } = require('../models');
+const { Rating, LearningSession, User } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -10,7 +10,7 @@ router.post('/:sessionId', validate(schemas.rating), async (req, res) => {
     const { sessionId } = req.params;
     const { rateeId, communication, skill, attitude, punctuality, comment } = req.body;
     
-    const session = await Session.findByPk(sessionId);
+    const session = await LearningSession.findByPk(sessionId);
     
     if (!session) {
       req.session.error = 'Session not found.';

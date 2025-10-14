@@ -53,6 +53,19 @@ class CalculatorService {
         suggestion = 'This is a fair exchange!';
       }
 
+      // Debug logs
+      console.log('Debug Data:', {
+        skillA: skillA.name,
+        skillB: skillB.name,
+        categoryA: skillA.Category.name,
+        categoryB: skillB.Category.name,
+        weightA: weightA.weight,
+        weightB: weightB.weight,
+        valueA,
+        valueB,
+        ratio
+      });
+
       return {
         skillA: {
           name: skillA.name,
@@ -118,4 +131,4 @@ class CalculatorService {
   }
 }
 
-module.exports = new CalculatorService(); 
+module.exports = new CalculatorService();

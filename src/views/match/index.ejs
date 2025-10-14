@@ -1,2 +1,26 @@
-<h1>Match</h1>
-<p>Matching results will appear here.</p>
+<h1 class="text-center mb-4">Find Matches</h1>
+
+<% if (matches.length > 0) { %>
+  <div class="container">
+    <div class="row">
+      <% matches.forEach(match => { %>
+        <div class="col-md-4 mb-4">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title"><%= match.user.name %></h5>
+              <p class="card-text">Score: <strong><%= match.score.toFixed(2) %></strong></p>
+              <p class="card-text">Teach Overlap: <%= match.teachOverlap %></p>
+              <p class="card-text">Learn Overlap: <%= match.learnOverlap %></p>
+              <p class="card-text">Tag Overlap Score: <%= (match.tagOverlapScore * 100).toFixed(2) %>%</p>
+              <p class="card-text">Availability Overlap Score: <%= (match.availabilityOverlapScore * 100).toFixed(2) %>%</p>
+            </div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+<% } else { %>
+  <div class="alert alert-warning text-center" role="alert">
+    No matches found. Try updating your skills or availability.
+  </div>
+<% } %>

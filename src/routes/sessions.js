@@ -1,5 +1,5 @@
 const express = require('express');
-const { LearningSession, User, Skill, Rating } = require('../models');
+const { LearningSession, User, Skill, Rating, UserProgress } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -10,16 +10,16 @@ router.get('/', async (req, res) => {
     const teachingSessions = await LearningSession.findAll({
       where: { teacherId: req.user.id },
       include: [
-        { model: User, as: 'learner', attributes: ['id', 'name'] },
+        { model: User, as: 'student', attributes: ['id', 'name', 'whatsapp_number'] },
         { model: Skill, attributes: ['id', 'name'] }
       ],
       order: [['startAt', 'DESC']]
     });
 
     const learningSessions = await LearningSession.findAll({
-      where: { learnerId: req.user.id },
+      where: { studentId: req.user.id },
       include: [
-        { model: User, as: 'teacher', attributes: ['id', 'name'] },
+        { model: User, as: 'teacher', attributes: ['id', 'name', 'whatsapp_number'] },
         { model: Skill, attributes: ['id', 'name'] }
       ],
       order: [['startAt', 'DESC']]
@@ -52,7 +52,7 @@ router.post('/request', validate(schemas.session), async (req, res) => {
     // Create session
     await LearningSession.create({
       teacherId: parseInt(teacherId),
-      learnerId: req.user.id,
+      studentId: req.user.id,
       skillId: parseInt(skillId),
       startAt: new Date(startAt),
       endAt: new Date(endAt),
@@ -113,7 +113,7 @@ router.post('/:id/complete', async (req, res) => {
       return res.redirect('/sessions');
     }
 
-    if (session.teacherId !== req.user.id && session.learnerId !== req.user.id) {
+    if (session.teacherId !== req.user.id && session.studentId !== req.user.id) {
       req.session.error = 'You can only complete sessions you are part of.';
       return res.redirect('/sessions');
     }
@@ -124,6 +124,31 @@ router.post('/:id/complete', async (req, res) => {
     }
 
     await session.update({ status: 'completed' });
+
+    try {
+      // Compute duration in hours
+      const start = new Date(session.startAt);
+      const end = new Date(session.endAt);
+      const durationHours = Math.max(0, (end - start) / (1000 * 60 * 60));
+      // Average rating if exists (from both sides)
+      const ratings = await Rating.findAll({ where: { sessionId: session.id } });
+      let avg = 0;
+      if (ratings.length) {
+        const totals = ratings.map(r => (r.communication + r.skill + r.attitude + r.punctuality) / 4);
+        avg = totals.reduce((a,b)=>a+b,0) / totals.length;
+      }
+      const basePoints = Math.round(durationHours * 10);
+      const ratingBonus = Math.round(avg * 2); // up to ~10 bonus
+      const points = Math.max(1, basePoints + ratingBonus);
+
+      // Create progress for both participants
+      await UserProgress.bulkCreate([
+        { userId: session.studentId, sessionId: session.id, type: 'learn', points },
+        { userId: session.teacherId, sessionId: session.id, type: 'teach', points }
+      ]);
+    } catch (e) {
+      console.error('Progress write error:', e);
+    }
 
     req.session.success = 'Session completed successfully.';
     res.redirect('/sessions');
@@ -146,7 +171,7 @@ router.post('/:id/cancel', async (req, res) => {
       return res.redirect('/sessions');
     }
 
-    if (session.teacherId !== req.user.id && session.learnerId !== req.user.id) {
+    if (session.teacherId !== req.user.id && session.studentId !== req.user.id) {
       req.session.error = 'You can only cancel sessions you are part of.';
       return res.redirect('/sessions');
     }
@@ -174,18 +199,9 @@ router.get('/:id', async (req, res) => {
     
     const session = await LearningSession.findByPk(id, {
       include: [
-        { model: User, as: 'teacher', attributes: ['id', 'name'] },
-        { model: User, as: 'learner', attributes: ['id', 'name'] },
-        { model: Skill, attributes: ['id', 'name'] },
-        {
-          model: Rating,
-          as: 'ratings',
-          include: [
-            { model: User, as: 'rater', attributes: ['id', 'name'] },
-            { model: User, as: 'ratee', attributes: ['id', 'name'] }
-          ]
-        }
-      ]
+        { model: User, as: 'teacher', attributes: ['id','name','whatsapp_number'] },
+        { model: User, as: 'student', attributes: ['id','name','whatsapp_number'] },
+      ],
     });
 
     if (!session) {
@@ -193,7 +209,7 @@ router.get('/:id', async (req, res) => {
       return res.redirect('/sessions');
     }
 
-    if (session.teacherId !== req.user.id && session.learnerId !== req.user.id) {
+    if (session.teacherId !== req.user.id && session.studentId !== req.user.id) {
       req.session.error = 'Access denied.';
       return res.redirect('/sessions');
     }

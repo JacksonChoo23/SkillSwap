@@ -48,12 +48,12 @@
 </form>
 
 <% if (_users.length) { %>
-  <div class="row row-cols-1 row-cols-md-2 g-3">
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
     <% _users.forEach(u => { %>
       <div class="col">
         <div class="card h-100">
           <div class="card-body">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
               <h5 class="card-title m-0"><%= u.name %></h5>
               <% if (u.location) { %>
                 <span class="badge bg-light text-dark border"><%= u.location %></span>
@@ -103,7 +103,11 @@
               </div>
             <% } %>
           </div>
-          <div class="card-footer d-flex justify-content-end">
+          <div class="card-footer d-flex justify-content-end gap-2">
+            <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>" data-user-name="<%= u.name %>">Tip</button>
+            <% if (u.whatsapp_number || u.whatsappNumber) { %>
+              <a class="btn btn-sm btn-success" rel="noopener" href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>" target="_blank">WhatsApp</a>
+            <% } %>
             <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
           </div>
         </div>

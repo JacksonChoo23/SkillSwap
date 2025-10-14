@@ -13,6 +13,7 @@
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -32,21 +33,30 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">Home</a>
                     </li>
+                    <% if (isAuthenticated) { %>
                     <li class="nav-item">
                         <a class="nav-link" href="/listings">Listings</a>
                     </li>
+                    <% } %>
                     <li class="nav-item">
-                        <a class="nav-link" href="/browse">Browse</a>
+                        <a class="nav-link" href="/about">About</a>
                     </li>
                     <li class="nav-item">
+                      <% if (isAuthenticated) { %>
+                        <a class="nav-link" href="/browse">Browse</a>
+                      <% } %>
+                    </li>
+                    <li class="nav-item">
+                      <% if (isAuthenticated) { %>
                         <a class="nav-link" href="/calculator">Calculator</a>
+                      <% } %>
                     </li>
                     <% if (isAuthenticated) { %>
                         <li class="nav-item">
                             <a class="nav-link" href="/match">Find Matches</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/messages">Messages</a>
+                            <a class="nav-link" href="/notifications">Notification</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/sessions">My Sessions</a>
@@ -86,30 +96,26 @@
     </nav>
 
     <!-- Flash Messages -->
-    <% if (success) { %>
-        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-            <%= success %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <% } %>
-    
-    <% if (error) { %>
-        <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-            <%= error %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <% } %>
-    
-    <% if (info) { %>
-        <div class="alert alert-info alert-dismissible fade show m-3" role="alert">
-            <%= info %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    <% } %>
+    <% (Array.isArray(success) ? success : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
+
+    <% (Array.isArray(error) ? error : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
+
+    <% (Array.isArray(info) ? info : []).forEach(function(msg){ %>
+    <script>Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', timer: 3000, showConfirmButton: false });</script>
+    <% }); %>
 
     <!-- Main Content -->
     <main class="container my-4">
         <%- body %>
+        <% if (isAuthenticated) { %>
+          <%- include('../partials/tip_modal') %>
+          <%- include('../partials/report_modal') %>
+          <%- include('../partials/request_session_modal') %>
+        <% } %>
     </main>
 
     <!-- Footer -->
@@ -134,4 +140,4 @@
     <!-- Custom JS -->
     <script src="/js/app.js"></script>
 </body>
-</html> 
+</html>

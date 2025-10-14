@@ -1,5 +1,5 @@
 const isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
+  if (req.isAuthenticated() || req.path === '/') {
     return next();
   }
   req.session.error = 'Please log in to access this page.';
@@ -25,4 +25,4 @@ module.exports = {
   isAuthenticated,
   isAdmin,
   isNotAuthenticated
-}; 
+};

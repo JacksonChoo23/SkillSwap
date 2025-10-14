@@ -1,0 +1,118 @@
+<%
+  const slotsByDay = new Map();
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  (slots || []).forEach(s => {
+    const d = s.dayOfWeek;
+    if (!slotsByDay.has(d)) slotsByDay.set(d, []);
+    slotsByDay.get(d).push(s);
+  });
+  for (const [d, arr] of slotsByDay) arr.sort((a,b)=>String(a.startTime).localeCompare(String(b.startTime)));
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">My Availability</h1>
+  <a class="btn btn-outline-secondary" href="/profile">Back to Profile</a>
+  </div>
+
+<div class="alert alert-info">Add weekly time ranges. Slots within the same day cannot overlap.</div>
+
+<div class="row">
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Weekly Editor</h2>
+        <form method="POST" action="/availability">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div id="slots" class="vstack gap-2"></div>
+          <div class="d-flex gap-2 mt-2">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="addSlotBtn">Add slot</button>
+            <button class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Current Slots</h2>
+        <% if (!slots || slots.length === 0) { %>
+          <div class="text-muted small">No availability yet.</div>
+        <% } else { %>
+          <ul class="list-group list-group-flush">
+            <% (Array.from(slotsByDay.keys()).sort()).forEach(d => { %>
+              <li class="list-group-item">
+                <strong><%= days[d] %></strong>
+                <div class="mt-1 d-flex flex-wrap gap-2">
+                  <% (slotsByDay.get(d) || []).forEach(s => { %>
+                    <span class="badge <%= overlapMap?.get(s.id) ? 'bg-warning text-dark' : 'bg-success' %>">
+                      <%= String(s.startTime).slice(0,5) %>-<%= String(s.endTime).slice(0,5) %>
+                      <% if (overlapMap?.get(s.id)) { %>
+                        <span class="ms-1">overlaps</span>
+                      <% } %>
+                    </span>
+                  <% }) %>
+                </div>
+              </li>
+            <% }) %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<template id="slotTemplate">
+  <div class="row g-2 align-items-end slot-row">
+    <div class="col-12 col-md-3">
+      <label class="form-label">Day</label>
+      <select class="form-select" name="dayOfWeek" required>
+        <% days.forEach((d, idx) => { %>
+          <option value="<%= idx %>"><%= d %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label">Start</label>
+      <input type="time" class="form-control" name="startTime" required>
+    </div>
+    <div class="col-6 col-md-3">
+      <label class="form-label">End</label>
+      <input type="time" class="form-control" name="endTime" required>
+    </div>
+    <div class="col-12 col-md-3">
+      <button type="button" class="btn btn-outline-danger w-100 js-remove">Remove</button>
+    </div>
+  </div>
+</template>
+
+<script>
+  (function() {
+    const tpl = document.getElementById('slotTemplate');
+    const container = document.getElementById('slots');
+    const addBtn = document.getElementById('addSlotBtn');
+
+    // Pre-fill existing slots into editor
+    const existing = <%- JSON.stringify(slots || []) %>;
+    existing.forEach(s => addSlot(s.dayOfWeek, String(s.startTime).slice(0,5), String(s.endTime).slice(0,5)));
+
+    addBtn.addEventListener('click', () => addSlot());
+
+    function addSlot(day, start, end) {
+      const node = tpl.content.cloneNode(true);
+      const row = node.querySelector('.slot-row');
+      const daySel = node.querySelector('select[name="dayOfWeek"]');
+      const sInput = node.querySelector('input[name="startTime"]');
+      const eInput = node.querySelector('input[name="endTime"]');
+      const rmBtn = node.querySelector('.js-remove');
+      if (typeof day === 'number') daySel.value = String(day);
+      if (start) sInput.value = start;
+      if (end) eInput.value = end;
+      rmBtn.addEventListener('click', () => row.remove());
+      container.appendChild(node);
+    }
+  })();
+</script>
+
+

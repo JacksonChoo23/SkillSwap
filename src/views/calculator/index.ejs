@@ -107,12 +107,14 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
       </div>
     <% } %>
 
-    <div class="col-12">
-      <details>
-        <summary>Debug data</summary>
-        <pre class="mt-2"><%= JSON.stringify(_result, null, 2) %></pre>
-      </details>
-    </div>
+    <% if (_result && _result.suggestion) { %>
+      <div class="card mt-4">
+        <div class="card-body">
+          <h5 class="card-title">Exchange Suggestion</h5>
+          <p class="card-text"><%= _result.suggestion %></p>
+        </div>
+      </div>
+    <% } %>
   </div>
 <% } %>
 

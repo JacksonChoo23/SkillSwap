@@ -1,2 +1,181 @@
-<h1>Admin Dashboard</h1>
-<p>Overview of admin functionalities will appear here.</p>
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <h1 class="h4 mb-0">Admin Dashboard</h1>
+  <div>
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/users">Users</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/listings">Listings</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/reports">Reports</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/categories">Categories</a>
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/weights">Weights</a>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Users</div>
+        <div class="h4 mb-0"><%= stats.totalUsers %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Listings</div>
+        <div class="h4 mb-0"><%= stats.totalListings %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Pending</div>
+        <div class="h4 mb-0"><%= stats.pendingListings %></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card text-center">
+      <div class="card-body">
+        <div class="text-muted small">Open Reports</div>
+        <div class="h4 mb-0"><%= stats.openReports %></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Recent Listings</h2>
+        <% if (!recentListings.length) { %>
+          <div class="text-muted small">No data.</div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Owner</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentListings.forEach(l => { %>
+                  <tr>
+                    <td><a href="/listings/<%= l.id %>"><%= l.title %></a></td>
+                    <td><%= l.User?.name || 'User' %></td>
+                    <td><span class="badge <%= l.status==='approved'?'bg-success':(l.status==='pending'?'bg-warning text-dark':'bg-secondary') %>"><%= l.status %></span></td>
+                    <td><%= new Date(l.createdAt).toLocaleString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <a class="btn btn-outline-secondary btn-sm" href="/admin/listings">Manage</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Recent Reports</h2>
+        <% if (!recentReports.length) { %>
+          <div class="text-muted small">No data.</div>
+        <% } else { %>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Reporter</th>
+                  <th>Target</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% recentReports.forEach(r => { %>
+                  <tr>
+                    <td>#<%= r.id %></td>
+                    <td><%= r.reporter?.name || 'User' %></td>
+                    <td><%= r.targetUser?.name || 'User' %></td>
+                    <td><span class="badge <%= r.status==='open'?'bg-danger':'bg-success' %>"><%= r.status %></span></td>
+                    <td><%= new Date(r.createdAt).toLocaleString() %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <a class="btn btn-outline-secondary btn-sm" href="/admin/reports">Manage</a>
+        <% } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Notification Center</h5>
+      </div>
+      <div class="card-body">
+        <div id="notificationList" class="list-group">
+          <div class="text-center text-muted">
+            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+            <p>Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  async function loadNotifications() {
+    try {
+      const response = await fetch('/api/notifications');
+      const data = await response.json();
+
+      const list = document.getElementById('notificationList');
+      list.innerHTML = '';
+
+      if (data.notifications && data.notifications.length > 0) {
+        data.notifications.forEach(notification => {
+          const item = document.createElement('a');
+          item.href = '#';
+          item.className = `list-group-item list-group-item-action ${notification.status === 'unread' ? 'fw-bold' : ''}`;
+          item.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+              <span>${notification.title}</span>
+              <small class="text-muted">${new Date(notification.created_at).toLocaleString()}</small>
+            </div>
+            <p class="mb-0 small text-muted">${notification.message}</p>
+          `;
+          item.addEventListener('click', async () => {
+            await markAsRead(notification.id);
+            item.classList.remove('fw-bold');
+          });
+          list.appendChild(item);
+        });
+      } else {
+        list.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No notifications found.</p></div>';
+      }
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    }
+  }
+
+  async function markAsRead(id) {
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadNotifications);
+</script>

@@ -1,8 +1,28 @@
 const express = require('express');
-const { User, UserSkill, Availability, Skill, Category } = require('../models');
+const { User, UserSkill, Availability, Skill, Category, UserProgress } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
+// Export progress CSV
+router.get('/progress/export', async (req, res) => {
+  try {
+    const rows = await UserProgress.findAll({ where: { userId: req.user.id }, order: [['createdAt','DESC']] });
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="progress.csv"');
+    const header = 'date,type,sessionId,points\n';
+    const lines = rows.map(r => [
+      new Date(r.createdAt).toISOString(),
+      r.type,
+      r.sessionId,
+      r.points
+    ].join(','));
+    res.send(header + lines.join('\n'));
+  } catch (error) {
+    console.error('Progress export error:', error);
+    req.session.error = 'Error exporting progress.';
+    res.redirect('/profile');
+  }
+});
 
 // Profile page
 router.get('/', async (req, res) => {
@@ -31,11 +51,25 @@ router.get('/', async (req, res) => {
       order: [['name', 'ASC']]
     });
 
+    // Compute progress summary and badges
+    const progress = await UserProgress.findAll({ where: { userId: req.user.id } });
+    const totalPoints = progress.reduce((sum, p) => sum + (p.points || 0), 0);
+    const learnPoints = progress.filter(p => p.type === 'learn').reduce((s,p)=>s+p.points,0);
+    const teachPoints = progress.filter(p => p.type === 'teach').reduce((s,p)=>s+p.points,0);
+    const badges = [];
+    // thresholds
+    if (totalPoints >= 50) badges.push({ label: 'Rising Star', class: 'bg-info text-dark' });
+    if (totalPoints >= 150) badges.push({ label: 'Skilled', class: 'bg-primary' });
+    if (totalPoints >= 300) badges.push({ label: 'Expert', class: 'bg-success' });
+    if (teachPoints >= 100) badges.push({ label: 'Mentor', class: 'bg-warning text-dark' });
+    if (learnPoints >= 100) badges.push({ label: 'Dedicated Learner', class: 'bg-secondary' });
+
     res.render('profile/index', {
       title: 'My Profile - SkillSwap MY',
       user,
       skills,
-      categories
+      categories,
+      progressSummary: { totalPoints, learnPoints, teachPoints, badges }
     });
   } catch (error) {
     console.error('Profile error:', error);
@@ -47,12 +81,13 @@ router.get('/', async (req, res) => {
 // Update profile
 router.post('/update', validate(schemas.profile), async (req, res) => {
   try {
-    const { name, bio, location, isPublic } = req.body;
+    const { name, bio, location, isPublic, whatsappNumber } = req.body;
     
     await req.user.update({
       name,
       bio: bio || '',
       location: location || '',
+      whatsappNumber: whatsappNumber || null,
       isPublic: isPublic === 'true'
     });
 

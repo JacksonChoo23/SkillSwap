@@ -1,2 +1,19 @@
-<h1>Reset Password</h1>
-<p>Form to set a new password will appear here.</p>
+<%- include('../partials/header') %>
+<div class="container py-4">
+  <h1 class="h4 mb-3">Reset Password</h1>
+
+  <form method="POST" action="/auth/reset/<%= token %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="mb-3">
+      <label class="form-label">New password</label>
+      <input class="form-control" type="password" name="password" required minlength="8">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Confirm password</label>
+      <input class="form-control" type="password" name="confirmPassword" required minlength="8">
+    </div>
+    <button class="btn btn-primary" type="submit">Update password</button>
+    <a class="btn btn-link" href="/auth/login">Back to login</a>
+  </form>
+</div>
+<%- include('../partials/footer') %>

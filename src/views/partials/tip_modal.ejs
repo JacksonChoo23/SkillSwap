@@ -1,0 +1,49 @@
+<div class="modal fade" id="tipModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/tips/send">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="toUserId" id="tipToUserId">
+        <div class="modal-header">
+          <h5 class="modal-title">Send Tip</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">Tipping <strong id="tipToUserName"></strong></div>
+          <div class="mb-3">
+            <label class="form-label">Amount (1–10)</label>
+            <input type="number" class="form-control" name="amount" min="1" max="10" value="1" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Note (optional)</label>
+            <textarea class="form-control" name="note" rows="2" maxlength="200"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-primary" type="submit">Send</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    const modalEl = document.getElementById('tipModal');
+    let bsModal;
+    function ensure(){ if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.js-tip');
+      if (!btn) return;
+      const uid = btn.getAttribute('data-user-id');
+      const uname = btn.getAttribute('data-user-name') || 'User';
+      document.getElementById('tipToUserId').value = uid;
+      document.getElementById('tipToUserName').textContent = uname;
+      ensure();
+      bsModal.show();
+    });
+  })();
+</script>
+
+

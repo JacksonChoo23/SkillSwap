@@ -1,5 +1,5 @@
 const express = require('express');
-const { MessageThread, Message, User, Listing } = require('../models');
+const { MessageThread, Message, User, Listing, Notification } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const moderationService = require('../services/moderationService');
 
@@ -136,6 +136,10 @@ router.post('/thread/:id', validate(schemas.message), async (req, res) => {
     // Update thread timestamp
     await thread.update({ updatedAt: new Date() });
 
+    // Notify the other user about the new message
+    const recipientId = thread.creatorId === req.user.id ? thread.participantId : thread.creatorId;
+    await notifyUserForMessageRequest(recipientId, `You have a new message in the thread about ${thread.Listing.title}.`);
+
     res.redirect(`/messages/thread/${id}`);
   } catch (error) {
     console.error('Send message error:', error);
@@ -192,6 +196,10 @@ router.post('/start/:listingId', validate(schemas.message), async (req, res) => 
       content: moderation.content
     });
 
+    // Notify the other user about the new message
+    const recipientId = thread.creatorId === req.user.id ? thread.participantId : thread.creatorId;
+    await notifyUserForMessageRequest(recipientId, `You have a new message in the thread about ${thread.Listing.title}.`);
+
     req.session.success = 'Message sent successfully.';
     res.redirect(`/messages/thread/${thread.id}`);
   } catch (error) {
@@ -201,4 +209,35 @@ router.post('/start/:listingId', validate(schemas.message), async (req, res) => 
   }
 });
 
-module.exports = router; 
+async function notifyUserForMessageRequest(userId, messageDetails) {
+  try {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      console.error(`User with ID ${userId} not found.`);
+      return;
+    }
+
+    // Create a notification
+    await Notification.create({
+      userId,
+      title: 'New Message Request!',
+      message: `You have a new message request: ${messageDetails}.`,
+      status: 'unread',
+    });
+
+    // Send email if no WhatsApp number
+    if (!user.whatsappNumber) {
+      sendEmail(user.email, 'New Message Request Notification', `You have a new message request: ${messageDetails}.`);
+    }
+  } catch (error) {
+    console.error('Error notifying user for message request:', error);
+  }
+}
+
+function sendEmail(to, subject, body) {
+  // Placeholder for email sending logic
+  console.log(`Sending email to ${to}: ${subject} - ${body}`);
+}
+
+module.exports = router;

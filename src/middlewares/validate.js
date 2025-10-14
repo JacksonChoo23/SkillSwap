@@ -33,6 +33,9 @@ const schemas = {
     name: Joi.string().min(2).max(100).required(),
     bio: Joi.string().max(1000).allow(''),
     location: Joi.string().max(255).allow(''),
+    whatsappNumber: Joi.string().pattern(/^\+[1-9]\d{1,14}$/).allow('').messages({
+      'string.pattern.base': 'WhatsApp number must be in E.164 format (e.g., +60123456789)'
+    }),
     isPublic: Joi.boolean()
   }),
   
@@ -46,12 +49,14 @@ const schemas = {
   }),
   
   session: Joi.object({
+    teacherId: Joi.number().integer().positive().required(),
     skillId: Joi.number().integer().positive().required(),
     startAt: Joi.date().greater('now').required(),
     endAt: Joi.date().greater(Joi.ref('startAt')).required()
   }),
   
   rating: Joi.object({
+    rateeId: Joi.number().integer().positive().required(),
     communication: Joi.number().integer().min(1).max(5).required(),
     skill: Joi.number().integer().min(1).max(5).required(),
     attitude: Joi.number().integer().min(1).max(5).required(),

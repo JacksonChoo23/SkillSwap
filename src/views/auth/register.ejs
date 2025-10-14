@@ -1,30 +1,420 @@
 <%- include('../partials/header') %>
-<div class="container py-4">
-  <h1 class="h4 mb-3">Register</h1>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-lg border-0">
+        <div class="card-header bg-primary text-white text-center py-4">
+          <h2 class="h3 mb-0">
+            <i class="fas fa-user-plus me-2"></i>
+            Create Your Account
+          </h2>
+          <p class="mb-0 opacity-75">Join SkillSwap MY today</p>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" action="/auth/register" id="registerForm">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            
+            <!-- Name Field -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-user text-primary me-2"></i>Full Name
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="fas fa-user text-muted"></i>
+                </span>
+                <input class="form-control border-start-0 ps-0" name="name" id="name" required 
+                       placeholder="Enter your full name">
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                This will be displayed on your profile
+              </div>
+            </div>
 
-  <% if (error)   { %><div class="alert alert-danger"><%= error %></div><% } %>
-  <% if (success) { %><div class="alert alert-success"><%= success %></div><% } %>
+            <!-- Email Field -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-envelope text-primary me-2"></i>Email Address
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="fas fa-envelope text-muted"></i>
+                </span>
+                <input class="form-control border-start-0 ps-0" type="email" name="email" id="email" required 
+                       placeholder="Enter your email address">
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                We'll use this for login and notifications
+              </div>
+            </div>
 
-  <form method="POST" action="/auth/register">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="mb-3">
-      <label class="form-label">Name</label>
-      <input class="form-control" name="name" required>
+            <!-- Password Field -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-lock text-primary me-2"></i>Password
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="fas fa-lock text-muted"></i>
+                </span>
+                <input class="form-control border-start-0 border-end-0 ps-0" type="password" name="password" id="password" required minlength="8"
+                       placeholder="Create a strong password">
+                <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword">
+                  <i class="fas fa-eye" id="toggleIcon"></i>
+                </button>
+              </div>
+              
+              <!-- Password Strength Indicator -->
+              <div class="mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <small class="text-muted">Password Strength:</small>
+                  <small id="passwordStrengthText" class="fw-semibold">Enter password</small>
+                </div>
+                <div class="progress" style="height: 8px;">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                       id="passwordStrengthBar" role="progressbar" style="width: 0%" 
+                       aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              </div>
+
+              <!-- Password Requirements -->
+              <div class="mt-3">
+                <div class="row">
+                  <div class="col-12">
+                    <div class="card bg-light border-0">
+                      <div class="card-body p-3">
+                        <h6 class="card-title mb-2">
+                          <i class="fas fa-shield-alt text-primary me-2"></i>
+                          Password Requirements
+                        </h6>
+                        <div class="row">
+                          <div class="col-md-6">
+                            <div class="requirement-item mb-2" id="length-check">
+                              <i class="fas fa-times text-danger me-2"></i>
+                              <small>At least 8 characters</small>
+                            </div>
+                            <div class="requirement-item mb-2" id="uppercase-check">
+                              <i class="fas fa-times text-danger me-2"></i>
+                              <small>One uppercase letter</small>
+                            </div>
+                            <div class="requirement-item mb-2" id="lowercase-check">
+                              <i class="fas fa-times text-danger me-2"></i>
+                              <small>One lowercase letter</small>
+                            </div>
+                          </div>
+                          <div class="col-md-6">
+                            <div class="requirement-item mb-2" id="number-check">
+                              <i class="fas fa-times text-danger me-2"></i>
+                              <small>One number</small>
+                            </div>
+                            <div class="requirement-item mb-2" id="special-check">
+                              <i class="fas fa-times text-danger me-2"></i>
+                              <small>One special character</small>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confirm Password Field -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold">
+                <i class="fas fa-lock text-primary me-2"></i>Confirm Password
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="fas fa-lock text-muted"></i>
+                </span>
+                <input class="form-control border-start-0 ps-0" type="password" name="confirmPassword" id="confirmPassword" required minlength="8"
+                       placeholder="Confirm your password">
+              </div>
+              <div id="passwordMatchFeedback" class="form-text"></div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2 mb-3">
+              <button class="btn btn-primary btn-lg py-3" type="submit" id="submitBtn" disabled>
+                <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status"></span>
+                <i class="fas fa-user-plus me-2" id="submitIcon"></i>
+                <span id="submitText">Create Account</span>
+              </button>
+            </div>
+
+            <!-- Warning Message -->
+            <div class="alert alert-warning d-none" id="submitWarning" role="alert">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Password requirements not met!</strong> 
+              Please ensure your password meets all requirements before registering.
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center">
+              <p class="text-muted mb-0">
+                Already have an account? 
+                <a href="/auth/login" class="text-primary text-decoration-none fw-semibold">
+                  Sign in here
+                </a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-    <div class="mb-3">
-      <label class="form-label">Email</label>
-      <input class="form-control" type="email" name="email" required>
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Password</label>
-      <input class="form-control" type="password" name="password" required minlength="8">
-    </div>
-    <div class="mb-3">
-      <label class="form-label">Confirm Password</label>
-      <input class="form-control" type="password" name="confirmPassword" required minlength="8">
-    </div>
-    <button class="btn btn-primary" type="submit">Create account</button>
-    <a class="btn btn-link" href="/auth/login">Login</a>
-  </form>
+  </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const passwordInput = document.getElementById('password');
+  const confirmPasswordInput = document.getElementById('confirmPassword');
+  const strengthBar = document.getElementById('passwordStrengthBar');
+  const strengthText = document.getElementById('passwordStrengthText');
+  const submitBtn = document.getElementById('submitBtn');
+  const submitWarning = document.getElementById('submitWarning');
+  const submitSpinner = document.getElementById('submitSpinner');
+  const submitIcon = document.getElementById('submitIcon');
+  const submitText = document.getElementById('submitText');
+  const togglePassword = document.getElementById('togglePassword');
+  const toggleIcon = document.getElementById('toggleIcon');
+  const passwordMatchFeedback = document.getElementById('passwordMatchFeedback');
+  
+  const checks = {
+    length: document.getElementById('length-check'),
+    uppercase: document.getElementById('uppercase-check'),
+    lowercase: document.getElementById('lowercase-check'),
+    number: document.getElementById('number-check'),
+    special: document.getElementById('special-check')
+  };
+
+  // Password visibility toggle
+  togglePassword.addEventListener('click', function() {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    
+    if (type === 'text') {
+      toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+      toggleIcon.className = 'fas fa-eye';
+    }
+  });
+
+  // Add input animations
+  const inputs = document.querySelectorAll('.form-control');
+  inputs.forEach(input => {
+    input.addEventListener('focus', function() {
+      this.parentElement.classList.add('shadow-sm');
+      this.style.transform = 'scale(1.02)';
+      this.style.transition = 'transform 0.2s ease-in-out';
+    });
+    
+    input.addEventListener('blur', function() {
+      this.parentElement.classList.remove('shadow-sm');
+      this.style.transform = 'scale(1)';
+    });
+  });
+
+  function updateRequirementIcon(element, met) {
+    const icon = element.querySelector('i');
+    const text = element.querySelector('small');
+    
+    if (met) {
+      icon.className = 'fas fa-check text-success me-2';
+      text.className = 'text-success';
+      element.style.transform = 'scale(1.05)';
+      setTimeout(() => {
+        element.style.transform = 'scale(1)';
+      }, 200);
+    } else {
+      icon.className = 'fas fa-times text-danger me-2';
+      text.className = 'text-muted';
+    }
+    element.style.transition = 'transform 0.2s ease-in-out';
+  }
+
+  function checkPasswordStrength(password) {
+    let score = 0;
+    const criteria = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+    };
+
+    // Update visual indicators with animation
+    Object.keys(criteria).forEach(key => {
+      updateRequirementIcon(checks[key], criteria[key]);
+      if (criteria[key]) score++;
+    });
+
+    // Calculate strength
+    const percentage = (score / 5) * 100;
+    let strength = 'Very Weak';
+    let barClass = 'bg-danger';
+    let textClass = 'text-danger';
+    let isStrong = false;
+
+    if (score === 5) {
+      strength = 'Very Strong';
+      barClass = 'bg-success';
+      textClass = 'text-success';
+      isStrong = true;
+    } else if (score === 4) {
+      strength = 'Strong';
+      barClass = 'bg-info';
+      textClass = 'text-info';
+    } else if (score === 3) {
+      strength = 'Medium';
+      barClass = 'bg-warning';
+      textClass = 'text-warning';
+    } else if (score === 2) {
+      strength = 'Weak';
+      barClass = 'bg-orange';
+      textClass = 'text-warning';
+    }
+
+    // Animate progress bar
+    strengthBar.style.width = percentage + '%';
+    strengthBar.className = 'progress-bar progress-bar-striped ' + 
+                           (isStrong ? 'progress-bar-animated ' : '') + barClass;
+    strengthBar.setAttribute('aria-valuenow', percentage);
+
+    // Update text with animation
+    if (password.length === 0) {
+      strengthText.textContent = 'Enter password';
+      strengthText.className = 'fw-semibold text-muted';
+    } else {
+      strengthText.textContent = strength;
+      strengthText.className = 'fw-semibold ' + textClass;
+    }
+
+    // Enable/disable submit button with animation
+    updateSubmitButton(isStrong && checkPasswordMatch(), password.length > 0);
+
+    return score;
+  }
+
+  function checkPasswordMatch() {
+    const password = passwordInput.value;
+    const confirmPassword = confirmPasswordInput.value;
+    
+    if (confirmPassword.length === 0) {
+      passwordMatchFeedback.innerHTML = '';
+      return true;
+    }
+    
+    if (password === confirmPassword) {
+      passwordMatchFeedback.innerHTML = '<i class="fas fa-check text-success me-2"></i>Passwords match';
+      passwordMatchFeedback.className = 'form-text text-success';
+      return true;
+    } else {
+      passwordMatchFeedback.innerHTML = '<i class="fas fa-times text-danger me-2"></i>Passwords do not match';
+      passwordMatchFeedback.className = 'form-text text-danger';
+      return false;
+    }
+  }
+
+  function updateSubmitButton(enabled, showWarning) {
+    if (enabled) {
+      submitBtn.disabled = false;
+      submitBtn.className = 'btn btn-primary btn-lg py-3';
+      submitWarning.classList.add('d-none');
+      submitIcon.className = 'fas fa-user-plus me-2';
+      submitText.textContent = 'Create Account';
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.className = 'btn btn-outline-secondary btn-lg py-3';
+      if (showWarning) {
+        submitWarning.classList.remove('d-none');
+      }
+      submitIcon.className = 'fas fa-lock me-2';
+      submitText.textContent = 'Complete Requirements';
+    }
+  }
+
+  // Event listeners
+  passwordInput.addEventListener('input', function() {
+    checkPasswordStrength(this.value);
+    checkPasswordMatch();
+  });
+
+  confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+
+  // Form submission with loading animation
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = passwordInput.value;
+    const score = checkPasswordStrength(password);
+    const passwordsMatch = checkPasswordMatch();
+    
+    if (score < 5 || !passwordsMatch) {
+      e.preventDefault();
+      submitWarning.classList.remove('d-none');
+      
+      // Shake animation for warning
+      submitWarning.style.animation = 'shake 0.5s ease-in-out';
+      setTimeout(() => {
+        submitWarning.style.animation = '';
+      }, 500);
+      
+      return false;
+    }
+
+    // Show loading state
+    submitBtn.disabled = true;
+    submitSpinner.classList.remove('d-none');
+    submitIcon.classList.add('d-none');
+    submitText.textContent = 'Creating Account...';
+  });
+});
+</script>
+
+<style>
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+.requirement-item {
+  transition: all 0.3s ease-in-out;
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+  border-color: #86b7fe;
+}
+
+.input-group:focus-within {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card {
+  transition: transform 0.3s ease-in-out;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.progress-bar {
+  transition: width 0.4s ease-in-out;
+}
+
+.btn {
+  transition: all 0.3s ease-in-out;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+
 <%- include('../partials/footer') %>

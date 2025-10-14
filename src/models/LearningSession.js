@@ -47,12 +47,19 @@ const LearningSession = sequelize.define('LearningSession', {
   status: {
     type: DataTypes.ENUM('requested', 'confirmed', 'completed', 'cancelled'),
     defaultValue: 'requested'
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    field: 'created_at'
+  },
+  updatedAt: {
+    type: DataTypes.DATE,
+    field: 'updated_at'
   }
 }, {
   tableName: 'learning_sessions',
-  freezeTableName: true,
   underscored: true,
-  timestamps: false,
+  timestamps: true,
   indexes: [
     {
       fields: ['teacher_id']
@@ -66,18 +73,12 @@ const LearningSession = sequelize.define('LearningSession', {
   ]
 });
 
-LearningSession.belongsTo(require('./User'), {
-  as: 'teacher',
-  foreignKey: { name: 'teacher_id', field: 'teacher_id', allowNull: false },
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
-});
-
-LearningSession.belongsTo(require('./User'), {
-  as: 'student',
-  foreignKey: { name: 'student_id', field: 'student_id', allowNull: false },
-  onDelete: 'CASCADE',
-  onUpdate: 'CASCADE'
+// Named scope to include both user associations
+LearningSession.addScope('withUsers', {
+  include: [
+    { model: sequelize.models.User, as: 'teacher', attributes: ['id','name'] },
+    { model: sequelize.models.User, as: 'student', attributes: ['id','name'] }
+  ]
 });
 
 module.exports = LearningSession;

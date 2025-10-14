@@ -62,6 +62,9 @@ router.get('/', async (req, res) => {
       );
     }
 
+    // Filter out the logged-in user's account
+    filteredUsers = filteredUsers.filter(user => user.id !== req.user.id);
+
     const categories = await Category.findAll({
       where: { isActive: true },
       order: [['name', 'ASC']]
@@ -121,4 +124,4 @@ router.get('/user/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;
