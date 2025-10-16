@@ -1,24 +1,23 @@
-# Use official Node.js image
-FROM node:18
+# Dockerfile for Cloud Run
+FROM node:18-slim
 
 # Create app directory
 WORKDIR /app
 
-# Copy package files first (better caching)
+# Copy package manifests and install first for better caching
 COPY package*.json ./
-
-# Install dependencies
+# Use npm ci to install exact deps
 RUN npm ci --omit=dev
 
-# Copy the rest of the application (including static files)
+# Copy source (including public/ and views/)
 COPY . .
 
-# Make sure static resources exist
-RUN ls -la public || echo "⚠️ Warning: public/ not found!"
+# Safety check (prints during build logs)
+RUN if [ -d "./public" ]; then echo "public exists"; else echo "⚠️ public not found"; fi
 
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=8080
+
 EXPOSE 8080
 
 # Start the app
