@@ -43,7 +43,7 @@ if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 // Security
 const isDev = process.env.NODE_ENV !== 'production';
-app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -119,7 +119,6 @@ app.set('views', path.join(__dirname, 'src/views'));
 // Static
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Locals (keep simple defaults)
 // Locals (keep simple defaults)
 app.use((req, res, next) => {
   const viaPassport = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
