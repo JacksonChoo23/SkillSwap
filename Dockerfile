@@ -1,35 +1,25 @@
-# Use Node.js 20 Alpine as base image
-FROM node:20-alpine
+# Use official Node.js image
+FROM node:18
 
-# Set working directory
+# Create app directory
 WORKDIR /app
 
-# Copy package files
+# Copy package files first (better caching)
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# Copy application code
+# Copy the rest of the application (including static files)
 COPY . .
 
-# Create logs directory
-RUN mkdir -p logs
+# Make sure static resources exist
+RUN ls -la public || echo "⚠️ Warning: public/ not found!"
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S skillswap -u 1001
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=8080
+EXPOSE 8080
 
-# Change ownership of the app directory
-RUN chown -R skillswap:nodejs /app
-USER skillswap
-
-# Expose port
-EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
-
-# Start the application
-CMD ["npm", "start"] 
+# Start the app
+CMD ["node", "app.js"]
