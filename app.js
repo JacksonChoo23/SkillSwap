@@ -43,7 +43,7 @@ if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 // Security
 const isDev = process.env.NODE_ENV !== 'production';
-
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -64,6 +64,7 @@ app.use(
     crossOriginEmbedderPolicy: false
   })
 );
+
 
 // Rate limit
 const limiter = rateLimit({
