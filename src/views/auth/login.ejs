@@ -1,130 +1,139 @@
 <%- include('../partials/header') %>
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-5">
-      <div class="card shadow-lg border-0">
-        <div class="card-header bg-primary text-white text-center py-4">
-          <h2 class="h3 mb-0">
-            <i class="fas fa-sign-in-alt me-2"></i>
-            Welcome Back
-          </h2>
-          <p class="mb-0 opacity-75">Sign in to your SkillSwap MY account</p>
-        </div>
-        <div class="card-body p-4">
-          <form method="POST" action="/auth/login" id="loginForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            
-            <!-- Email Field -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="fas fa-envelope text-primary me-2"></i>Email Address
-              </label>
-              <div class="input-group">
-                <span class="input-group-text bg-light border-end-0">
-                  <i class="fas fa-envelope text-muted"></i>
-                </span>
-                <input class="form-control border-start-0 ps-0" type="email" name="email" id="email" required 
-                       placeholder="Enter your email address" autocomplete="email">
-              </div>
-              <div class="invalid-feedback" id="emailFeedback"></div>
-            </div>
-
-            <!-- Password Field -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold">
-                <i class="fas fa-lock text-primary me-2"></i>Password
-              </label>
-              <div class="input-group">
-                <span class="input-group-text bg-light border-end-0">
-                  <i class="fas fa-lock text-muted"></i>
-                </span>
-                <input class="form-control border-start-0 border-end-0 ps-0" type="password" name="password" id="password" required 
-                       placeholder="Enter your password" autocomplete="current-password">
-                <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword">
-                  <i class="fas fa-eye" id="toggleIcon"></i>
-                </button>
-              </div>
-              <div class="invalid-feedback" id="passwordFeedback"></div>
-            </div>
-
-            <!-- Remember Me & Forgot Password -->
-            <div class="row mb-4">
-              <div class="col-6">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
-                  <label class="form-check-label text-muted" for="rememberMe">
-                    <small>Remember me</small>
-                  </label>
-                </div>
-              </div>
-              <div class="col-6 text-end">
-                <a href="/auth/forgot" class="text-primary text-decoration-none">
-                  <small><i class="fas fa-key me-1"></i>Forgot password?</small>
-                </a>
+<div class="min-vh-100 d-flex align-items-center">
+  <div class="container-fluid">
+    <div class="row g-0 min-vh-100">
+      <!-- Left Panel - Branding (Hidden on mobile) -->
+      <div class="col-lg-6 d-none d-lg-flex bg-primary bg-gradient text-white p-5 position-relative overflow-hidden">
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background: radial-gradient(circle, white 1px, transparent 1px); background-size: 50px 50px;"></div>
+        <div class="position-relative z-1 d-flex flex-column justify-content-center" style="max-width: 500px; margin: auto;">
+          <div class="mb-4">
+            <i class="fas fa-exchange-alt display-1 opacity-75"></i>
+          </div>
+          <h1 class="display-4 fw-bold mb-3">Welcome Back to<br>SkillSwap MY</h1>
+          <p class="fs-5 opacity-75 mb-5">Connect, Learn, and Grow Together</p>
+          
+          <div class="d-flex flex-column gap-4">
+            <div class="d-flex align-items-start gap-3">
+              <i class="fas fa-users-cog fs-1 opacity-75 flex-shrink-0"></i>
+              <div>
+                <h5 class="fw-semibold mb-1">Exchange Skills</h5>
+                <p class="mb-0 opacity-75">Learn from peers while sharing your expertise</p>
               </div>
             </div>
-
-            <!-- Submit Button -->
-            <div class="d-grid gap-2 mb-4">
-              <button class="btn btn-primary btn-lg py-3" type="submit" id="submitBtn">
-                <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status"></span>
-                <i class="fas fa-sign-in-alt me-2" id="submitIcon"></i>
-                <span id="submitText">Sign In</span>
-              </button>
-            </div>
-
-            <!-- Divider -->
-            <div class="text-center mb-4">
-              <div class="d-flex align-items-center">
-                <hr class="flex-grow-1">
-                <span class="px-3 text-muted small">OR</span>
-                <hr class="flex-grow-1">
+            <div class="d-flex align-items-start gap-3">
+              <i class="fas fa-calendar-check fs-1 opacity-75 flex-shrink-0"></i>
+              <div>
+                <h5 class="fw-semibold mb-1">Flexible Scheduling</h5>
+                <p class="mb-0 opacity-75">Set your availability and find the perfect match</p>
               </div>
             </div>
-
-            <!-- Register Link -->
-            <div class="text-center">
-              <div class="card bg-light border-0 p-3">
-                <p class="text-muted mb-2">
-                  <i class="fas fa-user-plus text-primary me-2"></i>
-                  New to SkillSwap MY?
-                </p>
-                <a href="/auth/register" class="btn btn-outline-primary">
-                  <i class="fas fa-user-plus me-2"></i>
-                  Create Account
-                </a>
+            <div class="d-flex align-items-start gap-3">
+              <i class="fas fa-shield-alt fs-1 opacity-75 flex-shrink-0"></i>
+              <div>
+                <h5 class="fw-semibold mb-1">Safe & Secure</h5>
+                <p class="mb-0 opacity-75">Your data is protected with enterprise-grade security</p>
               </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
-      <!-- Additional Help -->
-      <div class="text-center mt-4">
-        <div class="card border-0 bg-transparent">
-          <div class="card-body py-3">
-            <h6 class="text-muted mb-3">
-              <i class="fas fa-question-circle me-2"></i>
-              Need Help?
-            </h6>
-            <div class="row">
-              <div class="col-4">
-                <a href="/about" class="text-decoration-none text-muted">
-                  <i class="fas fa-info-circle d-block mb-1"></i>
-                  <small>About</small>
+      <!-- Right Panel - Login Form -->
+      <div class="col-lg-6 bg-light d-flex align-items-center justify-content-center p-4">
+        <div class="w-100 bg-white rounded-3 shadow-sm p-4 p-lg-5" style="max-width: 480px;">
+          <div class="text-center mb-4">
+            <h2 class="h2 fw-bold mb-2">Sign In</h2>
+            <p class="text-muted mb-0">Enter your credentials to access your account</p>
+          </div>
+          
+          <div>
+          <div>
+            <form method="POST" action="/auth/login" id="loginForm">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              
+              <!-- Email Field -->
+              <div class="mb-3">
+                <label class="form-label fw-medium">Email Address</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light">
+                    <i class="fas fa-envelope text-muted"></i>
+                  </span>
+                  <input class="form-control" type="email" name="email" id="email" required 
+                         placeholder="your.email@example.com" autocomplete="email">
+                </div>
+                <div class="invalid-feedback d-block" id="emailFeedback"></div>
+              </div>
+
+              <!-- Password Field -->
+              <div class="mb-3">
+                <label class="form-label fw-medium">Password</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light">
+                    <i class="fas fa-lock text-muted"></i>
+                  </span>
+                  <input class="form-control" type="password" name="password" id="password" required 
+                         placeholder="Enter your password" autocomplete="current-password">
+                  <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                    <i class="fas fa-eye" id="toggleIcon"></i>
+                  </button>
+                </div>
+                <div class="invalid-feedback d-block" id="passwordFeedback"></div>
+              </div>
+
+              <!-- Remember Me & Forgot Password -->
+              <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
+                  <label class="form-check-label" for="rememberMe">
+                    Remember me
+                  </label>
+                </div>
+                <a href="/auth/forgot" class="text-primary text-decoration-none small">
+                  Forgot password?
                 </a>
               </div>
-              <div class="col-4">
-                <a href="#" class="text-decoration-none text-muted">
-                  <i class="fas fa-headset d-block mb-1"></i>
-                  <small>Support</small>
-                </a>
+
+              <!-- Submit Button -->
+              <div class="d-grid mb-3">
+                <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">
+                  <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status"></span>
+                  <i class="fas fa-sign-in-alt me-2" id="submitIcon"></i>
+                  <span id="submitText">Sign In</span>
+                </button>
               </div>
-              <div class="col-4">
-                <a href="#" class="text-decoration-none text-muted">
-                  <i class="fas fa-shield-alt d-block mb-1"></i>
-                  <small>Privacy</small>
-                </a>
+
+              <!-- Register Link -->
+              <div class="text-center">
+                <p class="text-muted mb-0">
+                  Don't have an account? 
+                  <a href="/auth/register" class="text-primary text-decoration-none fw-semibold">
+                    Sign up
+                  </a>
+                </p>
+              </div>
+            </form>
+
+            <!-- Help Links -->
+            <div class="mt-4 pt-4 border-top">
+              <div class="row text-center g-3">
+                <div class="col-4">
+                  <a href="/about" class="text-muted text-decoration-none d-block">
+                    <i class="fas fa-info-circle d-block mb-1 fs-5"></i>
+                    <small>About</small>
+                  </a>
+                </div>
+                <div class="col-4">
+                  <a href="#" class="text-muted text-decoration-none d-block">
+                    <i class="fas fa-headset d-block mb-1 fs-5"></i>
+                    <small>Support</small>
+                  </a>
+                </div>
+                <div class="col-4">
+                  <a href="#" class="text-muted text-decoration-none d-block">
+                    <i class="fas fa-shield-alt d-block mb-1 fs-5"></i>
+                    <small>Privacy</small>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -250,46 +259,25 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Minimal custom styles - mostly using Bootstrap 5 classes */
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   25% { transform: translateX(-5px); }
   75% { transform: translateX(5px); }
 }
 
-.form-control:focus {
-  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
-  border-color: #86b7fe;
-}
-
-.input-group:focus-within {
-  transform: translateY(-1px);
-  transition: transform 0.2s ease-in-out;
-}
-
-.card {
-  transition: transform 0.3s ease-in-out;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-}
-
+/* Small enhancements for transitions */
 .btn {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.2s ease-in-out;
 }
 
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
-.form-check-input:checked {
-  background-color: #0d6efd;
-  border-color: #0d6efd;
-}
-
-.text-decoration-none:hover {
-  text-decoration: underline !important;
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+  border-radius: 0.375rem;
 }
 </style>
 
