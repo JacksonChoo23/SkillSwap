@@ -1,38 +1,52 @@
+// src/config/database.js
 const { Sequelize } = require('sequelize');
+const mysql2 = require('mysql2');
+const path = require('path');
 
-// Use SQLite for development if no database is configured
-const useSQLite = !process.env.DB_HOST && !process.env.DB_NAME;
+let cfg = {};
+try {
+  // 尝试加载 config/config.js，若无也没关系
+  const allCfg = require(path.join(__dirname, '..', '..', 'config', 'config.js'));
+  const env = process.env.NODE_ENV || 'development';
+  cfg = allCfg[env] || {};
+} catch (e) {
+  cfg = {};
+}
 
-const sequelize = useSQLite 
-  ? new Sequelize({
-      dialect: 'sqlite',
-      storage: './database.sqlite',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      define: {
-        timestamps: true,
-        underscored: true
-      }
-    })
-  : new Sequelize(
-      process.env.DB_NAME || 'skillswap_my',
-      process.env.DB_USER || 'root',
-      process.env.DB_PASSWORD || '',
-      {
-        host: process.env.DB_HOST || 'localhost',
-        port: process.env.DB_PORT || 3306,
-        dialect: 'mysql',
-        logging: process.env.NODE_ENV === 'development' ? console.log : false,
-        pool: {
-          max: 5,
-          min: 0,
-          acquire: 30000,
-          idle: 10000
-        },
-        define: {
-          timestamps: true,
-          underscored: true
-        }
-      }
-    );
+// 环境变量优先
+const DB_USER = process.env.DB_USER || cfg.username || 'root';
+const DB_PASS = process.env.DB_PASS || cfg.password || '';
+const DB_NAME = process.env.DB_NAME || cfg.database || 'skillswap_my';
+const DB_SOCKET = process.env.DB_SOCKET || ''; // '/cloudsql/PROJECT:REGION:INSTANCE'
+const DB_HOST = process.env.DB_HOST || cfg.host || '127.0.0.1';
+const DB_PORT = Number(process.env.DB_PORT || cfg.port || 3306);
 
-module.exports = { sequelize }; 
+const options = {
+  dialect: 'mysql',
+  dialectModule: mysql2,
+  logging: process.env.NODE_ENV === 'development' ? console.log : (cfg.logging || false),
+  pool: cfg.pool || { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  define: cfg.define || { timestamps: true, underscored: true }
+};
+
+// 如果提供了 unix socket，就用 socketPath
+if (DB_SOCKET) {
+  options.dialectOptions = Object.assign({}, options.dialectOptions, { socketPath: DB_SOCKET });
+} else {
+  options.host = DB_HOST;
+  options.port = DB_PORT;
+}
+
+// 支持 sqlite 回退仅在明确指定时使用（避免 Cloud Run 意外回退）
+if (process.env.FORCE_SQLITE === 'true') {
+  const sqlite = new Sequelize({
+    dialect: 'sqlite',
+    storage: process.env.SQLITE_STORAGE || './database.sqlite',
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    define: { timestamps: true, underscored: true }
+  });
+  module.exports = { sequelize: sqlite };
+} else {
+  const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, options);
+  module.exports = { sequelize };
+}

@@ -154,9 +154,13 @@ app.use((req, res, next) => {
   next();
 });
 
-// About page - before CSRF to allow guest access
+// About page - visible only to guests (before CSRF)
 app.get('/about', (req, res) => {
-  res.render('about', { 
+  const isAuthed = (typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || !!(req.session && req.session.user);
+  if (isAuthed) {
+    return res.redirect('/profile');
+  }
+  res.render('about', {
     title: 'About - SkillSwap MY',
     csrfToken: '' // No CSRF token needed for guest page
   });
