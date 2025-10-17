@@ -6,6 +6,7 @@ router.get('/', async (req, res) => {
   try {
     res.render('notifications/index', {
       title: 'Notifications',
+      csrfToken: req.csrfToken()
     });
   } catch (err) {
     req.flash('error', 'Unable to load notifications page');

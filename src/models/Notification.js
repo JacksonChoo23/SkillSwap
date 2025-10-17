@@ -1,16 +1,8 @@
-const { Model, DataTypes } = require('sequelize');
+const { Model } = require('sequelize');
 
-class Notification extends Model {
-  static associate(models) {
-    // A notification belongs to a user
-    Notification.belongsTo(models.User, {
-      foreignKey: 'userId',
-      as: 'user',
-    });
-  }
-}
+class Notification extends Model {}
 
-module.exports = (sequelize) => {
+module.exports = (sequelize, DataTypes) => {
   Notification.init({
     id: {
       type: DataTypes.INTEGER,
