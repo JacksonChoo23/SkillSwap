@@ -34,6 +34,7 @@ const adminRoutes = require('./src/routes/admin');
 const tipsRoutes = require('./src/routes/tips');
 const reportsRoutes = require('./src/routes/reports');
 const aboutRouter = require('./src/routes/about');
+const notificationsRoutes = require('./src/routes/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -194,6 +195,7 @@ app.use('/calculator', calculatorRoutes);
 app.use('/tips', isAuthenticated, tipsRoutes);
 app.use('/reports', isAuthenticated, reportsRoutes);
 app.use('/admin', isAuthenticated, isAdmin, adminRoutes);
+app.use('/notifications', isAuthenticated, notificationsRoutes);
 // Pages
 app.get('/', (req, res) => {
   res.render('home', { title: 'SkillSwap MY - Peer Skill Exchange' });

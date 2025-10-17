@@ -89,10 +89,10 @@
 
   async function loadNotifications() {
     try {
-      const newNotificationsResponse = await fetch('/api/notifications?status=new');
+        const newNotificationsResponse = await fetch('/listings/api/notifications?status=new');
       const newNotifications = await newNotificationsResponse.json();
 
-      const historyResponse = await fetch('/api/notifications?status=history');
+        const historyResponse = await fetch('/listings/api/notifications?status=history');
       const historyNotifications = await historyResponse.json();
 
       const newNotificationsContainer = document.getElementById('new-notifications');
