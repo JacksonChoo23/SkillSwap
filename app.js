@@ -40,7 +40,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // trust proxy for secure cookies behind proxy
-if (process.env.TRUST_PROXY === '1') app.set('trust proxy', 1);
+if (process.env.TRUST_PROXY === '1' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Security
 const isDev = process.env.NODE_ENV !== 'production';
@@ -212,7 +214,12 @@ app.use((req, res) => {
 
 // Errors
 app.use((err, req, res, next) => {
-  logger.error(err.stack || err);
+  logger.error(err && err.stack ? err.stack : err);
+
+  if (res.headersSent) {
+    return next(err);
+  }
+
   if (err.code === 'EBADCSRFTOKEN') {
     return res.status(403).render('error', {
       title: 'CSRF Error',
@@ -220,6 +227,7 @@ app.use((err, req, res, next) => {
       error: { status: 403 }
     });
   }
+
   res.status(err.status || 500).render('error', {
     title: 'Server Error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong.',
@@ -227,11 +235,16 @@ app.use((err, req, res, next) => {
   });
 });
 
+
 // Start
 async function startServer() {
   try {
     await sequelize.authenticate();
     logger.info('Database connection established successfully.');
+
+    // 确保 session 表存在并由 connect-session-sequelize 管理
+    await sessionStore.sync();
+    logger.info('Session store table synced.');
 
     // Do not sync by default. Use migrations.
     if (process.env.ALLOW_SYNC === 'true') {
@@ -239,6 +252,7 @@ async function startServer() {
       logger.info('Database synced by sequelize.sync().');
     }
 
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
@@ -248,6 +262,7 @@ async function startServer() {
     process.exit(1);
   }
 }
+
 
 startServer();
 
