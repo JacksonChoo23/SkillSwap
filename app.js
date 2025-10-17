@@ -237,31 +237,47 @@ app.use((err, req, res, next) => {
 
 
 // Start
+// Start
 async function startServer() {
-  try {
-    await sequelize.authenticate();
-    logger.info('Database connection established successfully.');
+  const PORT = process.env.PORT || 8080;
 
-    // 确保 session 表存在并由 connect-session-sequelize 管理
-    await sessionStore.sync();
-    logger.info('Session store table synced.');
+  // 先监听端口，保证 Cloud Run 健康检查能通过
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV}`);
+  });
 
-    // Do not sync by default. Use migrations.
-    if (process.env.ALLOW_SYNC === 'true') {
-      await sequelize.sync({ alter: false, force: false });
-      logger.info('Database synced by sequelize.sync().');
+  // 异步尝试连接数据库并同步 session 表
+  (async function tryConnect(retries = 0) {
+    try {
+      await sequelize.authenticate();
+      logger.info('Database connection established successfully.');
+
+      await sessionStore.sync();
+      logger.info('Session store table synced.');
+
+      if (process.env.ALLOW_SYNC === 'true') {
+        await sequelize.sync({ alter: false, force: false });
+        logger.info('Database synced by sequelize.sync().');
+      }
+    } catch (error) {
+      logger.error('Database connection attempt failed:', error && error.message ? error.message : error);
+      if (retries < 10) {
+        setTimeout(() => tryConnect(retries + 1), 5000);
+      } else {
+        logger.error('Database connection failed after multiple attempts.');
+      }
     }
+  })();
 
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      logger.info(`Server running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV}`);
-    });
-  } catch (error) {
-    logger.error('Unable to start server:', error);
-    process.exit(1);
-  }
+  process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled Rejection:', reason && reason.stack ? reason.stack : reason);
+  });
+  process.on('uncaughtException', (err) => {
+    logger.error('Uncaught Exception:', err && err.stack ? err.stack : err);
+  });
 }
+
 
 
 startServer();
