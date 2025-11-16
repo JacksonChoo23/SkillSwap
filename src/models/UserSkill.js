@@ -10,6 +10,7 @@ const UserSkill = sequelize.define('UserSkill', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: 'users',
       key: 'id'
@@ -18,6 +19,7 @@ const UserSkill = sequelize.define('UserSkill', {
   skillId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'skill_id',
     references: {
       model: 'skills',
       key: 'id'

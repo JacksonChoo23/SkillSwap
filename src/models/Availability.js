@@ -10,6 +10,7 @@ const Availability = sequelize.define('Availability', {
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'user_id',
     references: {
       model: 'users',
       key: 'id'
@@ -18,6 +19,7 @@ const Availability = sequelize.define('Availability', {
   dayOfWeek: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'day_of_week',
     validate: {
       min: 0,
       max: 6
@@ -25,11 +27,13 @@ const Availability = sequelize.define('Availability', {
   },
   startTime: {
     type: DataTypes.TIME,
-    allowNull: false
+    allowNull: false,
+    field: 'start_time'
   },
   endTime: {
     type: DataTypes.TIME,
-    allowNull: false
+    allowNull: false,
+    field: 'end_time'
   }
 }, {
   tableName: 'availabilities',

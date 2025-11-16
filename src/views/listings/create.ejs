@@ -25,35 +25,29 @@
   </div>
 
   <div class="col-md-6">
-    <label class="form-label">Skill</label>
+    <label class="form-label">Skill (from your profile)</label>
     <select class="form-select" name="skill_id" required>
-      <option value="">Select a skill</option>
-      <% (Array.isArray(skills) ? skills : []).forEach(s => { %>
-        <option
-          value="<%= s.id %>"
-          <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
-          <%= s.name %>
-        </option>
-      <% }) %>
+      <option value="">Select a skill you can teach</option>
+      <% if (!Array.isArray(skills) || skills.length === 0) { %>
+        <option value="" disabled>No teaching skills found. Add skills to your profile first.</option>
+      <% } else { %>
+        <% skills.forEach(s => { %>
+          <option
+            value="<%= s.id %>"
+            <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
+            <%= s.name %>
+          </option>
+        <% }) %>
+      <% } %>
     </select>
+    <small class="form-text text-muted">Only skills you marked as "teach" in your profile are shown.</small>
   </div>
 
-  <div class="col-md-3">
-    <label class="form-label">Price / hour (RM)</label>
-    <input
-      class="form-control"
-      name="price_per_hour"
-      type="number"
-      step="0.01"
-      min="0"
-      value="<%= form && form.price_per_hour ? form.price_per_hour : '' %>">
-  </div>
-
-  <div class="col-md-3">
+  <div class="col-md-6">
     <label class="form-label">Visibility</label>
     <select class="form-select" name="visibility">
-      <option value="public"  <%= (!form || form.visibility === 'public') ? 'selected' : '' %> >public</option>
-      <option value="private" <%= (form && form.visibility === 'private') ? 'selected' : '' %> >private</option>
+      <option value="public"  <%= (!form || form.visibility === 'public') ? 'selected' : '' %> >Public</option>
+      <option value="private" <%= (form && form.visibility === 'private') ? 'selected' : '' %> >Private</option>
     </select>
   </div>
 
@@ -76,12 +70,11 @@
   </div>
   <div class="card-body">
     <div class="row">
-      <div class="col-md-8">
+      <div class="col-md-10">
         <h6 class="fw-bold" id="quickPreviewTitle">Your listing title...</h6>
         <p class="text-muted mb-0" id="quickPreviewDescription">Your description...</p>
       </div>
-      <div class="col-md-4 text-end">
-        <div class="fw-bold text-success" id="quickPreviewPrice">Free</div>
+      <div class="col-md-2 text-end">
         <small class="text-muted" id="quickPreviewSkill">Select a skill</small>
       </div>
     </div>
@@ -118,10 +111,6 @@
               </div>
               <div class="col-md-4">
                 <div class="d-flex flex-column gap-2">
-                  <div>
-                    <strong class="text-success" id="previewPrice">Free</strong>
-                    <small class="text-muted"> / hour</small>
-                  </div>
                   <div>
                     <span class="badge bg-success" id="previewVisibility">Public</span>
                   </div>
@@ -280,17 +269,12 @@ function updatePreview() {
   const title = document.querySelector('input[name="title"]').value.trim();
   const description = document.querySelector('textarea[name="description"]').value.trim();
   const skillId = document.querySelector('select[name="skill_id"]').value;
-  const price = document.querySelector('input[name="price_per_hour"]').value;
   const visibility = document.querySelector('select[name="visibility"]').value;
   
   // Update preview elements
   document.getElementById('previewTitle').textContent = title || 'Your listing title will appear here';
   document.getElementById('previewDescription').textContent = description || 'Your listing description will appear here...';
   document.getElementById('previewSkill').textContent = skillsData[skillId] || 'Skill Category';
-  
-  // Update price display
-  const priceDisplay = price && parseFloat(price) > 0 ? `RM ${parseFloat(price).toFixed(2)}` : 'Free';
-  document.getElementById('previewPrice').textContent = priceDisplay;
   
   // Update visibility badge
   const visibilityBadge = document.getElementById('previewVisibility');
@@ -306,14 +290,13 @@ function updatePreview() {
   }
   
   // Update quick preview if visible
-  updateQuickPreview(title, description, skillId, priceDisplay);
+  updateQuickPreview(title, description, skillId);
 }
 
-function updateQuickPreview(title, description, skillId, priceDisplay) {
+function updateQuickPreview(title, description, skillId) {
   const quickPreviewTitle = document.getElementById('quickPreviewTitle');
   const quickPreviewDescription = document.getElementById('quickPreviewDescription');
   const quickPreviewSkill = document.getElementById('quickPreviewSkill');
-  const quickPreviewPrice = document.getElementById('quickPreviewPrice');
   
   if (quickPreviewTitle) {
     quickPreviewTitle.textContent = title || 'Your listing title...';
@@ -321,7 +304,6 @@ function updateQuickPreview(title, description, skillId, priceDisplay) {
       (description.length > 100 ? description.substring(0, 100) + '...' : description) : 
       'Your description...';
     quickPreviewSkill.textContent = skillsData[skillId] || 'Select a skill';
-    quickPreviewPrice.textContent = priceDisplay;
     
     // Show quick preview if there's content
     if (title || description) {
@@ -344,7 +326,7 @@ function submitForm() {
 
 // Auto-update preview when form fields change
 document.addEventListener('DOMContentLoaded', function() {
-  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'input[name="price_per_hour"]', 'select[name="visibility"]'];
+  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'select[name="visibility"]'];
   
   fields.forEach(selector => {
     const element = document.querySelector(selector);

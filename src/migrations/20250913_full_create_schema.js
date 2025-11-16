@@ -3,6 +3,15 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Check if tables already exist from earlier migrations
+    const tables = await queryInterface.showAllTables();
+    
+    // Skip this migration if core tables already exist
+    if (tables.includes('users') && tables.includes('categories')) {
+      console.log('Core tables already exist from previous migrations. Skipping full schema creation.');
+      return;
+    }
+    
     // USERS
     await queryInterface.createTable('users', {
       id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },

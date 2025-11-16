@@ -17,7 +17,8 @@ const Category = sequelize.define('Category', {
   },
   isActive: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
+    field: 'is_active'
   }
 }, {
   tableName: 'categories',

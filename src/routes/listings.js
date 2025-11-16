@@ -6,9 +6,19 @@ const { checkAdultAndToxicContent, generateListingSuggestions } = require('../..
 
 const router = express.Router();
 
-// 工具：读取技能列表
-const loadSkills = () =>
-  Skill.findAll({ attributes: ['id', 'name'], order: [['name', 'ASC']] });
+// 工具：读取用户可以教的技能列表
+const loadUserTeachingSkills = async (userId) => {
+  const userSkills = await UserSkill.findAll({
+    where: { userId, type: 'teach' },
+    include: [{
+      model: Skill,
+      attributes: ['id', 'name']
+    }],
+    order: [[Skill, 'name', 'ASC']]
+  });
+  
+  return userSkills.map(us => us.Skill);
+};
 
 // 列表页（只看 active）
 router.get('/', async (req, res) => {
@@ -36,10 +46,10 @@ router.get('/', async (req, res) => {
 // 创建页
 router.get('/create', isAuthenticated, async (req, res) => {
   try {
-    const skills = await loadSkills();
+    const userId = req.user?.id || req.session?.user?.id;
+    const skills = await loadUserTeachingSkills(userId);
     
     // Get user's skills for AI suggestions
-    const userId = req.user?.id || req.session?.user?.id;
     let aiSuggestions = null;
     
     if (userId) {
@@ -126,7 +136,8 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
 // 创建提交
 router.post('/create', isAuthenticated, async (req, res) => {
   const refill = async (opts = {}) => {
-    const skills = await loadSkills();
+    const userId = req.user?.id || req.session?.user?.id;
+    const skills = await loadUserTeachingSkills(userId);
     return res.render('listings/create', {
       title: 'Create Listing',
       skills,
@@ -136,7 +147,6 @@ router.post('/create', isAuthenticated, async (req, res) => {
         title: req.body.title || '',
         description: req.body.description || '',
         skill_id: req.body.skill_id || req.body.skillId || '',
-        price_per_hour: req.body.price_per_hour || req.body.pricePerHour || '',
         visibility: req.body.visibility || 'public'
       },
       aiSuggestions: opts.aiSuggestions || null,
@@ -150,8 +160,6 @@ router.post('/create', isAuthenticated, async (req, res) => {
       description,
       skill_id,
       skillId,
-      price_per_hour,
-      pricePerHour,
       visibility
     } = req.body;
 
@@ -182,23 +190,20 @@ router.post('/create', isAuthenticated, async (req, res) => {
       return refill({ moderationFlagged: { message: 'User not authenticated', scores: {} } });
     }
 
-    // 技能
+    // 技能 - 验证用户确实拥有此教学技能
     const chosenSkillId = Number(skill_id || skillId);
     if (!chosenSkillId) {
       return refill({ moderationFlagged: { message: 'Please select a skill', scores: {} } });
     }
-    const skill = await Skill.findByPk(chosenSkillId);
-    if (!skill) {
-      return refill({ moderationFlagged: { message: 'Selected skill does not exist', scores: {} } });
+    
+    // 验证用户在 user_skills 表中有这个技能并且类型是 teach
+    const userSkill = await UserSkill.findOne({
+      where: { userId, skillId: chosenSkillId, type: 'teach' }
+    });
+    
+    if (!userSkill) {
+      return refill({ moderationFlagged: { message: 'You can only create listings for skills you can teach. Please add this skill to your profile first.', scores: {} } });
     }
-
-    // 价格
-    const priceNum =
-      price_per_hour != null && price_per_hour !== ''
-        ? Number(price_per_hour)
-        : pricePerHour != null && pricePerHour !== ''
-          ? Number(pricePerHour)
-          : null;
 
     // 创建（status 用 active）
     await Listing.create({
@@ -206,7 +211,6 @@ router.post('/create', isAuthenticated, async (req, res) => {
       skillId: chosenSkillId,
       title: String(title).trim(),
       description: String(description).trim(),
-      pricePerHour: Number.isFinite(priceNum) ? priceNum : null, // 模型映射到 price_per_hour
       visibility: visibility || 'public',
       status: 'active'
     });
@@ -256,16 +260,17 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/edit', isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || req.session?.user?.id;
     const listing = await Listing.findByPk(id);
     if (!listing) {
       req.session.error = 'Listing not found.';
       return res.redirect('/listings');
     }
-    if ((req.user?.id || req.session?.user?.id) !== listing.userId) {
+    if (userId !== listing.userId) {
       req.session.error = 'You can only edit your own listings.';
       return res.redirect('/listings');
     }
-    const skills = await loadSkills();
+    const skills = await loadUserTeachingSkills(userId);
     res.render('listings/edit', { title: 'Edit Listing - SkillSwap MY', listing, skills });
   } catch (error) {
     console.error('Edit listing error:', error);
@@ -278,7 +283,7 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
 router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, skill_id, skillId, price_per_hour, pricePerHour, visibility } = req.body;
+    const { title, description, skill_id, skillId, visibility } = req.body;
 
     try {
       const moderationResult = await checkAdultAndToxicContent(description || '');
@@ -294,35 +299,35 @@ router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req,
       }
     }
 
+    const userId = req.user?.id || req.session?.user?.id;
     const listing = await Listing.findByPk(id);
     if (!listing) {
       req.session.error = 'Listing not found.';
       return res.redirect('/listings');
     }
-    if ((req.user?.id || req.session?.user?.id) !== listing.userId) {
+    if (userId !== listing.userId) {
       req.session.error = 'You can only edit your own listings.';
       return res.redirect('/listings');
     }
 
     const chosenSkillId = Number(skill_id || skillId) || listing.skillId;
-    if (chosenSkillId && !(await Skill.findByPk(chosenSkillId))) {
-      req.session.error = 'Selected skill does not exist';
-      return res.redirect(`/listings/${id}/edit`);
+    
+    // 验证用户在 user_skills 表中有这个技能并且类型是 teach
+    if (chosenSkillId) {
+      const userSkill = await UserSkill.findOne({
+        where: { userId, skillId: chosenSkillId, type: 'teach' }
+      });
+      
+      if (!userSkill) {
+        req.session.error = 'You can only list skills you can teach. Please add this skill to your profile first.';
+        return res.redirect(`/listings/${id}/edit`);
+      }
     }
-
-    const priceNum =
-      price_per_hour != null && price_per_hour !== ''
-        ? Number(price_per_hour)
-        : pricePerHour != null && pricePerHour !== ''
-          ? Number(pricePerHour)
-          : (listing.pricePerHour ?? listing.price_per_hour ?? null);
 
     await listing.update({
       title,
       description,
       skillId: chosenSkillId,
-      pricePerHour: Number.isFinite(priceNum) ? priceNum : null,
-      price_per_hour: Number.isFinite(priceNum) ? priceNum : null, // 兼容旧字段
       visibility: visibility || listing.visibility,
       status: 'active'
     });

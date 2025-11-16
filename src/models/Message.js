@@ -10,6 +10,7 @@ const Message = sequelize.define('Message', {
   threadId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'thread_id',
     references: {
       model: 'message_threads',
       key: 'id'
@@ -18,6 +19,7 @@ const Message = sequelize.define('Message', {
   senderId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'sender_id',
     references: {
       model: 'users',
       key: 'id'

@@ -10,6 +10,7 @@ const MessageThread = sequelize.define('MessageThread', {
   listingId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'listing_id',
     references: {
       model: 'listings',
       key: 'id'
@@ -18,6 +19,7 @@ const MessageThread = sequelize.define('MessageThread', {
   creatorId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'creator_id',
     references: {
       model: 'users',
       key: 'id'
@@ -26,6 +28,7 @@ const MessageThread = sequelize.define('MessageThread', {
   participantId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'participant_id',
     references: {
       model: 'users',
       key: 'id'

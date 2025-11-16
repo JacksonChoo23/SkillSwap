@@ -34,13 +34,6 @@ module.exports = (sequelize, DataTypes) => {
       validate: { len: [10, 2000] }
     },
 
-    // 对应表里的 price_per_hour
-    pricePerHour: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: true,
-      field: 'price_per_hour'
-    },
-
     visibility: {
       type: DataTypes.ENUM('public', 'private'),
       allowNull: false,

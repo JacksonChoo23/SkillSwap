@@ -10,6 +10,7 @@ const TipToken = sequelize.define('TipToken', {
   fromUserId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'from_user_id',
     references: {
       model: 'users',
       key: 'id'
@@ -18,6 +19,7 @@ const TipToken = sequelize.define('TipToken', {
   toUserId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'to_user_id',
     references: {
       model: 'users',
       key: 'id'

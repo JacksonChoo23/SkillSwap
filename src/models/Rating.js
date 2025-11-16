@@ -10,14 +10,16 @@ const Rating = sequelize.define('Rating', {
   sessionId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'session_id',
     references: {
-      model: 'sessions',
+      model: 'learning_sessions',
       key: 'id'
     }
   },
   raterId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'rater_id',
     references: {
       model: 'users',
       key: 'id'
@@ -26,6 +28,7 @@ const Rating = sequelize.define('Rating', {
   rateeId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    field: 'ratee_id',
     references: {
       model: 'users',
       key: 'id'
