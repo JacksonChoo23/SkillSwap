@@ -15,13 +15,24 @@
   </div>
 
   <div class="col-md-6">
-    <label class="form-label">Skill (from your profile)</label>
+    <label class="form-label">Teaching Skill (from your profile)</label>
     <select class="form-select" name="skill_id" required>
-      <% (Array.isArray(skills) ? skills : []).forEach(s => { %>
+      <% (Array.isArray(teachSkills) ? teachSkills : []).forEach(s => { %>
         <option value="<%= s.id %>" <%= s.id === l.skillId ? 'selected' : '' %>><%= s.name %></option>
       <% }) %>
     </select>
     <small class="form-text text-muted">Only skills you marked as "teach" in your profile are shown.</small>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Wants To Learn (optional)</label>
+    <select class="form-select" name="learn_skill_id" required>
+      <option value="">Select a skill you want to learn</option>
+      <% (Array.isArray(learnSkills) ? learnSkills : []).forEach(s => { %>
+        <option value="<%= s.id %>" <%= s.id === l.learnSkillId ? 'selected' : '' %>><%= s.name %></option>
+      <% }) %>
+    </select>
+    <small class="form-text text-muted">Only skills you marked as "learn" in your profile are shown.</small>
   </div>
 
   <div class="col-md-6">

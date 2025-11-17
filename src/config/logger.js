@@ -21,12 +21,16 @@ const logger = winston.createLogger({
 });
 
 if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+  const consoleFormat = winston.format.combine(
+    winston.format.colorize({ all: false }),
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.printf(({ timestamp, level, message, stack }) => {
+      const msg = stack || message;
+      return `${timestamp} ${level.padEnd(7)} ${msg}`;
+    })
+  );
+
+  logger.add(new winston.transports.Console({ format: consoleFormat }));
 }
 
 module.exports = logger; 

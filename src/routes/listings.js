@@ -20,6 +20,20 @@ const loadUserTeachingSkills = async (userId) => {
   return userSkills.map(us => us.Skill);
 };
 
+// 工具：读取用户想学的技能列表
+const loadUserLearningSkills = async (userId) => {
+  const userSkills = await UserSkill.findAll({
+    where: { userId, type: 'learn' },
+    include: [{
+      model: Skill,
+      attributes: ['id', 'name']
+    }],
+    order: [[Skill, 'name', 'ASC']]
+  });
+  
+  return userSkills.map(us => us.Skill);
+};
+
 // 列表页（只看 active）
 router.get('/', async (req, res) => {
   try {
@@ -27,7 +41,8 @@ router.get('/', async (req, res) => {
       where: { status: 'active' },
       include: [
         { model: User, attributes: ['id', 'name', 'location'] },
-        { model: Skill, as: 'Skill', attributes: ['id', 'name'] } // 注意 as
+        { model: Skill, as: 'Skill', attributes: ['id', 'name'] },
+        { model: Skill, as: 'LearnSkill', attributes: ['id', 'name'] }
       ],
       order: [['createdAt', 'DESC']]
     });
@@ -47,7 +62,8 @@ router.get('/', async (req, res) => {
 router.get('/create', isAuthenticated, async (req, res) => {
   try {
     const userId = req.user?.id || req.session?.user?.id;
-    const skills = await loadUserTeachingSkills(userId);
+    const teachSkills = await loadUserTeachingSkills(userId);
+    const learnSkills = await loadUserLearningSkills(userId);
     
     // Get user's skills for AI suggestions
     let aiSuggestions = null;
@@ -76,7 +92,8 @@ router.get('/create', isAuthenticated, async (req, res) => {
     
     res.render('listings/create', {
       title: 'Create Listing',
-      skills,
+      teachSkills,
+      learnSkills,
       moderationFlagged: null,
       successMessage: null,
       form: null,
@@ -137,16 +154,19 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
 router.post('/create', isAuthenticated, async (req, res) => {
   const refill = async (opts = {}) => {
     const userId = req.user?.id || req.session?.user?.id;
-    const skills = await loadUserTeachingSkills(userId);
+    const teachSkills = await loadUserTeachingSkills(userId);
+    const learnSkills = await loadUserLearningSkills(userId);
     return res.render('listings/create', {
       title: 'Create Listing',
-      skills,
+      teachSkills,
+      learnSkills,
       moderationFlagged: opts.moderationFlagged || null,
       successMessage: null,
       form: {
         title: req.body.title || '',
         description: req.body.description || '',
         skill_id: req.body.skill_id || req.body.skillId || '',
+        learn_skill_id: req.body.learn_skill_id || req.body.learnSkillId || '',
         visibility: req.body.visibility || 'public'
       },
       aiSuggestions: opts.aiSuggestions || null,
@@ -160,6 +180,8 @@ router.post('/create', isAuthenticated, async (req, res) => {
       description,
       skill_id,
       skillId,
+      learn_skill_id,
+      learnSkillId,
       visibility
     } = req.body;
 
@@ -193,7 +215,7 @@ router.post('/create', isAuthenticated, async (req, res) => {
     // 技能 - 验证用户确实拥有此教学技能
     const chosenSkillId = Number(skill_id || skillId);
     if (!chosenSkillId) {
-      return refill({ moderationFlagged: { message: 'Please select a skill', scores: {} } });
+      return refill({ moderationFlagged: { message: 'Please select a skill to teach', scores: {} } });
     }
     
     // 验证用户在 user_skills 表中有这个技能并且类型是 teach
@@ -205,10 +227,27 @@ router.post('/create', isAuthenticated, async (req, res) => {
       return refill({ moderationFlagged: { message: 'You can only create listings for skills you can teach. Please add this skill to your profile first.', scores: {} } });
     }
 
+    // 验证想学的技能（如果提供）
+    // 验证想学的技能（必须提供）
+    const chosenLearnSkillId = Number(learn_skill_id || learnSkillId);
+    if (!chosenLearnSkillId) {
+      return refill({ moderationFlagged: { message: 'Please select a skill you want to learn', scores: {} } });
+    }
+    if (chosenLearnSkillId) {
+      const userLearnSkill = await UserSkill.findOne({
+        where: { userId, skillId: chosenLearnSkillId, type: 'learn' }
+      });
+      
+      if (!userLearnSkill) {
+        return refill({ moderationFlagged: { message: 'You can only select skills you want to learn from your profile.', scores: {} } });
+      }
+    }
+
     // 创建（status 用 active）
     await Listing.create({
       userId,
       skillId: chosenSkillId,
+      learnSkillId: chosenLearnSkillId,
       title: String(title).trim(),
       description: String(description).trim(),
       visibility: visibility || 'public',
@@ -230,7 +269,8 @@ router.get('/:id', async (req, res) => {
     const listing = await Listing.findByPk(id, {
       include: [
         { model: User, attributes: ['id', 'name', 'bio', 'location', 'whatsapp_number'] },
-        { model: Skill, as: 'Skill', attributes: ['id', 'name'] } // 注意 as
+        { model: Skill, as: 'Skill', attributes: ['id', 'name'] },
+        { model: Skill, as: 'LearnSkill', attributes: ['id', 'name'] }
       ]
     });
 
@@ -270,8 +310,14 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
       req.session.error = 'You can only edit your own listings.';
       return res.redirect('/listings');
     }
-    const skills = await loadUserTeachingSkills(userId);
-    res.render('listings/edit', { title: 'Edit Listing - SkillSwap MY', listing, skills });
+    const teachSkills = await loadUserTeachingSkills(userId);
+    const learnSkills = await loadUserLearningSkills(userId);
+    res.render('listings/edit', { 
+      title: 'Edit Listing - SkillSwap MY', 
+      listing, 
+      teachSkills,
+      learnSkills 
+    });
   } catch (error) {
     console.error('Edit listing error:', error);
     req.session.error = 'Error loading listing.';
@@ -283,7 +329,7 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
 router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, skill_id, skillId, visibility } = req.body;
+    const { title, description, skill_id, skillId, learn_skill_id, learnSkillId, visibility } = req.body;
 
     try {
       const moderationResult = await checkAdultAndToxicContent(description || '');
@@ -311,6 +357,14 @@ router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req,
     }
 
     const chosenSkillId = Number(skill_id || skillId) || listing.skillId;
+
+    // Optional learn skill
+    const chosenLearnSkillIdRaw = (learn_skill_id ?? learnSkillId);
+    const chosenLearnSkillId = Number(chosenLearnSkillIdRaw || listing.learnSkillId);
+    if (!chosenLearnSkillId) {
+      req.session.error = 'Please select a skill you want to learn.';
+      return res.redirect(`/listings/${id}/edit`);
+    }
     
     // 验证用户在 user_skills 表中有这个技能并且类型是 teach
     if (chosenSkillId) {
@@ -324,10 +378,20 @@ router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req,
       }
     }
 
+    // Validate learn skill (if explicitly set to a number)
+    const userLearnSkill = await UserSkill.findOne({
+      where: { userId, skillId: chosenLearnSkillId, type: 'learn' }
+    });
+    if (!userLearnSkill) {
+      req.session.error = 'You can only select skills you want to learn from your profile.';
+      return res.redirect(`/listings/${id}/edit`);
+    }
+
     await listing.update({
       title,
       description,
       skillId: chosenSkillId,
+      learnSkillId: chosenLearnSkillId,
       visibility: visibility || listing.visibility,
       status: 'active'
     });

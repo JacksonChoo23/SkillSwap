@@ -14,11 +14,18 @@ module.exports = (sequelize, DataTypes) => {
       field: 'user_id'
     },
 
-    // FK -> skills.id
+    // FK -> skills.id (skill to teach)
     skillId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: 'skill_id'
+    },
+
+    // FK -> skills.id (skill to learn in exchange)
+    learnSkillId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      field: 'learn_skill_id'
     },
 
     title: {
@@ -69,6 +76,7 @@ module.exports = (sequelize, DataTypes) => {
     indexes: [
       { fields: ['user_id'] },
       { fields: ['skill_id'] },
+      { fields: ['learn_skill_id'] },
       { fields: ['status'] }
     ]
   });
@@ -77,6 +85,7 @@ module.exports = (sequelize, DataTypes) => {
   Listing.associate = (models) => {
     Listing.belongsTo(models.User,  { foreignKey: 'userId',  as: 'User'  });
     Listing.belongsTo(models.Skill, { foreignKey: 'skillId', as: 'Skill' });
+    Listing.belongsTo(models.Skill, { foreignKey: 'learnSkillId', as: 'LearnSkill' });
   };
 
   return Listing;

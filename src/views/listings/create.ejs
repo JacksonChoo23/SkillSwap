@@ -1,6 +1,6 @@
 <h1 class="h4 mb-3">Create Listing</h1>
 
-<form method="POST" action="/listings/create" class="row g-3">
+<form method="POST" action="/listings/create" class="row g-3 needs-validation" novalidate>
   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
   <div class="col-12">
@@ -24,23 +24,60 @@
       placeholder="What do you teach or want to learn? Any details."><%= (form && form.description) || (aiRewrite && aiRewrite.description) || '' %></textarea>
   </div>
 
-  <div class="col-md-6">
-    <label class="form-label">Skill (from your profile)</label>
-    <select class="form-select" name="skill_id" required>
-      <option value="">Select a skill you can teach</option>
-      <% if (!Array.isArray(skills) || skills.length === 0) { %>
-        <option value="" disabled>No teaching skills found. Add skills to your profile first.</option>
-      <% } else { %>
-        <% skills.forEach(s => { %>
-          <option
-            value="<%= s.id %>"
-            <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
-            <%= s.name %>
-          </option>
-        <% }) %>
-      <% } %>
-    </select>
-    <small class="form-text text-muted">Only skills you marked as "teach" in your profile are shown.</small>
+  <!-- Exchange skills card with emphasis toggle in header -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="fas fa-exchange-alt me-2"></i>Skill Exchange</span>
+        <div class="form-check form-switch m-0">
+          <input class="form-check-input" type="checkbox" id="emphasisToggle">
+          <label class="form-check-label small" for="emphasisToggle">Emphasize learning</label>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6 order-md-1" id="teachSection">
+            <label class="form-label fw-bold text-success">
+              <i class="fas fa-chalkboard-teacher me-1"></i><span id="teachLabel">I will teach</span>
+            </label>
+            <select class="form-select" name="skill_id" required>
+              <option value="">Select a skill you can teach</option>
+              <% if (!Array.isArray(teachSkills) || teachSkills.length === 0) { %>
+                <option value="" disabled>No teaching skills found. Add skills to your profile first.</option>
+              <% } else { %>
+                <% teachSkills.forEach(s => { %>
+                  <option
+                    value="<%= s.id %>"
+                    <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
+                    <%= s.name %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+            <div class="form-text">Only skills you marked as "teach" in your profile are shown.</div>
+          </div>
+
+          <div class="col-md-6 order-md-2" id="learnSection">
+            <label class="form-label fw-bold text-primary">
+              <i class="fas fa-graduation-cap me-1"></i><span id="learnLabel">I want to learn</span>
+            </label>
+            <select class="form-select" name="learn_skill_id" required>
+              <option value="">Select a skill you want to learn</option>
+              <% if (Array.isArray(learnSkills) && learnSkills.length > 0) { %>
+                <% learnSkills.forEach(s => { %>
+                  <option
+                    value="<%= s.id %>"
+                    <%= (form && String(form.learn_skill_id) === String(s.id)) ? 'selected' : '' %>>
+                    <%= s.name %>
+                  </option>
+                <% }) %>
+              <% } %>
+            </select>
+            <div class="form-text">Only skills you marked as "learn" in your profile are shown.</div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="col-md-6">
@@ -51,22 +88,45 @@
     </select>
   </div>
 
-  <div class="col-12 d-flex gap-2">
-    <button class="btn btn-primary" type="submit">Submit</button>
-    <button class="btn btn-outline-info" type="button" onclick="togglePreview()">
+  <div class="col-12 d-grid gap-2 d-md-flex">
+    <button class="btn btn-primary w-100 w-md-auto" type="submit"><i class="fas fa-check me-1"></i>Submit</button>
+    <button class="btn btn-outline-info w-100 w-md-auto" type="button" onclick="togglePreview()">
       <i class="fas fa-eye me-1"></i>Preview Listing
     </button>
-    <a class="btn btn-outline-secondary" href="/listings">Cancel</a>
+    <a class="btn btn-outline-secondary w-100 w-md-auto" href="/listings"><i class="fas fa-arrow-left me-1"></i>Cancel</a>
+  </div>
+
+  <!-- Mobile-only collapsible live preview -->
+  <div class="col-12 d-md-none">
+    <div class="accordion" id="mobilePreviewAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="mobilePreviewHeader">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobilePreviewCollapse" aria-expanded="false" aria-controls="mobilePreviewCollapse">
+            <i class="fas fa-eye me-2"></i>Live Preview
+          </button>
+        </h2>
+        <div id="mobilePreviewCollapse" class="accordion-collapse collapse" aria-labelledby="mobilePreviewHeader" data-bs-parent="#mobilePreviewAccordion">
+          <div class="accordion-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="mb-0" id="mobilePreviewTitle">Your listing title...</h6>
+            </div>
+            <p class="text-muted mb-2" id="mobilePreviewDescription">Your description...</p>
+            <div class="small text-muted">
+              <span class="badge bg-success me-1">Teaching</span>
+              <span class="badge bg-light text-primary" id="mobilePreviewSkill">Skill</span>
+              <span class="badge bg-primary d-none" id="mobilePreviewLearnSkill"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </form>
 
-<!-- Quick Preview Section -->
-<div class="card mt-4" id="quickPreview" style="display: none;">
+<!-- Live Preview Sidebar (visible on md+) -->
+<div class="card mt-4 d-none d-md-block position-sticky" id="quickPreview" style="top: 1rem;">
   <div class="card-header d-flex justify-content-between align-items-center">
-    <span><i class="fas fa-eye me-2"></i>Quick Preview</span>
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleQuickPreview()">
-      <i class="fas fa-times"></i>
-    </button>
+    <span><i class="fas fa-eye me-2"></i>Live Preview</span>
   </div>
   <div class="card-body">
     <div class="row">
@@ -101,7 +161,11 @@
         <div class="card border-primary" id="listingPreview">
           <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h6 class="mb-0" id="previewTitle">Your listing title will appear here</h6>
-            <span class="badge bg-light text-primary" id="previewSkill">Skill Category</span>
+            <div class="d-flex gap-2 align-items-center" id="previewBadges">
+              <span class="badge bg-success" id="badgeTeachingLabel">Teaching</span>
+              <span class="badge bg-light text-primary" id="previewSkill">Skill</span>
+              <span class="badge bg-primary d-none" id="previewLearnSkill"></span>
+            </div>
           </div>
           <div class="card-body">
             <div class="row">
@@ -249,12 +313,18 @@
 
 <script>
 // Global variables for skills data
-let skillsData = {};
+let teachSkillsData = {};
+let learnSkillsData = {};
 
-// Initialize skills data
-<% if (Array.isArray(skills)) { %>
-  <% skills.forEach(skill => { %>
-    skillsData['<%= skill.id %>'] = '<%= skill.name %>';
+// Initialize skills data (server-provided arrays)
+<% if (Array.isArray(teachSkills)) { %>
+  <% teachSkills.forEach(skill => { %>
+    teachSkillsData['<%= skill.id %>'] = '<%= skill.name %>';
+  <% }); %>
+<% } %>
+<% if (Array.isArray(learnSkills)) { %>
+  <% learnSkills.forEach(skill => { %>
+    learnSkillsData['<%= skill.id %>'] = '<%= skill.name %>';
   <% }); %>
 <% } %>
 
@@ -269,12 +339,20 @@ function updatePreview() {
   const title = document.querySelector('input[name="title"]').value.trim();
   const description = document.querySelector('textarea[name="description"]').value.trim();
   const skillId = document.querySelector('select[name="skill_id"]').value;
+  const learnSkillId = document.querySelector('select[name="learn_skill_id"]').value;
   const visibility = document.querySelector('select[name="visibility"]').value;
   
   // Update preview elements
   document.getElementById('previewTitle').textContent = title || 'Your listing title will appear here';
   document.getElementById('previewDescription').textContent = description || 'Your listing description will appear here...';
-  document.getElementById('previewSkill').textContent = skillsData[skillId] || 'Skill Category';
+  document.getElementById('previewSkill').textContent = teachSkillsData[skillId] || 'Skill';
+  const learnBadge = document.getElementById('previewLearnSkill');
+  if (learnSkillId && learnSkillsData[learnSkillId]) {
+    learnBadge.textContent = 'Wants to learn: ' + learnSkillsData[learnSkillId];
+    learnBadge.classList.remove('d-none');
+  } else if (learnBadge) {
+    learnBadge.classList.add('d-none');
+  }
   
   // Update visibility badge
   const visibilityBadge = document.getElementById('previewVisibility');
@@ -290,24 +368,47 @@ function updatePreview() {
   }
   
   // Update quick preview if visible
-  updateQuickPreview(title, description, skillId);
+  updateQuickPreview(title, description, skillId, learnSkillId);
 }
 
-function updateQuickPreview(title, description, skillId) {
+function updateQuickPreview(title, description, skillId, learnSkillId) {
   const quickPreviewTitle = document.getElementById('quickPreviewTitle');
   const quickPreviewDescription = document.getElementById('quickPreviewDescription');
   const quickPreviewSkill = document.getElementById('quickPreviewSkill');
+  const mobileTitle = document.getElementById('mobilePreviewTitle');
+  const mobileDesc = document.getElementById('mobilePreviewDescription');
+  const mobileSkill = document.getElementById('mobilePreviewSkill');
+  const mobileLearn = document.getElementById('mobilePreviewLearnSkill');
   
   if (quickPreviewTitle) {
     quickPreviewTitle.textContent = title || 'Your listing title...';
     quickPreviewDescription.textContent = description ? 
       (description.length > 100 ? description.substring(0, 100) + '...' : description) : 
       'Your description...';
-    quickPreviewSkill.textContent = skillsData[skillId] || 'Select a skill';
+    let skillText = teachSkillsData[skillId] || 'Select a skill';
+    if (learnSkillId && learnSkillsData[learnSkillId]) {
+      skillText += ' • Wants: ' + learnSkillsData[learnSkillId];
+    }
+    quickPreviewSkill.textContent = skillText;
     
     // Show quick preview if there's content
     if (title || description) {
       document.getElementById('quickPreview').style.display = 'block';
+    }
+  }
+
+  // Update mobile preview accordion content if present
+  if (mobileTitle && mobileDesc && mobileSkill && mobileLearn) {
+    mobileTitle.textContent = title || 'Your listing title...';
+    mobileDesc.textContent = description ?
+      (description.length > 120 ? description.substring(0, 120) + '...' : description) :
+      'Your description...';
+    mobileSkill.textContent = teachSkillsData[skillId] || 'Skill';
+    if (learnSkillId && learnSkillsData[learnSkillId]) {
+      mobileLearn.textContent = 'Wants to learn: ' + learnSkillsData[learnSkillId];
+      mobileLearn.classList.remove('d-none');
+    } else {
+      mobileLearn.classList.add('d-none');
     }
   }
 }
@@ -326,7 +427,7 @@ function submitForm() {
 
 // Auto-update preview when form fields change
 document.addEventListener('DOMContentLoaded', function() {
-  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'select[name="visibility"]'];
+  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'select[name="learn_skill_id"]', 'select[name="visibility"]'];
   
   fields.forEach(selector => {
     const element = document.querySelector(selector);
@@ -338,6 +439,19 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Initial preview update
   updatePreview();
+
+  // Emphasis toggle init
+  const toggle = document.getElementById('emphasisToggle');
+  const saved = localStorage.getItem('emphasis_learn_first');
+  const learnFirst = saved === '1';
+  toggle.checked = learnFirst;
+  applyEmphasis(learnFirst);
+  toggle.addEventListener('change', (e) => {
+    const isLearnFirst = e.target.checked;
+    localStorage.setItem('emphasis_learn_first', isLearnFirst ? '1' : '0');
+    applyEmphasis(isLearnFirst);
+    updatePreview();
+  });
   
   // Add event listeners for saved suggestions
   document.getElementById('saveSuggestion')?.addEventListener('click', saveSuggestion);
@@ -488,7 +602,7 @@ async function saveSuggestion() {
     const notes = Array.from(notesElements).map(li => li.textContent.trim());
     const suggestionType = document.querySelector('input[name="suggestionType"]:checked')?.value || 'teach';
     const skillId = document.querySelector('select[name="skill_id"]').value;
-    const skillCategory = skillsData[skillId] || '';
+    const skillCategory = teachSkillsData[skillId] || '';
     
     const response = await fetch('/listings/save-suggestion', {
       method: 'POST',
@@ -668,5 +782,49 @@ function applySavedSuggestion(title, description) {
   setTimeout(() => {
     titleInput.style.border = '';
   }, 2000);
+}
+
+// Emphasis toggle behavior: reorder sections and adjust preview badge order
+function applyEmphasis(isLearnFirst) {
+  const teachSection = document.getElementById('teachSection');
+  const learnSection = document.getElementById('learnSection');
+  const teachLabel = document.getElementById('teachLabel');
+  const learnLabel = document.getElementById('learnLabel');
+
+  if (isLearnFirst) {
+    // On md+ screens, show learn first
+    teachSection.classList.remove('order-md-1');
+    teachSection.classList.add('order-md-2');
+    learnSection.classList.remove('order-md-2');
+    learnSection.classList.add('order-md-1');
+    if (teachLabel) teachLabel.textContent = 'I can teach';
+    if (learnLabel) learnLabel.textContent = "I'm seeking to learn";
+  } else {
+    teachSection.classList.remove('order-md-2');
+    teachSection.classList.add('order-md-1');
+    learnSection.classList.remove('order-md-1');
+    learnSection.classList.add('order-md-2');
+    if (teachLabel) teachLabel.textContent = 'I will teach';
+    if (learnLabel) learnLabel.textContent = 'I want to learn';
+  }
+
+  // Reorder preview badges
+  const badgeTeach = document.getElementById('badgeTeachingLabel');
+  const badgeTeachSkill = document.getElementById('previewSkill');
+  const badgeLearn = document.getElementById('previewLearnSkill');
+  if (badgeTeach && badgeTeachSkill && badgeLearn) {
+    [badgeTeach, badgeTeachSkill, badgeLearn].forEach(el => {
+      el.classList.remove('order-1','order-2','order-3');
+    });
+    if (isLearnFirst) {
+      badgeLearn.classList.add('order-1');
+      badgeTeach.classList.add('order-2');
+      badgeTeachSkill.classList.add('order-3');
+    } else {
+      badgeTeach.classList.add('order-1');
+      badgeTeachSkill.classList.add('order-2');
+      badgeLearn.classList.add('order-3');
+    }
+  }
 }
 </script>

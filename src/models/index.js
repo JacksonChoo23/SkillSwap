@@ -86,9 +86,13 @@ Availability.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Listing, { foreignKey: 'userId', as: 'listings' });
 Listing.belongsTo(User, { foreignKey: 'userId' });
 
-// ★ Listing <-> Skill（你现在创建时需要 skillId 外键）
+// ★ Listing <-> Skill（teach）
 Skill.hasMany(Listing,  { foreignKey: 'skillId', as: 'listings' });
 Listing.belongsTo(Skill, { foreignKey: 'skillId', as: 'Skill' });
+
+// ★ Listing <-> Skill（learn - optional swap target）
+Skill.hasMany(Listing,  { foreignKey: 'learnSkillId', as: 'learnListings' });
+Listing.belongsTo(Skill, { foreignKey: 'learnSkillId', as: 'LearnSkill' });
 
 // User <-> MessageThread（双向参与）
 User.hasMany(MessageThread, { foreignKey: 'creatorId',     as: 'createdThreads' });

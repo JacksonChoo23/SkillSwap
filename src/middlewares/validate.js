@@ -41,7 +41,13 @@ const schemas = {
   
   listing: Joi.object({
     title: Joi.string().min(5).max(255).required(),
-    description: Joi.string().min(10).max(2000).required()
+    description: Joi.string().min(10).max(2000).required(),
+    // Optional fields for edit route (kept to avoid stripping)
+    skill_id: Joi.alternatives(Joi.number().integer().positive(), Joi.string().allow('')).optional(),
+    skillId: Joi.alternatives(Joi.number().integer().positive(), Joi.string().allow('')).optional(),
+    learn_skill_id: Joi.alternatives(Joi.number().integer().positive(), Joi.string().allow('')).optional(),
+    learnSkillId: Joi.alternatives(Joi.number().integer().positive(), Joi.string().allow('')).optional(),
+    visibility: Joi.string().valid('public', 'private').optional()
   }),
   
   message: Joi.object({

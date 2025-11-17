@@ -10,8 +10,12 @@
 </div>
 
 <div class="text-muted mb-2 small">
+  <span class="badge bg-success me-2">Teaching</span>
   <% if (l.Skill) { %>
     <span class="badge bg-secondary me-2"><%= l.Skill.name %></span>
+  <% } %>
+  <% if (l.LearnSkill) { %>
+    <span class="badge bg-info text-dark">Wants: <%= l.LearnSkill.name %></span>
   <% } %>
 </div>
 

@@ -154,15 +154,18 @@ app.use((req, res, next) => {
   next();
 });
 
-// About page - visible only to guests (before CSRF)
+// About page - accessible to all users (before CSRF)
 app.get('/about', (req, res) => {
   const isAuthed = (typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || !!(req.session && req.session.user);
-  if (isAuthed) {
-    return res.redirect('/profile');
-  }
+  const currentUser = req.user || req.session?.user || null;
+  
   res.render('about', {
     title: 'About - SkillSwap MY',
-    csrfToken: '' // No CSRF token needed for guest page
+    csrfToken: '', // No CSRF token needed for public page
+    isAuthenticated: isAuthed,
+    currentUser: currentUser,
+    user: currentUser,
+    isAdmin: !!(currentUser && currentUser.role === 'admin')
   });
 });
 

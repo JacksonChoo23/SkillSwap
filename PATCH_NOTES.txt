@@ -1,0 +1,35 @@
+// Patch file for listings route - add to line 331
+// Replace lines 331-333 with:
+
+    const { id } = req.params;
+    const { title, description, skill_id, skillId, learn_skill_id, learnSkillId, visibility } = req.body;
+
+// After line 355, add learn skill handling:
+
+    const chosenSkillId = Number(skill_id || skillId) || listing.skillId;
+    const chosenLearnSkillId = Number(learn_skill_id || learnSkillId) || null;
+    
+// After line 367 (after the teach skill validation), add:
+
+    // 验证想学的技能（如果提供）
+    if (chosenLearnSkillId) {
+      const userLearnSkill = await UserSkill.findOne({
+        where: { userId, skillId: chosenLearnSkillId, type: 'learn' }
+      });
+      
+      if (!userLearnSkill) {
+        req.session.error = 'You can only select skills you want to learn from your profile.';
+        return res.redirect(`/listings/${id}/edit`);
+      }
+    }
+
+// Replace lines 369-374 (listing.update) with:
+
+    await listing.update({
+      title,
+      description,
+      skillId: chosenSkillId,
+      learnSkillId: chosenLearnSkillId,
+      visibility: visibility || listing.visibility,
+      status: 'active'
+    });

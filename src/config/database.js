@@ -21,10 +21,18 @@ const DB_SOCKET = process.env.DB_SOCKET || ''; // '/cloudsql/PROJECT:REGION:INST
 const DB_HOST = process.env.DB_HOST || cfg.host || '127.0.0.1';
 const DB_PORT = Number(process.env.DB_PORT || cfg.port || 3306);
 
+const logger = require('./logger');
+
 const options = {
   dialect: 'mysql',
   dialectModule: mysql2,
-  logging: process.env.NODE_ENV === 'development' ? console.log : (cfg.logging || false),
+  logging: process.env.NODE_ENV === 'development'
+    ? (msg) => {
+        // Normalize whitespace and trim long SQL for readability
+        const single = String(msg).replace(/\s+/g, ' ').trim();
+        logger.debug(single);
+      }
+    : (cfg.logging || false),
   pool: cfg.pool || { max: 5, min: 0, acquire: 30000, idle: 10000 },
   define: cfg.define || { timestamps: true, underscored: true }
 };

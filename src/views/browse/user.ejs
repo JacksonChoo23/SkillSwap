@@ -81,6 +81,16 @@
   <a class="btn btn-outline-secondary" href="/browse">Back to browse</a>
   <% if (isAuthenticated) { %>
     <a class="btn btn-primary" href="/messages?to=<%= u.id %>">Message</a>
+    <% if (u.whatsappNumber) { %>
+      <a class="btn btn-success" target="_blank" rel="noopener" href="https://wa.me/<%= String(u.whatsappNumber).replace(/\D/g, '') %>?text=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY!') %>">
+        <i class="fab fa-whatsapp me-1"></i>WhatsApp
+      </a>
+    <% } %>
+    <% if (!u.whatsappNumber && u.email) { %>
+      <a class="btn btn-success" href="mailto:<%= u.email %>?subject=<%- encodeURIComponent('Hello from SkillSwap MY') %>&body=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY and would like to connect!') %>">
+        <i class="fas fa-envelope me-1"></i>E-mail
+      </a>
+    <% } %>
   <% } else { %>
     <a class="btn btn-primary" href="/auth/login">Login to message</a>
   <% } %>
