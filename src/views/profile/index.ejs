@@ -16,6 +16,10 @@
     <div class="card">
       <div class="card-body">
         <h2 class="h6 text-muted mb-3">Account</h2>
+        <div class="mb-2">
+          <div class="small text-muted">User ID (Teacher ID)</div>
+          <div><code><%= u.id %></code></div>
+        </div>
         <% if (progressSummary) { %>
           <div class="mb-3">
             <div class="small text-muted">Progress</div>
@@ -71,6 +75,9 @@
               <div class="border rounded px-2 py-2 d-flex justify-content-between align-items-center">
                 <div class="me-2">
                   <span class="badge text-uppercase me-2 <%= s.type === 'teach' ? 'bg-primary' : 'bg-info' %>"><%= s.type %></span>
+                  <% if (s.Skill && s.Skill.id) { %>
+                    <span class="badge bg-secondary me-2">Skill ID: <%= s.Skill.id %></span>
+                  <% } %>
                   <strong><%= s.Skill?.name || '-' %></strong>
                   <span class="text-muted small ms-2">(<%= s.level || '-' %>)</span>
                   <span class="small text-muted ms-2"><%= s.Skill?.Category?.name || '' %></span>

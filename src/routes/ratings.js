@@ -18,7 +18,7 @@ router.post('/:sessionId', validate(schemas.rating), async (req, res) => {
     }
 
     // Check if user is part of this session
-    if (session.teacherId !== req.user.id && session.learnerId !== req.user.id) {
+    if (session.teacherId !== req.user.id && session.studentId !== req.user.id) {
       req.session.error = 'You can only rate sessions you are part of.';
       return res.redirect('/sessions');
     }
@@ -30,7 +30,7 @@ router.post('/:sessionId', validate(schemas.rating), async (req, res) => {
     }
 
     // Check if user is rating the other participant
-    if (parseInt(rateeId) !== session.teacherId && parseInt(rateeId) !== session.learnerId) {
+    if (parseInt(rateeId) !== session.teacherId && parseInt(rateeId) !== session.studentId) {
       req.session.error = 'Invalid rating target.';
       return res.redirect('/sessions');
     }

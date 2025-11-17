@@ -45,8 +45,28 @@ const LearningSession = sequelize.define('LearningSession', {
     field: 'end_at'
   },
   status: {
-    type: DataTypes.ENUM('requested', 'confirmed', 'completed', 'cancelled'),
+    type: DataTypes.ENUM('requested', 'confirmed', 'in_progress', 'completed', 'cancelled'),
     defaultValue: 'requested'
+  },
+  startCode: {
+    type: DataTypes.STRING(6),
+    allowNull: true,
+    field: 'start_code'
+  },
+  codeExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'code_expires_at'
+  },
+  actualStartAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'actual_start_at'
+  },
+  actualEndAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'actual_end_at'
   },
   createdAt: {
     type: DataTypes.DATE,
@@ -69,6 +89,12 @@ const LearningSession = sequelize.define('LearningSession', {
     },
     {
       fields: ['start_at']
+    },
+    {
+      fields: ['status']
+    },
+    {
+      fields: ['actual_start_at']
     }
   ]
 });

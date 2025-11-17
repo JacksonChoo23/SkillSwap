@@ -46,7 +46,7 @@ router.post('/request', validate(schemas.session), async (req, res) => {
     const teacher = await User.findByPk(teacherId);
     if (!teacher) {
       req.session.error = 'Teacher not found.';
-      return res.redirect('back');
+      return res.redirect(req.get('Referrer') || '/sessions');
     }
 
     // Create session
@@ -64,7 +64,7 @@ router.post('/request', validate(schemas.session), async (req, res) => {
   } catch (error) {
     console.error('Request session error:', error);
     req.session.error = 'Error requesting session.';
-    res.redirect('back');
+    res.redirect(req.get('Referrer') || '/sessions');
   }
 });
 
@@ -101,6 +101,79 @@ router.post('/:id/confirm', async (req, res) => {
   }
 });
 
+// Generate start code (teacher only)
+router.post('/:id/generate-code', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await LearningSession.findByPk(id);
+    if (!session) {
+      req.session.error = 'Session not found.';
+      return res.redirect('/sessions');
+    }
+    if (session.teacherId !== req.user.id) {
+      req.session.error = 'Only the teacher can generate a code.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (!['confirmed', 'in_progress'].includes(session.status)) {
+      req.session.error = 'Session must be confirmed to generate a code.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    // 3-digit code; can switch to 4-6 if needed
+    const code = String(Math.floor(100 + Math.random() * 900));
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
+    await session.update({ startCode: code, codeExpiresAt: expires });
+    req.session.success = `Start code generated. Expires at ${expires.toLocaleTimeString()}.`;
+    res.redirect(`/sessions/${id}`);
+  } catch (error) {
+    console.error('Generate code error:', error);
+    req.session.error = 'Error generating code.';
+    res.redirect('/sessions');
+  }
+});
+
+// Verify start code (student only)
+router.post('/:id/verify-code', validate(schemas.sessionCode), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { code } = req.body;
+    const session = await LearningSession.findByPk(id);
+    if (!session) {
+      req.session.error = 'Session not found.';
+      return res.redirect('/sessions');
+    }
+    if (session.studentId !== req.user.id) {
+      req.session.error = 'Only the learner can verify the code.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (session.status !== 'confirmed' && session.status !== 'in_progress') {
+      req.session.error = 'Session is not ready to start.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (!session.startCode || !session.codeExpiresAt) {
+      req.session.error = 'No start code generated yet.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (String(session.startCode) !== String(code)) {
+      req.session.error = 'Invalid code.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (new Date(session.codeExpiresAt).getTime() < Date.now()) {
+      req.session.error = 'Code expired. Ask the teacher to generate a new one.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    // Start session
+    if (!session.actualStartAt) {
+      await session.update({ actualStartAt: new Date(), status: 'in_progress' });
+    }
+    req.session.success = 'Session started.';
+    res.redirect(`/sessions/${id}`);
+  } catch (error) {
+    console.error('Verify code error:', error);
+    req.session.error = 'Error verifying code.';
+    res.redirect('/sessions');
+  }
+});
+
 // Complete session
 router.post('/:id/complete', async (req, res) => {
   try {
@@ -127,8 +200,8 @@ router.post('/:id/complete', async (req, res) => {
 
     try {
       // Compute duration in hours
-      const start = new Date(session.startAt);
-      const end = new Date(session.endAt);
+      const start = session.actualStartAt ? new Date(session.actualStartAt) : new Date(session.startAt);
+      const end = session.actualEndAt ? new Date(session.actualEndAt) : new Date(session.endAt);
       const durationHours = Math.max(0, (end - start) / (1000 * 60 * 60));
       // Average rating if exists (from both sides)
       const ratings = await Rating.findAll({ where: { sessionId: session.id } });
@@ -155,6 +228,59 @@ router.post('/:id/complete', async (req, res) => {
   } catch (error) {
     console.error('Complete session error:', error);
     req.session.error = 'Error completing session.';
+    res.redirect('/sessions');
+  }
+});
+
+// End session (teacher ends; records actual_end_at)
+router.post('/:id/end', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await LearningSession.findByPk(id);
+    if (!session) {
+      req.session.error = 'Session not found.';
+      return res.redirect('/sessions');
+    }
+    if (session.teacherId !== req.user.id) {
+      req.session.error = 'Only the teacher can end the session.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    if (session.status !== 'in_progress') {
+      req.session.error = 'Session is not in progress.';
+      return res.redirect(`/sessions/${id}`);
+    }
+    // record actual end time and finalize the session
+    await session.update({ actualEndAt: new Date(), status: 'completed' });
+
+    // finalize progress and compute points (same logic as complete handler)
+    try {
+      const updated = await LearningSession.findByPk(id); // reload to get actualStartAt/End
+      const start = updated.actualStartAt ? new Date(updated.actualStartAt) : new Date(updated.startAt);
+      const end = updated.actualEndAt ? new Date(updated.actualEndAt) : new Date(updated.endAt);
+      const durationHours = Math.max(0, (end - start) / (1000 * 60 * 60));
+      const ratings = await Rating.findAll({ where: { sessionId: updated.id } });
+      let avg = 0;
+      if (ratings.length) {
+        const totals = ratings.map(r => (r.communication + r.skill + r.attitude + r.punctuality) / 4);
+        avg = totals.reduce((a,b)=>a+b,0) / totals.length;
+      }
+      const basePoints = Math.round(durationHours * 10);
+      const ratingBonus = Math.round(avg * 2);
+      const points = Math.max(1, basePoints + ratingBonus);
+
+      await UserProgress.bulkCreate([
+        { userId: updated.studentId, sessionId: updated.id, type: 'learn', points },
+        { userId: updated.teacherId, sessionId: updated.id, type: 'teach', points }
+      ]);
+    } catch (e) {
+      console.error('Progress write error on end:', e);
+    }
+
+    req.session.success = 'Session ended and completed successfully.';
+    return res.redirect(`/sessions/${id}`);
+  } catch (error) {
+    console.error('End session error:', error);
+    req.session.error = 'Error ending session.';
     res.redirect('/sessions');
   }
 });
@@ -201,6 +327,7 @@ router.get('/:id', async (req, res) => {
       include: [
         { model: User, as: 'teacher', attributes: ['id','name','whatsapp_number'] },
         { model: User, as: 'student', attributes: ['id','name','whatsapp_number'] },
+        { model: Skill, attributes: ['id','name'] }
       ],
     });
 

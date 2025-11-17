@@ -5,6 +5,7 @@
   const badge = s => (
     s === 'requested'  ? 'bg-warning text-dark' :
     s === 'confirmed'  ? 'bg-primary' :
+    s === 'in_progress'? 'bg-info text-dark' :
     s === 'completed'  ? 'bg-success' :
     s === 'cancelled'  ? 'bg-secondary' : 'bg-light text-dark'
   );
@@ -14,35 +15,37 @@
   <h1 class="h4 mb-0">My Sessions</h1>
 </div>
 
-<!-- Optional: quick request form (IDs for now) -->
+<!-- Request a Session (manual IDs for now) -->
 <div class="card mb-4">
   <div class="card-body">
     <h2 class="h6 text-muted mb-3">Request a Session</h2>
     <form method="POST" action="/sessions/request" class="row g-2">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <label class="form-label">Teacher ID</label>
-        <input type="number" class="form-control" name="teacherId" required>
+        <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <label class="form-label">Skill ID</label>
-        <input type="number" class="form-control" name="skillId" required>
+        <input type="number" class="form-control" name="skillId" placeholder="e.g. 5" required>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <label class="form-label">Start</label>
         <input type="datetime-local" class="form-control" name="startAt" required>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <label class="form-label">End</label>
         <input type="datetime-local" class="form-control" name="endAt" required>
       </div>
-      <div class="col-12 mt-1">
+      <div class="col-12 mt-1 d-grid d-md-block">
         <button class="btn btn-primary">Request</button>
       </div>
     </form>
-    <div class="form-text mt-2">Later, replace IDs with pickers.</div>
+    <div class="form-text mt-2">
+      Tip: Use Browse to find a teacher and note their ID and skill.
+    </div>
   </div>
-</div>
+  </div>
 
 <div class="row g-4">
   <!-- Teaching -->
@@ -64,7 +67,7 @@
                       <strong><%= s.Skill?.name || 'Skill' %></strong>
                     </div>
                     <div class="small text-muted mt-1">
-                      With learner: <%= s.learner?.name || 'User' %>
+                      With learner: <%= s.student?.name || 'User' %>
                     </div>
                     <div class="small text-muted">
                       <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
@@ -83,13 +86,18 @@
                           <button class="btn btn-outline-danger btn-sm">Cancel</button>
                         </form>
                       <% } else if (s.status === 'confirmed') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/complete" class="d-inline">
+                        <form method="POST" action="/sessions/<%= s.id %>/generate-code" class="d-inline">
                           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-success btn-sm">Complete</button>
+                          <button class="btn btn-primary btn-sm">Generate Code</button>
                         </form>
                         <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
                           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                           <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                        </form>
+                      <% } else if (s.status === 'in_progress') { %>
+                        <form method="POST" action="/sessions/<%= s.id %>/end" class="d-inline">
+                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                          <button class="btn btn-success btn-sm">End Session</button>
                         </form>
                       <% } %>
                     </div>
@@ -137,14 +145,13 @@
                           <button class="btn btn-outline-danger btn-sm">Cancel</button>
                         </form>
                       <% } else if (s.status === 'confirmed') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/complete" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-success btn-sm">Complete</button>
-                        </form>
+                        <!-- Enter code on session detail page -->
                         <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
                           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                           <button class="btn btn-outline-danger btn-sm">Cancel</button>
                         </form>
+                      <% } else if (s.status === 'in_progress') { %>
+                        <span class="badge bg-info text-dark">In progress</span>
                       <% } %>
                     </div>
                   </div>

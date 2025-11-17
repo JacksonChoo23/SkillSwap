@@ -61,6 +61,10 @@ const schemas = {
     endAt: Joi.date().greater(Joi.ref('startAt')).required()
   }),
   
+  sessionCode: Joi.object({
+    code: Joi.string().pattern(/^\d{3,6}$/).required()
+  }),
+  
   rating: Joi.object({
     rateeId: Joi.number().integer().positive().required(),
     communication: Joi.number().integer().min(1).max(5).required(),
