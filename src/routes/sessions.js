@@ -1,5 +1,5 @@
 const express = require('express');
-const { LearningSession, User, Skill, Rating, UserProgress } = require('../models');
+const { LearningSession, User, Skill, Rating, UserProgress, Notification } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -49,15 +49,33 @@ router.post('/request', validate(schemas.session), async (req, res) => {
       return res.redirect(req.get('Referrer') || '/sessions');
     }
 
+    const skill = await Skill.findByPk(skillId, { attributes: ['id', 'name'] });
+
     // Create session
     await LearningSession.create({
-      teacherId: parseInt(teacherId),
+      teacherId: parseInt(teacherId, 10),
       studentId: req.user.id,
-      skillId: parseInt(skillId),
+      skillId: parseInt(skillId, 10),
       startAt: new Date(startAt),
       endAt: new Date(endAt),
       status: 'requested'
     });
+
+    try {
+      const requesterName = req.user?.name || 'A SkillSwap member';
+      const skillName = skill?.name || 'their skill';
+      const timeText = startAt
+        ? new Date(startAt).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' })
+        : 'a proposed time';
+
+      await Notification.create({
+        user_id: teacher.id,
+        title: 'New teaching request',
+        message: `${requesterName} requested a session for ${skillName} on ${timeText}.`
+      });
+    } catch (notificationError) {
+      console.error('Failed to create notification for teaching request:', notificationError);
+    }
 
     req.session.success = 'Session request sent successfully.';
     res.redirect('/sessions');

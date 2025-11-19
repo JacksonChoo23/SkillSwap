@@ -311,7 +311,10 @@
 
   async function loadUserNotifications() {
     try {
-        const response = await fetch('/listings/api/notifications');
+      const response = await fetch('/listings/api/notifications', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       const data = await response.json();
 
       const list = document.getElementById('userNotificationList');
@@ -345,7 +348,11 @@
 
   async function markUserNotificationAsRead(id) {
     try {
-        await fetch(`/listings/api/notifications/${id}/read`, { method: 'POST' });
+      await fetch(`/listings/api/notifications/${id}/read`, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }

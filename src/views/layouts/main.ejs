@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
@@ -109,7 +109,7 @@
     <% }); %>
 
     <!-- Main Content -->
-    <main class="container my-4">
+    <main class="container my-4 flex-grow-1 w-100">
         <%- body %>
         <% if (isAuthenticated) { %>
           <%- include('../partials/tip_modal') %>
@@ -119,7 +119,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-light py-4 mt-5">
+    <footer class="bg-light py-4 border-top mt-auto w-100">
         <div class="container">
             <div class="row">
                 <div class="col-md-6">

@@ -24,7 +24,7 @@ let suggestModel = null;
 
 if (modelsAvailable) {
   baseModel = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     systemInstruction: `
 Output ONLY valid JSON. No fences. No prose.
 Schema:
@@ -48,7 +48,7 @@ Rules:
   });
 
   suggestModel = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
+    model: "gemini-2.0-flash",
     systemInstruction: `
 You are an AI assistant helping users create skill exchange listings. Based on their profile skills, generate helpful suggestions.
 

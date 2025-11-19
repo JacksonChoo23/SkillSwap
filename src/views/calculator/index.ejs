@@ -13,117 +13,193 @@ const valHoursA  = prev.hoursA  != null ? prev.hoursA  : 1;
 const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
 %>
 
-<h1 class="h4 mb-3">Skill Value Calculator</h1>
+<div class="bg-primary text-white p-4 p-md-5 rounded-4 shadow-sm mb-4">
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between">
+    <div>
+      <p class="text-white-50 mb-0">Balance time fairly between two SkillSwap partners by comparing their skills, levels, and coaching hours.</p>
+    </div>
+    <div class="mt-3 mt-md-0 text-md-end">
+      <span class="badge text-bg-light text-primary fw-semibold">Beta tool</span>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2 mt-3 small">
+    <span class="badge bg-white text-primary">1. Pick two skills</span>
+    <span class="badge bg-white text-primary">2. Set levels & hours</span>
+    <span class="badge bg-white text-primary">3. Review the fair swap</span>
+  </div>
+</div>
 
-<form class="row g-3" method="POST" action="/calculator/calculate">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+<div class="row g-4 align-items-start">
+  <div class="col-lg-8">
+    <div class="card shadow-sm border-0 h-100">
+      <div class="card-header bg-white border-0 pb-0">
+        <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+          <i class="fas fa-scale-balanced text-primary"></i>
+          Skill Value Calculator
+        </h1>
+        <p class="text-muted small mb-3">Fill in both parties to estimate a balanced exchange rate.</p>
+      </div>
+      <div class="card-body">
+        <form class="row g-4" method="POST" action="/calculator/calculate">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-  <!-- Party A -->
-  <div class="col-12">
-    <h2 class="h6 mb-2">Party A</h2>
-  </div>
-  <div class="col-md-6">
-    <label class="form-label">Skill A</label>
-    <select class="form-select" name="skillAId" required>
-      <option value="">Select a skill</option>
-      <% _skills.forEach(s => { %>
-        <option value="<%= s.id %>" <%= (valSkillAId===String(s.id) ? 'selected' : '') %>>
-          <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
-        </option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label class="form-label">Level A</label>
-    <select class="form-select" name="levelA" required>
-      <option value="beginner"     <%= (valLevelA==='beginner'     ? 'selected' : '') %>>beginner</option>
-      <option value="intermediate" <%= (valLevelA==='intermediate' ? 'selected' : '') %>>intermediate</option>
-      <option value="advanced"     <%= (valLevelA==='advanced'     ? 'selected' : '') %>>advanced</option>
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label class="form-label">Hours A</label>
-    <input class="form-control" type="number" name="hoursA" min="0.5" step="0.5" value="<%= valHoursA %>" required>
+          <div class="col-12">
+            <div class="border rounded-4 p-3 p-md-4 bg-light">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge text-bg-success">Party A</span>
+                <span class="text-muted small">Coach who provides skill A</span>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Skill</label>
+                  <select class="form-select" name="skillAId" required>
+                    <option value="">Select a skill</option>
+                    <% _skills.forEach(s => { %>
+                      <option value="<%= s.id %>" <%= (valSkillAId===String(s.id) ? 'selected' : '') %>>
+                        <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
+                      </option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Level</label>
+                  <select class="form-select" name="levelA" required>
+                    <option value="beginner"     <%= (valLevelA==='beginner'     ? 'selected' : '') %>>Beginner</option>
+                    <option value="intermediate" <%= (valLevelA==='intermediate' ? 'selected' : '') %>>Intermediate</option>
+                    <option value="advanced"     <%= (valLevelA==='advanced'     ? 'selected' : '') %>>Advanced</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Hours offered</label>
+                  <input class="form-control" type="number" name="hoursA" min="0.5" step="0.5" value="<%= valHoursA %>" required>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="border rounded-4 p-3 p-md-4 bg-light">
+              <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge text-bg-info">Party B</span>
+                <span class="text-muted small">Partner who provides skill B</span>
+              </div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Skill</label>
+                  <select class="form-select" name="skillBId" required>
+                    <option value="">Select a skill</option>
+                    <% _skills.forEach(s => { %>
+                      <option value="<%= s.id %>" <%= (valSkillBId===String(s.id) ? 'selected' : '') %>>
+                        <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
+                      </option>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Level</label>
+                  <select class="form-select" name="levelB" required>
+                    <option value="beginner"     <%= (valLevelB==='beginner'     ? 'selected' : '') %>>Beginner</option>
+                    <option value="intermediate" <%= (valLevelB==='intermediate' ? 'selected' : '') %>>Intermediate</option>
+                    <option value="advanced"     <%= (valLevelB==='advanced'     ? 'selected' : '') %>>Advanced</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Hours offered</label>
+                  <input class="form-control" type="number" name="hoursB" min="0.5" step="0.5" value="<%= valHoursB %>" required>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 d-grid d-md-flex gap-2">
+            <button class="btn btn-primary flex-fill" type="submit">
+              <i class="fas fa-calculator me-1"></i> Calculate Fair Exchange
+            </button>
+            <a href="/browse" class="btn btn-outline-secondary">
+              <i class="fas fa-compass me-1"></i> Explore Skills
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <!-- Party B -->
-  <div class="col-12 pt-2">
-    <h2 class="h6 mb-2">Party B</h2>
-  </div>
-  <div class="col-md-6">
-    <label class="form-label">Skill B</label>
-    <select class="form-select" name="skillBId" required>
-      <option value="">Select a skill</option>
-      <% _skills.forEach(s => { %>
-        <option value="<%= s.id %>" <%= (valSkillBId===String(s.id) ? 'selected' : '') %>>
-          <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
-        </option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label class="form-label">Level B</label>
-    <select class="form-select" name="levelB" required>
-      <option value="beginner"     <%= (valLevelB==='beginner'     ? 'selected' : '') %>>beginner</option>
-      <option value="intermediate" <%= (valLevelB==='intermediate' ? 'selected' : '') %>>intermediate</option>
-      <option value="advanced"     <%= (valLevelB==='advanced'     ? 'selected' : '') %>>advanced</option>
-    </select>
-  </div>
-  <div class="col-md-3">
-    <label class="form-label">Hours B</label>
-    <input class="form-control" type="number" name="hoursB" min="0.5" step="0.5" value="<%= valHoursB %>" required>
-  </div>
-
-  <div class="col-12">
-    <button class="btn btn-primary" type="submit">Calculate</button>
-  </div>
-</form>
-
-<% if (_result) { %>
-  <hr class="my-4">
-  <h2 class="h6">Result</h2>
-
-  <div class="row g-3">
+  <div class="col-lg-4">
     <%
-      const fx = (_result.fair || _result.exchange || null);
-      const msg = _result.message || null;
+      const fx = (_result && (_result.fair || _result.exchange)) || null;
+      const msg = _result ? (_result.message || null) : null;
     %>
-    <% if (msg) { %>
-      <div class="col-12">
-        <div class="alert alert-info"><%= msg %></div>
+
+    <% if (_result) { %>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white border-0">
+          <h2 class="h6 mb-0 d-flex align-items-center gap-2">
+            <i class="fas fa-chart-pie text-primary"></i>
+            Latest calculation
+          </h2>
+        </div>
+        <div class="card-body">
+          <% if (msg) { %>
+            <div class="alert alert-info small"><%= msg %></div>
+          <% } %>
+
+          <% if (fx && (fx.hoursA || fx.hoursB || fx.rate)) { %>
+            <div class="row g-3 text-center mb-3">
+              <div class="col-6">
+                <div class="border rounded-3 p-3">
+                  <div class="text-muted small">Hours for A</div>
+                  <div class="fs-4 fw-semibold"><%= fx.hoursA != null ? fx.hoursA : '-' %></div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="border rounded-3 p-3">
+                  <div class="text-muted small">Hours for B</div>
+                  <div class="fs-4 fw-semibold"><%= fx.hoursB != null ? fx.hoursB : '-' %></div>
+                </div>
+              </div>
+            </div>
+            <div class="text-center text-muted small">Rate (A → B): <strong><%= fx.rate != null ? fx.rate : '-' %></strong></div>
+          <% } else { %>
+            <p class="text-muted mb-0">Run a calculation to see a suggested split.</p>
+          <% } %>
+        </div>
+
+        <% if (_result && _result.suggestion) { %>
+          <div class="card-footer bg-light">
+            <p class="small text-muted mb-1">Exchange suggestion</p>
+            <p class="mb-0"><%= _result.suggestion %></p>
+          </div>
+        <% } %>
+      </div>
+    <% } else { %>
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+          <h2 class="h6 d-flex align-items-center gap-2">
+            <i class="fas fa-lightbulb text-warning"></i>
+            Quick tips
+          </h2>
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item px-0">Pair skills within the same category for smoother swaps.</li>
+            <li class="list-group-item px-0">Try adjusting hours to see how the ratio reacts.</li>
+            <li class="list-group-item px-0">Use the calculator again after each coaching session.</li>
+          </ul>
+        </div>
       </div>
     <% } %>
 
-    <% if (fx && (fx.hoursA || fx.hoursB || fx.rate)) { %>
-      <div class="col-md-6">
-        <div class="card">
-          <div class="card-body">
-            <div class="mb-1">Suggested exchange:</div>
-            <div>A: <strong><%= fx.hoursA != null ? fx.hoursA : '-' %></strong> hours</div>
-            <div>B: <strong><%= fx.hoursB != null ? fx.hoursB : '-' %></strong> hours</div>
-            <div class="mt-2 small text-muted">rate: <%= fx.rate != null ? fx.rate : '-' %></div>
+    <% if (_categories.length) { %>
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-0">
+          <h2 class="h6 mb-0">Popular categories</h2>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2">
+            <% _categories.forEach(c => { %>
+              <span class="badge bg-light text-dark border"><%= c.name %></span>
+            <% }) %>
           </div>
         </div>
       </div>
     <% } %>
-
-    <% if (_result && _result.suggestion) { %>
-      <div class="card mt-4">
-        <div class="card-body">
-          <h5 class="card-title">Exchange Suggestion</h5>
-          <p class="card-text"><%= _result.suggestion %></p>
-        </div>
-      </div>
-    <% } %>
   </div>
-<% } %>
-
-<% if (_categories.length) { %>
-  <hr class="my-4">
-  <h2 class="h6">Available categories</h2>
-  <ul class="list-inline">
-    <% _categories.forEach(c => { %>
-      <li class="list-inline-item badge bg-light text-dark border"><%= c.name %></li>
-    <% }) %>
-  </ul>
-<% } %>
+</div>

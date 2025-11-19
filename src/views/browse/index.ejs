@@ -70,7 +70,11 @@
                 <ul class="list-unstyled mb-0">
                   <% u.userSkills.slice(0, 5).forEach(us => { %>
                     <li class="mb-1">
-                      <span class="badge bg-secondary"><%= us.type %></span>
+                      <% if (us.type === 'teach') { %>
+                        <span class="badge bg-success">Teaching</span>
+                      <% } else if (us.type === 'learn') { %>
+                        <span class="badge bg-primary">Learning</span>
+                      <% } %>
                       <span class="ms-1"><%= us.Skill ? us.Skill.name : '' %></span>
                       <% if (us.level) { %><span class="text-muted ms-1">(<%= us.level %>)</span><% } %>
                       <% if (us.Skill && us.Skill.Category && us.Skill.Category.name) { %>
@@ -107,6 +111,8 @@
             <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>" data-user-name="<%= u.name %>">Tip</button>
             <% if (u.whatsapp_number || u.whatsappNumber) { %>
               <a class="btn btn-sm btn-success" rel="noopener" href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>" target="_blank">WhatsApp</a>
+            <% } else if (u.email) { %>
+              <a class="btn btn-sm btn-outline-primary" href="mailto:<%= u.email %>?subject=SkillSwap MY Inquiry">Email</a>
             <% } %>
             <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
           </div>

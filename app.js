@@ -215,7 +215,10 @@ app.use((req, res) => {
   res.status(404).render('error', {
     title: 'Page Not Found',
     message: 'The page you are looking for does not exist.',
-    error: { status: 404 }
+    error: { status: 404 },
+    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+    user: req.user || null,
+    isAdmin: !!(req.user && req.user.role === 'admin')
   });
 });
 
@@ -231,14 +234,20 @@ app.use((err, req, res, next) => {
     return res.status(403).render('error', {
       title: 'CSRF Error',
       message: 'Form submission failed. Please try again.',
-      error: { status: 403 }
+      error: { status: 403 },
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      user: req.user || null,
+      isAdmin: !!(req.user && req.user.role === 'admin')
     });
   }
 
   res.status(err.status || 500).render('error', {
     title: 'Server Error',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong.',
-    error: process.env.NODE_ENV === 'development' ? err : {}
+    error: process.env.NODE_ENV === 'development' ? err : {},
+    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+    user: req.user || null,
+    isAdmin: !!(req.user && req.user.role === 'admin')
   });
 });
 

@@ -56,7 +56,8 @@ const files = [
   'CalculatorWeight.js',
   'Category.js',
   'UserProgress.js',
-  'ContactHistory.js'
+  'ContactHistory.js',
+  'SavedSuggestion.js'
 ];
 
 // 加载并规范化
@@ -67,11 +68,11 @@ for (const f of files) {
   db[model.name] = model;
 }
 
-// 这里做关联——沿用你原来的写法（现在是“全是模型实例”，不会再把工厂/类误传进来）
+// 这里做关联——沿用你原来的写法（现在是"全是模型实例"，不会再把工厂/类误传进来）
 const {
   User, Skill, UserSkill, Availability, Listing, MessageThread, Message,
   LearningSession, Rating, Report, TipToken, Notification, CalculatorWeight, Category,
-  UserProgress, ContactHistory
+  UserProgress, ContactHistory, SavedSuggestion
 } = db;
 
 // User <-> UserSkill
@@ -159,6 +160,10 @@ User.hasMany(ContactHistory, { as: 'outgoingContacts', foreignKey: { name: 'user
 User.hasMany(ContactHistory, { as: 'incomingContacts', foreignKey: { name: 'peer_user_id', field: 'peer_user_id' } });
 ContactHistory.belongsTo(User, { as: 'actor', foreignKey: { name: 'user_id',      field: 'user_id' } });
 ContactHistory.belongsTo(User, { as: 'peer',  foreignKey: { name: 'peer_user_id', field: 'peer_user_id' } });
+
+// SavedSuggestion
+User.hasMany(SavedSuggestion, { foreignKey: 'user_id', as: 'savedSuggestions' });
+SavedSuggestion.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 module.exports = {
   sequelize,

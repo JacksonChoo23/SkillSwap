@@ -90,9 +90,6 @@
 
   <div class="col-12 d-grid gap-2 d-md-flex">
     <button class="btn btn-primary w-100 w-md-auto" type="submit"><i class="fas fa-check me-1"></i>Submit</button>
-    <button class="btn btn-outline-info w-100 w-md-auto" type="button" onclick="togglePreview()">
-      <i class="fas fa-eye me-1"></i>Preview Listing
-    </button>
     <a class="btn btn-outline-secondary w-100 w-md-auto" href="/listings"><i class="fas fa-arrow-left me-1"></i>Cancel</a>
   </div>
 
@@ -313,20 +310,17 @@
 
 <script>
 // Global variables for skills data
-let teachSkillsData = {};
-let learnSkillsData = {};
+const teachSkillsData = JSON.parse(String.raw`<%- JSON.stringify(
+  Array.isArray(teachSkills)
+    ? Object.fromEntries(teachSkills.map(skill => [String(skill.id), skill.name]))
+    : {}
+) %>`);
 
-// Initialize skills data (server-provided arrays)
-<% if (Array.isArray(teachSkills)) { %>
-  <% teachSkills.forEach(skill => { %>
-    teachSkillsData['<%= skill.id %>'] = '<%= skill.name %>';
-  <% }); %>
-<% } %>
-<% if (Array.isArray(learnSkills)) { %>
-  <% learnSkills.forEach(skill => { %>
-    learnSkillsData['<%= skill.id %>'] = '<%= skill.name %>';
-  <% }); %>
-<% } %>
+const learnSkillsData = JSON.parse(String.raw`<%- JSON.stringify(
+  Array.isArray(learnSkills)
+    ? Object.fromEntries(learnSkills.map(skill => [String(skill.id), skill.name]))
+    : {}
+) %>`);
 
 // Preview functionality
 function togglePreview() {

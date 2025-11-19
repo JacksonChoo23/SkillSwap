@@ -1,5 +1,5 @@
 const express = require('express');
-const { Listing, User, Skill, UserSkill } = require('../models');
+const { Listing, User, Skill, UserSkill, SavedSuggestion } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const { isAuthenticated } = require('../middlewares/auth');
 const { checkAdultAndToxicContent, generateListingSuggestions } = require('../../utils/geminiModeration');
@@ -119,6 +119,8 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
 
     const userId = req.user?.id || req.session?.user?.id;
     const listingType = req.query.type || 'teach'; // 'teach' or 'learn'
+    const teachSkillId = req.query.teach_skill_id;
+    const learnSkillId = req.query.learn_skill_id;
     
     if (!userId) {
       return res.json({ error: 'User not authenticated' });
@@ -129,11 +131,41 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
       attributes: ['id', 'name', 'location']
     });
     
-    // Fetch user's skills
-    const userSkills = await UserSkill.findAll({
-      where: { userId },
-      include: [{ model: Skill, attributes: ['id', 'name'] }]
-    });
+    // Build skills array based on selected skill IDs from form
+    const userSkills = [];
+    
+    if (teachSkillId) {
+      const teachSkill = await Skill.findByPk(teachSkillId, {
+        attributes: ['id', 'name']
+      });
+      if (teachSkill) {
+        userSkills.push({
+          type: 'teach',
+          Skill: teachSkill
+        });
+      }
+    }
+    
+    if (learnSkillId) {
+      const learnSkill = await Skill.findByPk(learnSkillId, {
+        attributes: ['id', 'name']
+      });
+      if (learnSkill) {
+        userSkills.push({
+          type: 'learn',
+          Skill: learnSkill
+        });
+      }
+    }
+    
+    // If no skills selected, fall back to user's profile skills
+    if (userSkills.length === 0) {
+      const profileSkills = await UserSkill.findAll({
+        where: { userId },
+        include: [{ model: Skill, attributes: ['id', 'name'] }]
+      });
+      userSkills.push(...profileSkills);
+    }
     
     // Generate AI suggestions with user context
     const result = await generateListingSuggestions(userSkills, listingType, { user });
@@ -426,7 +458,6 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
 // Save AI suggestion
 router.post('/save-suggestion', isAuthenticated, async (req, res) => {
   try {
-    const { SavedSuggestion } = require('../models');
     const userId = req.user?.id || req.session?.user?.id;
     const { title, description, suggestion_type, skill_category, notes } = req.body;
 
@@ -457,7 +488,6 @@ router.post('/save-suggestion', isAuthenticated, async (req, res) => {
 // Get saved suggestions
 router.get('/saved-suggestions', isAuthenticated, async (req, res) => {
   try {
-    const { SavedSuggestion } = require('../models');
     const userId = req.user?.id || req.session?.user?.id;
     const { type, favorites_only } = req.query;
 
@@ -485,7 +515,6 @@ router.get('/saved-suggestions', isAuthenticated, async (req, res) => {
 // Toggle favorite status
 router.patch('/saved-suggestions/:id/favorite', isAuthenticated, async (req, res) => {
   try {
-    const { SavedSuggestion } = require('../models');
     const userId = req.user?.id || req.session?.user?.id;
     const { id } = req.params;
 
@@ -513,7 +542,6 @@ router.patch('/saved-suggestions/:id/favorite', isAuthenticated, async (req, res
 // Delete saved suggestion
 router.delete('/saved-suggestions/:id', isAuthenticated, async (req, res) => {
   try {
-    const { SavedSuggestion } = require('../models');
     const userId = req.user?.id || req.session?.user?.id;
     const { id } = req.params;
 
@@ -551,6 +579,12 @@ router.get('/api/notifications', isAuthenticated, async (req, res) => {
     const notifications = await Notification.findAll({
       where: { user_id: userId },
       order: [['status', 'ASC'], ['created_at', 'DESC']]
+    });
+
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     });
 
     res.json({ notifications });

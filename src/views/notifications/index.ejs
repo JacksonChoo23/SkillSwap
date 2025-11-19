@@ -47,7 +47,10 @@
   const csrfToken = '<%= csrfToken %>';
 
   async function fetchNotifications() {
-    const res = await fetch('/listings/api/notifications');
+    const res = await fetch('/listings/api/notifications', {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache' }
+    });
     if (!res.ok) throw new Error('Failed to fetch notifications');
     const data = await res.json();
     return data.notifications || [];
@@ -56,7 +59,11 @@
   async function markRead(id) {
     await fetch(`/listings/api/notifications/${id}/read`, {
       method: 'POST',
-      headers: { 'CSRF-Token': csrfToken }
+      cache: 'no-store',
+      headers: {
+        'CSRF-Token': csrfToken,
+        'Cache-Control': 'no-cache'
+      }
     });
   }
 
