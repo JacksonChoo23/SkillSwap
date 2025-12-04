@@ -1,25 +1,46 @@
 const express = require('express');
 const router = express.Router();
-const checkToxicity = require('../../utils/checkToxicity');
-const { Skill } = require('../models');
+const { checkAdultAndToxicContent } = require('../../utils/geminiModeration');
+const { Skill, Category } = require('../models');
 
 router.post('/add', async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const { name, categoryId } = req.body;
 
-    // Check for toxicity
-    const moderationResult = await checkToxicity(description);
-
-    if (moderationResult.toxic) {
-      const labels = moderationResult.details.map((d) => d.label).join(', ');
-      return res.status(400).send(`Your description contains: ${labels}`);
+    if (!name || !categoryId) {
+      return res.status(400).send('Name and Category ID are required.');
     }
 
-    // Save the skill if not toxic
-    await Skill.create({ title, description });
+    // Validate Category
+    const category = await Category.findByPk(categoryId);
+    if (!category) {
+      return res.status(400).send('Invalid Category ID.');
+    }
+
+    // Check for toxicity in name
+    try {
+      const moderationResult = await checkAdultAndToxicContent(name);
+
+      if (moderationResult.isToxic || moderationResult.isAdult) {
+        const reasons = moderationResult.reasons ? moderationResult.reasons.join(', ') : 'Inappropriate content';
+        return res.status(400).send(`Skill name flagged: ${reasons}`);
+      }
+    } catch (modError) {
+      console.warn('Moderation check failed, proceeding with caution:', modError);
+    }
+
+    // Save the skill
+    await Skill.create({
+      name: name,
+      categoryId: categoryId
+    });
+
     res.status(201).send('Skill added successfully');
   } catch (error) {
     console.error('Error adding skill:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).send('Skill already exists.');
+    }
     res.status(500).send('Internal server error');
   }
 });

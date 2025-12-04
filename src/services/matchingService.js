@@ -26,13 +26,42 @@ class MatchingService {
       const teachSkills = user.userSkills.filter(us => us.type === 'teach').map(us => us.skillId);
       const learnSkills = user.userSkills.filter(us => us.type === 'learn').map(us => us.skillId);
 
-      // Find potential matches
-      const potentialMatches = await User.findAll({
+      // Optimization: Filter candidates at the database level
+      // We only want users who:
+      // 1. Learn what I teach (their 'learn' skills include my 'teach' skills)
+      // OR
+      // 2. Teach what I learn (their 'teach' skills include my 'learn' skills)
+
+      const matchingUserIds = (await User.findAll({
+        attributes: ['id'],
         where: {
           id: { [Op.ne]: userId },
           isPublic: true,
           role: 'user'
         },
+        include: [{
+          model: UserSkill,
+          as: 'userSkills',
+          required: true,
+          where: {
+            [Op.or]: [
+              { type: 'learn', skillId: { [Op.in]: teachSkills.length ? teachSkills : [-1] } },
+              { type: 'teach', skillId: { [Op.in]: learnSkills.length ? learnSkills : [-1] } }
+            ]
+          }
+        }]
+      })).map(u => u.id);
+
+      // Remove duplicates
+      const uniqueMatchingIds = [...new Set(matchingUserIds)];
+
+      if (uniqueMatchingIds.length === 0) {
+        return [];
+      }
+
+      // Fetch full details for scoring
+      const candidates = await User.findAll({
+        where: { id: { [Op.in]: uniqueMatchingIds } },
         include: [
           {
             model: UserSkill,
@@ -48,7 +77,7 @@ class MatchingService {
 
       const matches = [];
 
-      for (const match of potentialMatches) {
+      for (const match of candidates) {
         const matchTeachSkills = match.userSkills.filter(us => us.type === 'teach').map(us => us.skillId);
         const matchLearnSkills = match.userSkills.filter(us => us.type === 'learn').map(us => us.skillId);
 
@@ -100,7 +129,7 @@ class MatchingService {
       for (const matchAvail of matchAvailabilities) {
         if (userAvail.dayOfWeek === matchAvail.dayOfWeek) {
           totalPossibleOverlaps++;
-          
+
           // Check if time slots overlap
           const userStart = userAvail.startTime;
           const userEnd = userAvail.endTime;
@@ -118,4 +147,4 @@ class MatchingService {
   }
 }
 
-module.exports = new MatchingService(); 
+module.exports = new MatchingService();

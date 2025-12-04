@@ -1,12 +1,39 @@
 const express = require('express');
 const { User, UserSkill, Availability, Skill, Category, UserProgress } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
+const multer = require('multer');
+const path = require('path');
+
+// Configure Multer for avatar uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/uploads/avatars');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif|webp/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files are allowed!'));
+  }
+});
 
 const router = express.Router();
 // Export progress CSV
 router.get('/progress/export', async (req, res) => {
   try {
-    const rows = await UserProgress.findAll({ where: { userId: req.user.id }, order: [['createdAt','DESC']] });
+    const rows = await UserProgress.findAll({ where: { userId: req.user.id }, order: [['createdAt', 'DESC']] });
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename="progress.csv"');
     const header = 'date,type,sessionId,points\n';
@@ -54,8 +81,8 @@ router.get('/', async (req, res) => {
     // Compute progress summary and badges
     const progress = await UserProgress.findAll({ where: { userId: req.user.id } });
     const totalPoints = progress.reduce((sum, p) => sum + (p.points || 0), 0);
-    const learnPoints = progress.filter(p => p.type === 'learn').reduce((s,p)=>s+p.points,0);
-    const teachPoints = progress.filter(p => p.type === 'teach').reduce((s,p)=>s+p.points,0);
+    const learnPoints = progress.filter(p => p.type === 'learn').reduce((s, p) => s + p.points, 0);
+    const teachPoints = progress.filter(p => p.type === 'teach').reduce((s, p) => s + p.points, 0);
     const badges = [];
     // thresholds
     if (totalPoints >= 50) badges.push({ label: 'Rising Star', class: 'bg-info text-dark' });
@@ -79,17 +106,23 @@ router.get('/', async (req, res) => {
 });
 
 // Update profile
-router.post('/update', validate(schemas.profile), async (req, res) => {
+router.post('/update', upload.single('profileImage'), async (req, res) => {
   try {
     const { name, bio, location, isPublic, whatsappNumber } = req.body;
-    
-    await req.user.update({
+
+    const updateData = {
       name,
       bio: bio || '',
       location: location || '',
       whatsappNumber: whatsappNumber || null,
       isPublic: isPublic === 'true'
-    });
+    };
+
+    if (req.file) {
+      updateData.profileImage = '/uploads/avatars/' + req.file.filename;
+    }
+
+    await req.user.update(updateData);
 
     req.session.success = 'Profile updated successfully.';
     res.redirect('/profile');
@@ -139,7 +172,7 @@ router.post('/skills', async (req, res) => {
 router.delete('/skills/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const userSkill = await UserSkill.findOne({
       where: {
         id,
@@ -195,7 +228,7 @@ router.post('/availability', async (req, res) => {
 router.delete('/availability/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const availability = await Availability.findOne({
       where: {
         id,
@@ -231,4 +264,4 @@ router.post('/privacy', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

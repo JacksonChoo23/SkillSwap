@@ -44,6 +44,13 @@ const User = sequelize.define('User', {
     validate: { is: /^\+[1-9]\d{1,14}$/ } // E.164；不想严格可以去掉
   },
 
+  // DB: profile_image
+  profileImage: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'profile_image'
+  },
+
   // DB: is_public
   isPublic: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_public' },
 
@@ -59,6 +66,19 @@ const User = sequelize.define('User', {
 
   // 忘记密码：DB: reset_token_expiry
   resetTokenExpiry: { type: DataTypes.DATE, allowNull: true, field: 'reset_token_expiry' },
+
+  // Email Verification
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'is_verified'
+  },
+  activationToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'activation_token'
+  },
 
   // 时间戳：DB 用 created_at / updated_at
   createdAt: {
@@ -80,7 +100,7 @@ const User = sequelize.define('User', {
 });
 
 // Define associations
-User.associate = function(models) {
+User.associate = function (models) {
   // User has many saved suggestions
   User.hasMany(models.SavedSuggestion, {
     foreignKey: 'user_id',

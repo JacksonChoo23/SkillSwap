@@ -1,824 +1,304 @@
-<h1 class="h4 mb-3">Create Listing</h1>
-
-<form method="POST" action="/listings/create" class="row g-3 needs-validation" novalidate>
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-  <div class="col-12">
-    <label class="form-label">Title</label>
-    <input
-      class="form-control"
-      name="title"
-      required
-      maxlength="255"
-      value="<%= (form && form.title) || (aiRewrite && aiRewrite.title) || '' %>"
-      placeholder="Your listing title">
-  </div>
-
-  <div class="col-12">
-    <label class="form-label">Description</label>
-    <textarea
-      class="form-control"
-      name="description"
-      rows="6"
-      required
-      placeholder="What do you teach or want to learn? Any details."><%= (form && form.description) || (aiRewrite && aiRewrite.description) || '' %></textarea>
-  </div>
-
-  <!-- Exchange skills card with emphasis toggle in header -->
-  <div class="col-12">
-    <div class="card">
-      <div class="card-header d-flex justify-content-between align-items-center">
-        <span class="fw-semibold"><i class="fas fa-exchange-alt me-2"></i>Skill Exchange</span>
-        <div class="form-check form-switch m-0">
-          <input class="form-check-input" type="checkbox" id="emphasisToggle">
-          <label class="form-check-label small" for="emphasisToggle">Emphasize learning</label>
-        </div>
+<div class="container py-4">
+  <div class="row g-4">
+    <!-- Main Form Column -->
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 fw-bold text-gray-800">Create New Listing</h1>
       </div>
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-6 order-md-1" id="teachSection">
-            <label class="form-label fw-bold text-success">
-              <i class="fas fa-chalkboard-teacher me-1"></i><span id="teachLabel">I will teach</span>
-            </label>
-            <select class="form-select" name="skill_id" required>
-              <option value="">Select a skill you can teach</option>
-              <% if (!Array.isArray(teachSkills) || teachSkills.length === 0) { %>
-                <option value="" disabled>No teaching skills found. Add skills to your profile first.</option>
-              <% } else { %>
-                <% teachSkills.forEach(s => { %>
-                  <option
-                    value="<%= s.id %>"
-                    <%= (form && String(form.skill_id) === String(s.id)) ? 'selected' : '' %>>
-                    <%= s.name %>
-                  </option>
-                <% }) %>
-              <% } %>
-            </select>
-            <div class="form-text">Only skills you marked as "teach" in your profile are shown.</div>
-          </div>
 
-          <div class="col-md-6 order-md-2" id="learnSection">
-            <label class="form-label fw-bold text-primary">
-              <i class="fas fa-graduation-cap me-1"></i><span id="learnLabel">I want to learn</span>
-            </label>
-            <select class="form-select" name="learn_skill_id" required>
-              <option value="">Select a skill you want to learn</option>
-              <% if (Array.isArray(learnSkills) && learnSkills.length > 0) { %>
-                <% learnSkills.forEach(s => { %>
-                  <option
-                    value="<%= s.id %>"
-                    <%= (form && String(form.learn_skill_id) === String(s.id)) ? 'selected' : '' %>>
-                    <%= s.name %>
-                  </option>
-                <% }) %>
-              <% } %>
-            </select>
-            <div class="form-text">Only skills you marked as "learn" in your profile are shown.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+          <form method="POST" action="/listings/create" class="row g-4 needs-validation" novalidate>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-  <div class="col-md-6">
-    <label class="form-label">Visibility</label>
-    <select class="form-select" name="visibility">
-      <option value="public"  <%= (!form || form.visibility === 'public') ? 'selected' : '' %> >Public</option>
-      <option value="private" <%= (form && form.visibility === 'private') ? 'selected' : '' %> >Private</option>
-    </select>
-  </div>
-
-  <div class="col-12 d-grid gap-2 d-md-flex">
-    <button class="btn btn-primary w-100 w-md-auto" type="submit"><i class="fas fa-check me-1"></i>Submit</button>
-    <a class="btn btn-outline-secondary w-100 w-md-auto" href="/listings"><i class="fas fa-arrow-left me-1"></i>Cancel</a>
-  </div>
-
-  <!-- Mobile-only collapsible live preview -->
-  <div class="col-12 d-md-none">
-    <div class="accordion" id="mobilePreviewAccordion">
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="mobilePreviewHeader">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#mobilePreviewCollapse" aria-expanded="false" aria-controls="mobilePreviewCollapse">
-            <i class="fas fa-eye me-2"></i>Live Preview
-          </button>
-        </h2>
-        <div id="mobilePreviewCollapse" class="accordion-collapse collapse" aria-labelledby="mobilePreviewHeader" data-bs-parent="#mobilePreviewAccordion">
-          <div class="accordion-body">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="mb-0" id="mobilePreviewTitle">Your listing title...</h6>
+            <!-- Title -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Listing Title</label>
+              <input class="form-control form-control-lg" name="title" required maxlength="255"
+                value="<%= (form && form.title) || (aiRewrite && aiRewrite.title) || '' %>"
+                placeholder="e.g., I can teach you Advanced Python Programming">
+              <div class="form-text">Be specific and catchy.</div>
             </div>
-            <p class="text-muted mb-2" id="mobilePreviewDescription">Your description...</p>
-            <div class="small text-muted">
-              <span class="badge bg-success me-1">Teaching</span>
-              <span class="badge bg-light text-primary" id="mobilePreviewSkill">Skill</span>
-              <span class="badge bg-primary d-none" id="mobilePreviewLearnSkill"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</form>
 
-<!-- Live Preview Sidebar (visible on md+) -->
-<div class="card mt-4 d-none d-md-block position-sticky" id="quickPreview" style="top: 1rem;">
-  <div class="card-header d-flex justify-content-between align-items-center">
-    <span><i class="fas fa-eye me-2"></i>Live Preview</span>
-  </div>
-  <div class="card-body">
-    <div class="row">
-      <div class="col-md-10">
-        <h6 class="fw-bold" id="quickPreviewTitle">Your listing title...</h6>
-        <p class="text-muted mb-0" id="quickPreviewDescription">Your description...</p>
-      </div>
-      <div class="col-md-2 text-end">
-        <small class="text-muted" id="quickPreviewSkill">Select a skill</small>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Listing Preview Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="previewModalLabel">
-          <i class="fas fa-eye me-2"></i>Listing Preview
-        </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div class="alert alert-info">
-          <i class="fas fa-info-circle me-2"></i>
-          This is how your listing will appear to other users on SkillSwap MY.
-        </div>
-        
-        <!-- Preview Content -->
-        <div class="card border-primary" id="listingPreview">
-          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h6 class="mb-0" id="previewTitle">Your listing title will appear here</h6>
-            <div class="d-flex gap-2 align-items-center" id="previewBadges">
-              <span class="badge bg-success" id="badgeTeachingLabel">Teaching</span>
-              <span class="badge bg-light text-primary" id="previewSkill">Skill</span>
-              <span class="badge bg-primary d-none" id="previewLearnSkill"></span>
+            <!-- Description -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Description</label>
+              <textarea class="form-control" name="description" rows="6" required
+                placeholder="Describe what you are offering and what you hope to learn in return..."><%= (form && form.description) || (aiRewrite && aiRewrite.description) || '' %></textarea>
             </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-8">
-                <h6 class="text-muted mb-2">Description:</h6>
-                <p id="previewDescription" class="mb-3">Your listing description will appear here...</p>
-              </div>
-              <div class="col-md-4">
-                <div class="d-flex flex-column gap-2">
-                  <div>
-                    <span class="badge bg-success" id="previewVisibility">Public</span>
+
+            <!-- Skill Exchange Section -->
+            <div class="col-12">
+              <div class="card bg-light border-0 rounded-3">
+                <div
+                  class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pb-0 pt-3 px-3">
+                  <span class="fw-bold text-dark"><i class="fas fa-exchange-alt me-2 text-primary"></i>Skill
+                    Exchange</span>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="emphasisToggle">
+                    <label class="form-check-label small text-muted" for="emphasisToggle">Emphasize learning</label>
                   </div>
-                  <div class="mt-2">
-                    <small class="text-muted">
-                      <i class="fas fa-user me-1"></i>Posted by You
-                    </small>
+                </div>
+                <div class="card-body p-3">
+                  <div class="row g-3">
+                    <!-- Teach Section -->
+                    <div class="col-md-6 order-md-1" id="teachSection">
+                      <label class="form-label fw-bold text-success small text-uppercase ls-1">
+                        <i class="fas fa-chalkboard-teacher me-1"></i><span id="teachLabel">I Will Teach</span>
+                      </label>
+                      <div class="input-group">
+                        <select class="form-select" name="skill_id" required>
+                          <option value="">Select a skill...</option>
+                          <% if (!Array.isArray(teachSkills) || teachSkills.length===0) { %>
+                            <option value="" disabled>No teaching skills found.</option>
+                            <% } else { %>
+                              <% teachSkills.forEach(s=> { %>
+                                <option value="<%= s.id %>" <%=(form && String(form.skill_id)===String(s.id))
+                                  ? 'selected' : '' %>>
+                                  <%= s.name %>
+                                </option>
+                                <% }) %>
+                                  <% } %>
+                        </select>
+                      </div>
+                      <div class="mt-2 text-end">
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
+                          id="generateTeachSuggestions" onclick="triggerAiSuggestions('teach')" data-bs-toggle="tooltip"
+                          title="Select a skill first to get AI suggestions">
+                          <i class="fas fa-magic me-1"></i>AI Suggestions
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Learn Section -->
+                    <div class="col-md-6 order-md-2" id="learnSection">
+                      <label class="form-label fw-bold text-primary small text-uppercase ls-1">
+                        <i class="fas fa-graduation-cap me-1"></i><span id="learnLabel">I Want to Learn</span>
+                      </label>
+                      <div class="input-group">
+                        <select class="form-select" name="learn_skill_id" required>
+                          <option value="">Select a skill...</option>
+                          <% if (Array.isArray(learnSkills) && learnSkills.length> 0) { %>
+                            <% learnSkills.forEach(s=> { %>
+                              <option value="<%= s.id %>" <%=(form && String(form.learn_skill_id)===String(s.id))
+                                ? 'selected' : '' %>>
+                                <%= s.name %>
+                              </option>
+                              <% }) %>
+                                <% } %>
+                        </select>
+                      </div>
+                      <div class="mt-2 text-end">
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
+                          id="generateLearnSuggestions" onclick="triggerAiSuggestions('learn')" data-bs-toggle="tooltip"
+                          title="Select a skill first to get AI suggestions">
+                          <i class="fas fa-magic me-1"></i>AI Suggestions
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visibility -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Visibility</label>
+              <select class="form-select" name="visibility">
+                <option value="public" <%=(!form || form.visibility==='public' ) ? 'selected' : '' %> >Public (Visible
+                  to everyone)</option>
+                <option value="private" <%=(form && form.visibility==='private' ) ? 'selected' : '' %> >Private (Only
+                  me)</option>
+              </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-12 mt-4">
+              <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <a class="btn btn-light px-4" href="/listings">Cancel</a>
+                <button class="btn btn-primary px-4" type="submit"><i class="fas fa-paper-plane me-2"></i>Publish
+                  Listing</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Mobile Live Preview Accordion -->
+      <div class="d-lg-none mt-4">
+        <div class="accordion shadow-sm rounded-3 overflow-hidden" id="mobilePreviewAccordion">
+          <div class="accordion-item border-0">
+            <h2 class="accordion-header" id="mobilePreviewHeader">
+              <button class="accordion-button collapsed fw-bold bg-white" type="button" data-bs-toggle="collapse"
+                data-bs-target="#mobilePreviewCollapse" aria-expanded="false" aria-controls="mobilePreviewCollapse">
+                <i class="fas fa-eye me-2 text-primary"></i>Live Preview
+              </button>
+            </h2>
+            <div id="mobilePreviewCollapse" class="accordion-collapse collapse" aria-labelledby="mobilePreviewHeader"
+              data-bs-parent="#mobilePreviewAccordion">
+              <div class="accordion-body bg-light">
+                <!-- Mobile Preview Content -->
+                <div class="card border-0 shadow-sm">
+                  <div class="card-body">
+                    <h6 class="fw-bold mb-1" id="mobilePreviewTitle">Your listing title...</h6>
+                    <p class="text-muted small mb-2" id="mobilePreviewDescription">Your description...</p>
+                    <div class="d-flex flex-wrap gap-1">
+                      <span class="badge bg-success">Teaching</span>
+                      <span class="badge bg-light text-dark border" id="mobilePreviewSkill">Skill</span>
+                      <span class="badge bg-primary d-none" id="mobilePreviewLearnSkill"></span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <div class="card-footer bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-              <small class="text-muted">
-                <i class="fas fa-clock me-1"></i>Just now
-              </small>
-              <div>
-                <button class="btn btn-primary btn-sm" disabled>
-                  <i class="fas fa-envelope me-1"></i>Contact
-                </button>
-                <button class="btn btn-outline-secondary btn-sm" disabled>
-                  <i class="fas fa-heart me-1"></i>Save
-                </button>
+        </div>
+      </div>
+
+      <!-- AI Suggestions Container (Client-side rendered) -->
+      <div class="card shadow-sm border-0 rounded-3 mt-4 d-none" id="aiSuggestionsCard">
+        <div class="card-header bg-white border-bottom-0 d-flex justify-content-between align-items-center pt-3 px-3">
+          <span class="fw-bold text-primary"><i class="fas fa-robot me-2"></i>AI Suggestions</span>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary" id="regenerateSuggestions">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-success" id="saveSuggestion">
+              <i class="fas fa-bookmark"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-info" id="loadSavedSuggestions">
+              <i class="fas fa-history"></i>
+            </button>
+          </div>
+        </div>
+        <div class="card-body pt-0" id="suggestionsContent">
+          <!-- Content will be loaded here -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sidebar Column (Preview) -->
+    <div class="col-lg-4 d-none d-lg-block">
+      <div class="sticky-top" style="top: 2rem; z-index: 10;">
+        <h6 class="text-uppercase text-muted fw-bold small ls-1 mb-3">Live Preview</h6>
+
+        <!-- Preview Card -->
+        <div class="card border-0 shadow-sm" id="listingPreview">
+          <div class="card-header bg-primary text-white border-0 py-3">
+            <div class="d-flex justify-content-between align-items-start">
+              <h6 class="mb-0 fw-bold text-truncate pe-2" id="previewTitle" style="max-width: 80%;">Your Title</h6>
+              <span class="badge bg-success" id="previewVisibility">Public</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <div class="d-flex flex-wrap gap-2 mb-2" id="previewBadges">
+                <span class="badge bg-success" id="badgeTeachingLabel">Teaching</span>
+                <span class="badge bg-light text-dark border" id="previewSkill">Skill</span>
+                <span class="badge bg-primary d-none" id="previewLearnSkill"></span>
               </div>
+            </div>
+            <p class="card-text text-muted small" id="previewDescription">Your description will appear here...</p>
+          </div>
+          <div class="card-footer bg-white border-top-0 pt-0 pb-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted"><i class="fas fa-user-circle me-1"></i>You</small>
+              <button class="btn btn-sm btn-outline-primary disabled">Contact</button>
             </div>
           </div>
         </div>
+
+        <div class="alert alert-info mt-3 small border-0 bg-info-subtle text-info-emphasis">
+          <i class="fas fa-info-circle me-2"></i>This is how your listing will appear to others.
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Listing Preview Modal (Optional now since we have live preview, but good for mobile final check) -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Listing Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Duplicate of preview card logic could go here if needed, but we rely on live preview mostly -->
+        <p>Please review your listing details before submitting.</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
-        <button type="button" class="btn btn-primary" onclick="submitForm()">
-          <i class="fas fa-check me-1"></i>Looks Good - Submit
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Edit</button>
+        <button type="button" class="btn btn-primary" onclick="submitForm()">Submit</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Saved Suggestions Modal -->
-<div class="modal fade" id="savedSuggestionsModal" tabindex="-1" aria-labelledby="savedSuggestionsModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="savedSuggestionsModalLabel">
-          <i class="fas fa-history me-2"></i>Saved Suggestions
-        </h5>
+<div class="modal fade" id="savedSuggestionsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Saved Suggestions</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        <div class="d-flex gap-2 mb-3">
-          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('all')">All</button>
-          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('teach')">Teaching</button>
-          <button class="btn btn-sm btn-outline-primary" onclick="loadSuggestions('learn')">Learning</button>
-          <button class="btn btn-sm btn-outline-warning" onclick="loadSuggestions('favorites')">
+        <div class="d-flex gap-2 mb-4 overflow-auto pb-2">
+          <button class="btn btn-sm btn-outline-primary active rounded-pill px-3"
+            onclick="loadSuggestions('all')">All</button>
+          <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+            onclick="loadSuggestions('teach')">Teaching</button>
+          <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
+            onclick="loadSuggestions('learn')">Learning</button>
+          <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="loadSuggestions('favorites')">
             <i class="fas fa-star me-1"></i>Favorites
           </button>
         </div>
-        
-        <div id="savedSuggestionsList">
-          <div class="text-center text-muted">
-            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+
+        <div id="savedSuggestionsList" class="vstack gap-3">
+          <div class="text-center text-muted py-5">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
             <p>Loading suggestions...</p>
           </div>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
 </div>
 
-<% if (typeof moderationFlagged !== 'undefined' && moderationFlagged) { %>
-  <div class="alert alert-warning mt-3">
-    <strong><%= moderationFlagged.message %></strong>
-  </div>
-<% } %>
-
-<% if (typeof aiSuggestions !== 'undefined' && aiSuggestions) { %>
-  <div class="card mt-3" id="aiSuggestionsCard">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <span><i class="fas fa-lightbulb text-warning me-2"></i>AI Suggestions Based on Your Skills</span>
-      <div class="d-flex gap-2">
-        <div class="btn-group btn-group-sm" role="group">
-          <input type="radio" class="btn-check" name="suggestionType" id="teachSuggestions" value="teach" checked>
-          <label class="btn btn-outline-primary" for="teachSuggestions">Teaching</label>
-          
-          <input type="radio" class="btn-check" name="suggestionType" id="learnSuggestions" value="learn">
-          <label class="btn btn-outline-primary" for="learnSuggestions">Learning</label>
+<% if (typeof moderationFlagged !=='undefined' && moderationFlagged) { %>
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div class="toast show align-items-center text-white bg-warning border-0" role="alert" aria-live="assertive"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <%= moderationFlagged.message %>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="regenerateSuggestions">
-          <i class="fas fa-sync-alt me-1"></i>Regenerate
-        </button>
-        <button type="button" class="btn btn-sm btn-outline-success" id="saveSuggestion">
-          <i class="fas fa-bookmark me-1"></i>Save
-        </button>
-        <button type="button" class="btn btn-sm btn-outline-info" id="loadSavedSuggestions">
-          <i class="fas fa-history me-1"></i>History
-        </button>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
       </div>
     </div>
-    <div class="card-body" id="suggestionsContent">
-      <% if (aiSuggestions.title) { %>
-        <div class="mb-3">
-          <label class="fw-semibold text-primary">Suggested Title:</label>
-          <p class="mb-1 bg-light p-2 rounded"><%= aiSuggestions.title %></p>
-          <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('title', this)">
-            <i class="fas fa-check me-1"></i>Use This Title
-          </button>
-        </div>
-      <% } %>
-      
-      <% if (aiSuggestions.description) { %>
-        <div class="mb-3">
-          <label class="fw-semibold text-primary">Suggested Description:</label>
-          <p class="mb-1 bg-light p-2 rounded"><%= aiSuggestions.description %></p>
-          <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('description', this)">
-            <i class="fas fa-check me-1"></i>Use This Description
-          </button>
-        </div>
-      <% } %>
-      
-      <% if (Array.isArray(aiSuggestions.notes) && aiSuggestions.notes.length) { %>
-        <div class="mb-0">
-          <label class="fw-semibold text-info">💡 Tips for a Great Listing:</label>
-          <ul class="small mb-0 mt-1">
-            <% aiSuggestions.notes.forEach(n => { %>
-              <li class="mb-1"><%= n %></li>
-            <% }) %>
-          </ul>
-        </div>
-      <% } %>
-    </div>
   </div>
-<% } %>
+  <% } %>
 
-<script>
-// Global variables for skills data
-const teachSkillsData = JSON.parse(String.raw`<%- JSON.stringify(
-  Array.isArray(teachSkills)
-    ? Object.fromEntries(teachSkills.map(skill => [String(skill.id), skill.name]))
-    : {}
-) %>`);
-
-const learnSkillsData = JSON.parse(String.raw`<%- JSON.stringify(
-  Array.isArray(learnSkills)
-    ? Object.fromEntries(learnSkills.map(skill => [String(skill.id), skill.name]))
-    : {}
-) %>`);
-
-// Preview functionality
-function togglePreview() {
-  updatePreview();
-  const modal = new bootstrap.Modal(document.getElementById('previewModal'));
-  modal.show();
-}
-
-function updatePreview() {
-  const title = document.querySelector('input[name="title"]').value.trim();
-  const description = document.querySelector('textarea[name="description"]').value.trim();
-  const skillId = document.querySelector('select[name="skill_id"]').value;
-  const learnSkillId = document.querySelector('select[name="learn_skill_id"]').value;
-  const visibility = document.querySelector('select[name="visibility"]').value;
-  
-  // Update preview elements
-  document.getElementById('previewTitle').textContent = title || 'Your listing title will appear here';
-  document.getElementById('previewDescription').textContent = description || 'Your listing description will appear here...';
-  document.getElementById('previewSkill').textContent = teachSkillsData[skillId] || 'Skill';
-  const learnBadge = document.getElementById('previewLearnSkill');
-  if (learnSkillId && learnSkillsData[learnSkillId]) {
-    learnBadge.textContent = 'Wants to learn: ' + learnSkillsData[learnSkillId];
-    learnBadge.classList.remove('d-none');
-  } else if (learnBadge) {
-    learnBadge.classList.add('d-none');
-  }
-  
-  // Update visibility badge
-  const visibilityBadge = document.getElementById('previewVisibility');
-  visibilityBadge.textContent = visibility.charAt(0).toUpperCase() + visibility.slice(1);
-  visibilityBadge.className = visibility === 'public' ? 'badge bg-success' : 'badge bg-warning';
-  
-  // Update card styling based on completeness
-  const previewCard = document.getElementById('listingPreview');
-  if (title && description && skillId) {
-    previewCard.className = 'card border-success';
-  } else {
-    previewCard.className = 'card border-warning';
-  }
-  
-  // Update quick preview if visible
-  updateQuickPreview(title, description, skillId, learnSkillId);
-}
-
-function updateQuickPreview(title, description, skillId, learnSkillId) {
-  const quickPreviewTitle = document.getElementById('quickPreviewTitle');
-  const quickPreviewDescription = document.getElementById('quickPreviewDescription');
-  const quickPreviewSkill = document.getElementById('quickPreviewSkill');
-  const mobileTitle = document.getElementById('mobilePreviewTitle');
-  const mobileDesc = document.getElementById('mobilePreviewDescription');
-  const mobileSkill = document.getElementById('mobilePreviewSkill');
-  const mobileLearn = document.getElementById('mobilePreviewLearnSkill');
-  
-  if (quickPreviewTitle) {
-    quickPreviewTitle.textContent = title || 'Your listing title...';
-    quickPreviewDescription.textContent = description ? 
-      (description.length > 100 ? description.substring(0, 100) + '...' : description) : 
-      'Your description...';
-    let skillText = teachSkillsData[skillId] || 'Select a skill';
-    if (learnSkillId && learnSkillsData[learnSkillId]) {
-      skillText += ' • Wants: ' + learnSkillsData[learnSkillId];
-    }
-    quickPreviewSkill.textContent = skillText;
-    
-    // Show quick preview if there's content
-    if (title || description) {
-      document.getElementById('quickPreview').style.display = 'block';
-    }
-  }
-
-  // Update mobile preview accordion content if present
-  if (mobileTitle && mobileDesc && mobileSkill && mobileLearn) {
-    mobileTitle.textContent = title || 'Your listing title...';
-    mobileDesc.textContent = description ?
-      (description.length > 120 ? description.substring(0, 120) + '...' : description) :
-      'Your description...';
-    mobileSkill.textContent = teachSkillsData[skillId] || 'Skill';
-    if (learnSkillId && learnSkillsData[learnSkillId]) {
-      mobileLearn.textContent = 'Wants to learn: ' + learnSkillsData[learnSkillId];
-      mobileLearn.classList.remove('d-none');
-    } else {
-      mobileLearn.classList.add('d-none');
-    }
-  }
-}
-
-function toggleQuickPreview() {
-  const quickPreview = document.getElementById('quickPreview');
-  quickPreview.style.display = quickPreview.style.display === 'none' ? 'block' : 'none';
-}
-
-function submitForm() {
-  // Close modal and submit form
-  const modal = bootstrap.Modal.getInstance(document.getElementById('previewModal'));
-  modal.hide();
-  document.querySelector('form').submit();
-}
-
-// Auto-update preview when form fields change
-document.addEventListener('DOMContentLoaded', function() {
-  const fields = ['input[name="title"]', 'textarea[name="description"]', 'select[name="skill_id"]', 'select[name="learn_skill_id"]', 'select[name="visibility"]'];
-  
-  fields.forEach(selector => {
-    const element = document.querySelector(selector);
-    if (element) {
-      element.addEventListener('input', updatePreview);
-      element.addEventListener('change', updatePreview);
-    }
-  });
-  
-  // Initial preview update
-  updatePreview();
-
-  // Emphasis toggle init
-  const toggle = document.getElementById('emphasisToggle');
-  const saved = localStorage.getItem('emphasis_learn_first');
-  const learnFirst = saved === '1';
-  toggle.checked = learnFirst;
-  applyEmphasis(learnFirst);
-  toggle.addEventListener('change', (e) => {
-    const isLearnFirst = e.target.checked;
-    localStorage.setItem('emphasis_learn_first', isLearnFirst ? '1' : '0');
-    applyEmphasis(isLearnFirst);
-    updatePreview();
-  });
-  
-  // Add event listeners for saved suggestions
-  document.getElementById('saveSuggestion')?.addEventListener('click', saveSuggestion);
-  document.getElementById('loadSavedSuggestions')?.addEventListener('click', showSavedSuggestions);
-});
-
-// Apply AI suggestion to form fields
-function applySuggestion(type, button) {
-  const text = button.previousElementSibling.textContent.trim();
-  if (type === 'title') {
-    const titleInput = document.querySelector('input[name="title"]');
-    if (titleInput) {
-      titleInput.value = text;
-      titleInput.focus();
-      updatePreview(); // Update preview after applying suggestion
-    }
-  } else if (type === 'description') {
-    const descTextarea = document.querySelector('textarea[name="description"]');
-    if (descTextarea) {
-      descTextarea.value = text;
-      descTextarea.focus();
-      updatePreview(); // Update preview after applying suggestion
-    }
-  }
-  
-  // Show feedback
-  button.innerHTML = '<i class="fas fa-check text-success me-1"></i>Applied!';
-  button.classList.remove('btn-outline-success');
-  button.classList.add('btn-success');
-  
-  setTimeout(() => {
-    button.innerHTML = '<i class="fas fa-check me-1"></i>Use This ' + (type === 'title' ? 'Title' : 'Description');
-    button.classList.remove('btn-success');
-    button.classList.add('btn-outline-success');
-  }, 2000);
-}
-
-// Regenerate AI suggestions
-document.getElementById('regenerateSuggestions')?.addEventListener('click', async function() {
-  await regenerateSuggestions();
-});
-
-// Handle suggestion type change
-document.querySelectorAll('input[name="suggestionType"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    if (this.checked) {
-      regenerateSuggestions();
-    }
-  });
-});
-
-async function regenerateSuggestions() {
-  const button = document.getElementById('regenerateSuggestions');
-  const originalHTML = button.innerHTML;
-  
-  // Get selected suggestion type
-  const selectedType = document.querySelector('input[name="suggestionType"]:checked')?.value || 'teach';
-  
-  // Show loading state
-  button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Generating...';
-  button.disabled = true;
-  
-  try {
-    // Add cache busting and no-cache headers for fresh suggestions
-    const timestamp = Date.now();
-    const response = await fetch(`/listings/ai-suggestions?type=${selectedType}&nocache=${timestamp}`, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
-    const data = await response.json();
-    
-    if (data.suggestions) {
-      // Update the suggestions content
-      const content = document.getElementById('suggestionsContent');
-      let html = '';
-      
-      if (data.suggestions.title) {
-        html += `
-          <div class="mb-3">
-            <label class="fw-semibold text-primary">Suggested Title:</label>
-            <p class="mb-1 bg-light p-2 rounded">${data.suggestions.title}</p>
-            <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('title', this)">
-              <i class="fas fa-check me-1"></i>Use This Title
-            </button>
-          </div>
-        `;
-      }
-      
-      if (data.suggestions.description) {
-        html += `
-          <div class="mb-3">
-            <label class="fw-semibold text-primary">Suggested Description:</label>
-            <p class="mb-1 bg-light p-2 rounded">${data.suggestions.description}</p>
-            <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('description', this)">
-              <i class="fas fa-check me-1"></i>Use This Description
-            </button>
-          </div>
-        `;
-      }
-      
-      if (data.suggestions.notes && data.suggestions.notes.length) {
-        html += `
-          <div class="mb-0">
-            <label class="fw-semibold text-info">💡 Tips for a Great Listing:</label>
-            <ul class="small mb-0 mt-1">
-              ${data.suggestions.notes.map(note => `<li class="mb-1">${note}</li>`).join('')}
-            </ul>
-          </div>
-        `;
-      }
-      
-      content.innerHTML = html;
-      
-      // Update preview if modal is open
-      if (document.getElementById('previewModal').classList.contains('show')) {
-        updatePreview();
-      }
-    }
-  } catch (error) {
-    console.error('Failed to regenerate suggestions:', error);
-    alert('Failed to generate new suggestions. Please try again.');
-  } finally {
-    // Restore button state
-    button.innerHTML = originalHTML;
-    button.disabled = false;
-  }
-}
-
-// Saved suggestions functionality
-async function saveSuggestion() {
-  try {
-    // Get current AI suggestions
-    const titleElement = document.querySelector('#suggestionsContent .bg-light p');
-    const descElement = document.querySelectorAll('#suggestionsContent .bg-light p')[1];
-    const notesElements = document.querySelectorAll('#suggestionsContent .small li');
-    
-    if (!titleElement || !descElement) {
-      alert('No AI suggestions to save. Generate suggestions first.');
-      return;
-    }
-    
-    const title = titleElement.textContent.trim();
-    const description = descElement.textContent.trim();
-    const notes = Array.from(notesElements).map(li => li.textContent.trim());
-    const suggestionType = document.querySelector('input[name="suggestionType"]:checked')?.value || 'teach';
-    const skillId = document.querySelector('select[name="skill_id"]').value;
-    const skillCategory = teachSkillsData[skillId] || '';
-    
-    const response = await fetch('/listings/save-suggestion', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      },
-      body: JSON.stringify({
-        title,
-        description,
-        suggestion_type: suggestionType,
-        skill_category: skillCategory,
-        notes
-      })
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      // Show success feedback
-      const button = document.getElementById('saveSuggestion');
-      const originalHTML = button.innerHTML;
-      button.innerHTML = '<i class="fas fa-check text-success me-1"></i>Saved!';
-      button.classList.add('btn-success');
-      
-      setTimeout(() => {
-        button.innerHTML = originalHTML;
-        button.classList.remove('btn-success');
-      }, 2000);
-    } else {
-      alert('Failed to save suggestion: ' + (data.error || 'Unknown error'));
-    }
-  } catch (error) {
-    console.error('Save suggestion error:', error);
-    alert('Failed to save suggestion. Please try again.');
-  }
-}
-
-function showSavedSuggestions() {
-  const modal = new bootstrap.Modal(document.getElementById('savedSuggestionsModal'));
-  modal.show();
-  loadSuggestions('all');
-}
-
-async function loadSuggestions(type) {
-  try {
-    const listContainer = document.getElementById('savedSuggestionsList');
-    listContainer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
-    
-    let url = '/listings/saved-suggestions';
-    const params = new URLSearchParams();
-    
-    if (type === 'favorites') {
-      params.append('favorites_only', 'true');
-    } else if (type === 'teach' || type === 'learn') {
-      params.append('type', type);
-    }
-    
-    if (params.toString()) {
-      url += '?' + params.toString();
-    }
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data.suggestions && data.suggestions.length > 0) {
-      listContainer.innerHTML = data.suggestions.map(suggestion => `
-        <div class="card mb-3" data-suggestion-id="${suggestion.id}">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <h6 class="card-title mb-1">${suggestion.title}</h6>
-              <div class="d-flex gap-1">
-                <button class="btn btn-sm ${suggestion.is_favorite ? 'btn-warning' : 'btn-outline-warning'}" 
-                        onclick="toggleFavorite(${suggestion.id}, this)">
-                  <i class="fas fa-star"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="deleteSuggestion(${suggestion.id}, this)">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </div>
-            <p class="card-text small text-muted mb-2">${suggestion.description}</p>
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <span class="badge bg-${suggestion.suggestion_type === 'teach' ? 'primary' : 'info'}">${suggestion.suggestion_type}</span>
-                ${suggestion.skill_category ? `<span class="badge bg-secondary">${suggestion.skill_category}</span>` : ''}
-              </div>
-              <button class="btn btn-sm btn-outline-success" onclick="applySavedSuggestion('${suggestion.title}', '${suggestion.description}')">
-                <i class="fas fa-plus me-1"></i>Use
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    } else {
-      listContainer.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No saved suggestions found.</p></div>';
-    }
-    
-    // Update active filter button
-    document.querySelectorAll('#savedSuggestionsModal .btn-outline-primary, #savedSuggestionsModal .btn-outline-warning').forEach(btn => {
-      btn.classList.remove('active');
-    });
-    event.target.classList.add('active');
-    
-  } catch (error) {
-    console.error('Load suggestions error:', error);
-    document.getElementById('savedSuggestionsList').innerHTML = '<div class="text-center text-danger"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><p>Failed to load suggestions.</p></div>';
-  }
-}
-
-async function toggleFavorite(id, button) {
-  try {
-    const response = await fetch(`/listings/saved-suggestions/${id}/favorite`, {
-      method: 'PATCH',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      if (data.is_favorite) {
-        button.classList.remove('btn-outline-warning');
-        button.classList.add('btn-warning');
-      } else {
-        button.classList.remove('btn-warning');
-        button.classList.add('btn-outline-warning');
-      }
-    }
-  } catch (error) {
-    console.error('Toggle favorite error:', error);
-  }
-}
-
-async function deleteSuggestion(id, button) {
-  if (!confirm('Are you sure you want to delete this suggestion?')) {
-    return;
-  }
-  
-  try {
-    const response = await fetch(`/listings/saved-suggestions/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success) {
-      const card = button.closest('.card');
-      card.remove();
-    }
-  } catch (error) {
-    console.error('Delete suggestion error:', error);
-    alert('Failed to delete suggestion.');
-  }
-}
-
-function applySavedSuggestion(title, description) {
-  // Apply to form fields
-  document.querySelector('input[name="title"]').value = title;
-  document.querySelector('textarea[name="description"]').value = description;
-  
-  // Update preview
-  updatePreview();
-  
-  // Close modal
-  const modal = bootstrap.Modal.getInstance(document.getElementById('savedSuggestionsModal'));
-  modal.hide();
-  
-  // Show feedback
-  const titleInput = document.querySelector('input[name="title"]');
-  titleInput.focus();
-  titleInput.style.border = '2px solid #28a745';
-  setTimeout(() => {
-    titleInput.style.border = '';
-  }, 2000);
-}
-
-// Emphasis toggle behavior: reorder sections and adjust preview badge order
-function applyEmphasis(isLearnFirst) {
-  const teachSection = document.getElementById('teachSection');
-  const learnSection = document.getElementById('learnSection');
-  const teachLabel = document.getElementById('teachLabel');
-  const learnLabel = document.getElementById('learnLabel');
-
-  if (isLearnFirst) {
-    // On md+ screens, show learn first
-    teachSection.classList.remove('order-md-1');
-    teachSection.classList.add('order-md-2');
-    learnSection.classList.remove('order-md-2');
-    learnSection.classList.add('order-md-1');
-    if (teachLabel) teachLabel.textContent = 'I can teach';
-    if (learnLabel) learnLabel.textContent = "I'm seeking to learn";
-  } else {
-    teachSection.classList.remove('order-md-2');
-    teachSection.classList.add('order-md-1');
-    learnSection.classList.remove('order-md-1');
-    learnSection.classList.add('order-md-2');
-    if (teachLabel) teachLabel.textContent = 'I will teach';
-    if (learnLabel) learnLabel.textContent = 'I want to learn';
-  }
-
-  // Reorder preview badges
-  const badgeTeach = document.getElementById('badgeTeachingLabel');
-  const badgeTeachSkill = document.getElementById('previewSkill');
-  const badgeLearn = document.getElementById('previewLearnSkill');
-  if (badgeTeach && badgeTeachSkill && badgeLearn) {
-    [badgeTeach, badgeTeachSkill, badgeLearn].forEach(el => {
-      el.classList.remove('order-1','order-2','order-3');
-    });
-    if (isLearnFirst) {
-      badgeLearn.classList.add('order-1');
-      badgeTeach.classList.add('order-2');
-      badgeTeachSkill.classList.add('order-3');
-    } else {
-      badgeTeach.classList.add('order-1');
-      badgeTeachSkill.classList.add('order-2');
-      badgeLearn.classList.add('order-3');
-    }
-  }
-}
-</script>
+    <script>
+      // Pass server-side data to the external script
+      window.listingData = {
+        teachSkillsData: JSON.parse(String.raw`<%- JSON.stringify(
+          Array.isArray(teachSkills)
+          ? Object.fromEntries(teachSkills.map(skill => [String(skill.id), skill.name]))
+          : {}
+        ) %>`),
+        learnSkillsData: JSON.parse(String.raw`<%- JSON.stringify(
+          Array.isArray(learnSkills)
+          ? Object.fromEntries(learnSkills.map(skill => [String(skill.id), skill.name]))
+          : {}
+        ) %>`),
+        serverSuggestions: JSON.parse(String.raw`<%- JSON.stringify(typeof aiSuggestions !== 'undefined' ? aiSuggestions : null) %>`)
+      };
+    </script>
+    <script src="/js/listing-form.js"></script>

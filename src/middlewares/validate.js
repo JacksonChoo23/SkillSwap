@@ -1,6 +1,5 @@
 const Joi = require('joi');
 
-
 const validate = (schema) => {
   return (req, res, next) => {
     // 关键：允许未知，剔除未知，一次解决 _csrf、隐藏字段、浏览器额外字段
@@ -23,12 +22,17 @@ const schemas = {
     password: Joi.string().min(8).required(),
     confirmPassword: Joi.string().valid(Joi.ref('password')).required()
   }),
-  
+
   login: Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().required()
   }),
-  
+
+  resetPassword: Joi.object({
+    password: Joi.string().min(8).required(),
+    confirmPassword: Joi.string().valid(Joi.ref('password')).required()
+  }),
+
   profile: Joi.object({
     name: Joi.string().min(2).max(100).required(),
     bio: Joi.string().max(1000).allow(''),
@@ -38,7 +42,7 @@ const schemas = {
     }),
     isPublic: Joi.boolean()
   }),
-  
+
   listing: Joi.object({
     title: Joi.string().min(5).max(255).required(),
     description: Joi.string().min(10).max(2000).required(),
@@ -49,22 +53,22 @@ const schemas = {
     learnSkillId: Joi.alternatives(Joi.number().integer().positive(), Joi.string().allow('')).optional(),
     visibility: Joi.string().valid('public', 'private').optional()
   }),
-  
+
   message: Joi.object({
     content: Joi.string().min(1).max(2000).required()
   }),
-  
+
   session: Joi.object({
     teacherId: Joi.number().integer().positive().required(),
     skillId: Joi.number().integer().positive().required(),
     startAt: Joi.date().greater('now').required(),
     endAt: Joi.date().greater(Joi.ref('startAt')).required()
   }),
-  
+
   sessionCode: Joi.object({
     code: Joi.string().pattern(/^\d{3,6}$/).required()
   }),
-  
+
   rating: Joi.object({
     rateeId: Joi.number().integer().positive().required(),
     communication: Joi.number().integer().min(1).max(5).required(),
@@ -73,7 +77,7 @@ const schemas = {
     punctuality: Joi.number().integer().min(1).max(5).required(),
     comment: Joi.string().max(500).allow('')
   }),
-  
+
   calculator: Joi.object({
     skillAId: Joi.number().integer().positive().required(),
     skillBId: Joi.number().integer().positive().required(),
@@ -82,12 +86,12 @@ const schemas = {
     hoursA: Joi.number().positive().required(),
     hoursB: Joi.number().positive().required()
   }),
-  
+
   tip: Joi.object({
     amount: Joi.number().integer().min(1).required(),
     note: Joi.string().max(200).allow('')
   }),
-  
+
   report: Joi.object({
     reason: Joi.string().min(10).max(1000).required()
   })
@@ -96,4 +100,4 @@ const schemas = {
 module.exports = {
   validate,
   schemas
-}; 
+};

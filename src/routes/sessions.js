@@ -1,5 +1,6 @@
 const express = require('express');
-const { LearningSession, User, Skill, Rating, UserProgress, Notification } = require('../models');
+const { LearningSession, User, Skill, Rating, UserProgress, Notification, Availability } = require('../models');
+const { Op } = require('sequelize');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -41,11 +42,61 @@ router.get('/', async (req, res) => {
 router.post('/request', validate(schemas.session), async (req, res) => {
   try {
     const { skillId, teacherId, startAt, endAt } = req.body;
+    const requestStart = new Date(startAt);
+    const requestEnd = new Date(endAt);
 
-    // Check if teacher exists and has this skill
+    // Basic validation
+    if (requestStart >= requestEnd) {
+      req.session.error = 'End time must be after start time.';
+      return res.redirect(req.get('Referrer') || '/sessions');
+    }
+    if (requestStart < new Date()) {
+      req.session.error = 'Cannot book sessions in the past.';
+      return res.redirect(req.get('Referrer') || '/sessions');
+    }
+
+    // Check if teacher exists
     const teacher = await User.findByPk(teacherId);
     if (!teacher) {
       req.session.error = 'Teacher not found.';
+      return res.redirect(req.get('Referrer') || '/sessions');
+    }
+
+    // 1. Check Availability
+    const dayOfWeek = requestStart.getDay();
+    const startTimeStr = requestStart.toTimeString().split(' ')[0];
+    const endTimeStr = requestEnd.toTimeString().split(' ')[0];
+
+    const availability = await Availability.findOne({
+      where: {
+        userId: teacherId,
+        dayOfWeek: dayOfWeek,
+        startTime: { [Op.lte]: startTimeStr },
+        endTime: { [Op.gte]: endTimeStr }
+      }
+    });
+
+    if (!availability) {
+      req.session.error = 'The teacher is not available at this time.';
+      return res.redirect(req.get('Referrer') || '/sessions');
+    }
+
+    // 2. Check Conflicts
+    const conflict = await LearningSession.findOne({
+      where: {
+        teacherId: teacherId,
+        status: { [Op.in]: ['confirmed', 'requested', 'in_progress'] },
+        [Op.or]: [
+          {
+            startAt: { [Op.lt]: requestEnd },
+            endAt: { [Op.gt]: requestStart }
+          }
+        ]
+      }
+    });
+
+    if (conflict) {
+      req.session.error = 'The teacher already has a session at this time.';
       return res.redirect(req.get('Referrer') || '/sessions');
     }
 
@@ -56,8 +107,8 @@ router.post('/request', validate(schemas.session), async (req, res) => {
       teacherId: parseInt(teacherId, 10),
       studentId: req.user.id,
       skillId: parseInt(skillId, 10),
-      startAt: new Date(startAt),
-      endAt: new Date(endAt),
+      startAt: requestStart,
+      endAt: requestEnd,
       status: 'requested'
     });
 
@@ -90,9 +141,9 @@ router.post('/request', validate(schemas.session), async (req, res) => {
 router.post('/:id/confirm', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const session = await LearningSession.findByPk(id);
-    
+
     if (!session) {
       req.session.error = 'Session not found.';
       return res.redirect('/sessions');
@@ -196,9 +247,9 @@ router.post('/:id/verify-code', validate(schemas.sessionCode), async (req, res) 
 router.post('/:id/complete', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const session = await LearningSession.findByPk(id);
-    
+
     if (!session) {
       req.session.error = 'Session not found.';
       return res.redirect('/sessions');
@@ -226,7 +277,7 @@ router.post('/:id/complete', async (req, res) => {
       let avg = 0;
       if (ratings.length) {
         const totals = ratings.map(r => (r.communication + r.skill + r.attitude + r.punctuality) / 4);
-        avg = totals.reduce((a,b)=>a+b,0) / totals.length;
+        avg = totals.reduce((a, b) => a + b, 0) / totals.length;
       }
       const basePoints = Math.round(durationHours * 10);
       const ratingBonus = Math.round(avg * 2); // up to ~10 bonus
@@ -280,7 +331,7 @@ router.post('/:id/end', async (req, res) => {
       let avg = 0;
       if (ratings.length) {
         const totals = ratings.map(r => (r.communication + r.skill + r.attitude + r.punctuality) / 4);
-        avg = totals.reduce((a,b)=>a+b,0) / totals.length;
+        avg = totals.reduce((a, b) => a + b, 0) / totals.length;
       }
       const basePoints = Math.round(durationHours * 10);
       const ratingBonus = Math.round(avg * 2);
@@ -307,9 +358,9 @@ router.post('/:id/end', async (req, res) => {
 router.post('/:id/cancel', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const session = await LearningSession.findByPk(id);
-    
+
     if (!session) {
       req.session.error = 'Session not found.';
       return res.redirect('/sessions');
@@ -340,12 +391,12 @@ router.post('/:id/cancel', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const session = await LearningSession.findByPk(id, {
       include: [
-        { model: User, as: 'teacher', attributes: ['id','name','whatsapp_number'] },
-        { model: User, as: 'student', attributes: ['id','name','whatsapp_number'] },
-        { model: Skill, attributes: ['id','name'] }
+        { model: User, as: 'teacher', attributes: ['id', 'name', 'whatsapp_number'] },
+        { model: User, as: 'student', attributes: ['id', 'name', 'whatsapp_number'] },
+        { model: Skill, attributes: ['id', 'name'] }
       ],
     });
 
@@ -370,4 +421,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

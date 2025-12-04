@@ -5,7 +5,7 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { User } = require('../models');
-const { sendResetPasswordEmail } = require('../../utils/mailer');
+const { sendResetEmail, sendActivationEmail } = require('../../utils/mailer');
 const { validate, schemas } = require('../middlewares/validate');
 const { isNotAuthenticated } = require('../middlewares/auth');
 
@@ -29,14 +29,61 @@ router.post('/register', isNotAuthenticated, validate(schemas.register), async (
 
     const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
 
-    await User.create({ name, email, passwordHash });
+    const activationToken = crypto.randomBytes(32).toString('hex');
 
-    req.session.success = 'Registration successful! Please log in.';
+    await User.create({
+      name,
+      email,
+      passwordHash,
+      activationToken,
+      isVerified: false
+    });
+
+    try {
+      await sendActivationEmail({
+        to: email,
+        name: name,
+        token: activationToken
+      });
+    } catch (mailErr) {
+      console.error('Send activation email failed:', mailErr.message);
+      // In dev, log the token so we can activate manually
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[DEV Activation Token] ${activationToken}`);
+      }
+    }
+
+    req.session.success = 'Registration successful! Please check your email to activate your account.';
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Registration error:', error);
     req.session.error = 'Registration failed. Please try again.';
     res.redirect('/auth/register');
+  }
+});
+
+// Activation Route
+router.get('/activate/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    const user = await User.findOne({ where: { activationToken: token } });
+
+    if (!user) {
+      req.session.error = 'Invalid or expired activation token.';
+      return res.redirect('/auth/login');
+    }
+
+    await user.update({
+      isVerified: true,
+      activationToken: null
+    });
+
+    req.session.success = 'Account activated successfully! You can now log in.';
+    res.redirect('/auth/login');
+  } catch (error) {
+    console.error('Activation error:', error);
+    req.session.error = 'Activation failed. Please try again.';
+    res.redirect('/auth/login');
   }
 });
 
@@ -51,6 +98,10 @@ router.post('/login', isNotAuthenticated, validate(schemas.login), (req, res, ne
     if (err) return next(err);
     if (!user) {
       req.session.error = info?.message || 'Invalid email or password.';
+      return res.redirect('/auth/login');
+    }
+    if (!user.isVerified) {
+      req.session.error = 'Please verify your email address before logging in.';
       return res.redirect('/auth/login');
     }
     req.logIn(user, (err2) => {
@@ -107,10 +158,13 @@ router.post('/forgot', isNotAuthenticated, async (req, res) => {
 
     // 发邮件
     try {
-      await sendResetPasswordEmail({
+      await sendResetEmail({
         to: user.email,
         name: user.name,
-        url,
+        token: resetToken, // sendResetEmail expects 'token' not 'url' directly if we use the new signature, but let's check mailer.js. 
+        // Wait, mailer.js sendResetEmail takes { to, name, token }. 
+        // The original code passed { to, name, url }.
+        // I should fix this call to match the definition in mailer.js
       });
     } catch (mailErr) {
       console.error('Send email failed:', mailErr.message);
@@ -154,19 +208,12 @@ router.get('/reset/:token', isNotAuthenticated, async (req, res) => {
 });
 
 // Reset POST
-router.post('/reset/:token', isNotAuthenticated, async (req, res) => {
+router.post('/reset/:token', isNotAuthenticated, validate(schemas.resetPassword), async (req, res) => {
   try {
     const { token } = req.params;
-    const { password, confirmPassword } = req.body;
+    const { password } = req.body;
 
-    if (password !== confirmPassword) {
-      req.session.error = 'Passwords do not match.';
-      return res.redirect(`/auth/reset/${token}`);
-    }
-    if (!password || password.length < 8) {
-      req.session.error = 'Password must be at least 8 characters long.';
-      return res.redirect(`/auth/reset/${token}`);
-    }
+    // Manual validation removed, handled by middleware
 
     const user = await User.findOne({
       where: {

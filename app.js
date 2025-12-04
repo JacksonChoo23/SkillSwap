@@ -35,6 +35,7 @@ const tipsRoutes = require('./src/routes/tips');
 const reportsRoutes = require('./src/routes/reports');
 const aboutRouter = require('./src/routes/about');
 const notificationsRoutes = require('./src/routes/notifications');
+const skillsRoutes = require('./src/routes/skills');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -142,8 +143,8 @@ app.use((req, res, next) => {
   const sInfo = req.session?.info;
 
   res.locals.success = (fSuccess && fSuccess.length ? fSuccess : (sSuccess ? (Array.isArray(sSuccess) ? sSuccess : [sSuccess]) : []));
-  res.locals.error   = (fError && fError.length ? fError : (sError ? (Array.isArray(sError) ? sError : [sError]) : []));
-  res.locals.info    = (fInfo && fInfo.length ? fInfo : (sInfo ? (Array.isArray(sInfo) ? sInfo : [sInfo]) : []));
+  res.locals.error = (fError && fError.length ? fError : (sError ? (Array.isArray(sError) ? sError : [sError]) : []));
+  res.locals.info = (fInfo && fInfo.length ? fInfo : (sInfo ? (Array.isArray(sInfo) ? sInfo : [sInfo]) : []));
 
   if (req.session) {
     delete req.session.success;
@@ -154,20 +155,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// About page - accessible to all users (before CSRF)
-app.get('/about', (req, res) => {
-  const isAuthed = (typeof req.isAuthenticated === 'function' && req.isAuthenticated()) || !!(req.session && req.session.user);
-  const currentUser = req.user || req.session?.user || null;
-  
-  res.render('about', {
-    title: 'About - SkillSwap MY',
-    csrfToken: '', // No CSRF token needed for public page
-    isAuthenticated: isAuthed,
-    currentUser: currentUser,
-    user: currentUser,
-    isAdmin: !!(currentUser && currentUser.role === 'admin')
-  });
-});
+
 
 // CSRF (after session)
 app.use(csrf({ cookie: false }));
@@ -205,7 +193,16 @@ app.use('/tips', isAuthenticated, tipsRoutes);
 app.use('/reports', isAuthenticated, reportsRoutes);
 app.use('/admin', isAuthenticated, isAdmin, adminRoutes);
 app.use('/notifications', isAuthenticated, notificationsRoutes);
+app.use('/skills', isAuthenticated, skillsRoutes);
 // Pages
+app.get('/about', (req, res) => {
+  // Locals middleware already sets isAuthenticated, currentUser, csrfToken
+  res.render('about', {
+    title: 'About - SkillSwap MY'
+    // csrfToken, user, isAuthenticated are in res.locals
+  });
+});
+
 app.get('/', (req, res) => {
   res.render('home', { title: 'SkillSwap MY - Peer Skill Exchange' });
 });
@@ -218,7 +215,8 @@ app.use((req, res) => {
     error: { status: 404 },
     isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
     user: req.user || null,
-    isAdmin: !!(req.user && req.user.role === 'admin')
+    isAdmin: !!(req.user && req.user.role === 'admin'),
+    csrfToken: (req.csrfToken && typeof req.csrfToken === 'function') ? req.csrfToken() : ''
   });
 });
 
@@ -237,7 +235,8 @@ app.use((err, req, res, next) => {
       error: { status: 403 },
       isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
       user: req.user || null,
-      isAdmin: !!(req.user && req.user.role === 'admin')
+      isAdmin: !!(req.user && req.user.role === 'admin'),
+      csrfToken: (req.csrfToken && typeof req.csrfToken === 'function') ? req.csrfToken() : ''
     });
   }
 
@@ -247,7 +246,8 @@ app.use((err, req, res, next) => {
     error: process.env.NODE_ENV === 'development' ? err : {},
     isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
     user: req.user || null,
-    isAdmin: !!(req.user && req.user.role === 'admin')
+    isAdmin: !!(req.user && req.user.role === 'admin'),
+    csrfToken: (req.csrfToken && typeof req.csrfToken === 'function') ? req.csrfToken() : ''
   });
 });
 

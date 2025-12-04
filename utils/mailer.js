@@ -45,4 +45,17 @@ async function sendResetEmail({ to, name, token }) {
   return sendMail({ to, subject: 'Reset your password', html, text });
 }
 
-module.exports = { transport, verify, sendMail, sendResetEmail };
+async function sendActivationEmail({ to, name, token }) {
+  const base = process.env.BASE_URL || 'http://localhost:3000';
+  const url = `${base}/auth/activate/${token}`;
+  const html = `
+    <p>Hi ${name || ''},</p>
+    <p>Thank you for registering. Please click the link below to verify your email address:</p>
+    <p><a href="${url}">${url}</a></p>
+    <p>If you did not register for this account, please ignore this email.</p>
+  `;
+  const text = `Verify your email: ${url}`;
+  return sendMail({ to, subject: 'Verify your email - SkillSwap MY', html, text });
+}
+
+module.exports = { transport, verify, sendMail, sendResetEmail: sendResetEmail, sendActivationEmail };

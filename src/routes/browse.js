@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { category, level, location, type, search } = req.query;
-    
+
     // Build where clause for users
     const userWhere = { isPublic: true, role: 'user' };
     if (location) {
@@ -51,11 +51,11 @@ router.get('/', async (req, res) => {
     let filteredUsers = users;
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredUsers = users.filter(user => 
+      filteredUsers = users.filter(user =>
         user.name.toLowerCase().includes(searchLower) ||
         user.bio?.toLowerCase().includes(searchLower) ||
         user.location?.toLowerCase().includes(searchLower) ||
-        user.userSkills.some(us => 
+        user.userSkills.some(us =>
           us.Skill.name.toLowerCase().includes(searchLower) ||
           us.Skill.Category.name.toLowerCase().includes(searchLower)
         )
@@ -93,7 +93,7 @@ router.get('/', async (req, res) => {
 router.get('/user/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const user = await User.findByPk(id, {
       include: [
         {
@@ -115,7 +115,8 @@ router.get('/user/:id', async (req, res) => {
 
     res.render('browse/user', {
       title: `${user.name} - SkillSwap MY`,
-      profileUser: user
+      profileUser: user,
+      from: req.query.from
     });
   } catch (error) {
     console.error('User profile error:', error);
