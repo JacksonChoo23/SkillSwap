@@ -1,0 +1,246 @@
+<!-- src/views/reports/review.ejs -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-clipboard-check me-2"></i>Report Review</h2>
+                <span
+                    class="badge bg-<%= report.status === 'escalated' ? 'warning' : report.status === 'resolved' ? 'success' : 'info' %> fs-6">
+                    <%= report.status.replace('_', ' ' ).toUpperCase() %>
+                </span>
+            </div>
+
+            <!-- AI Analysis Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div
+                    class="card-header bg-<%= aiAnalysis.verdict === 'violation' ? 'danger' : aiAnalysis.verdict === 'harmless' ? 'success' : 'warning' %> text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-robot me-2"></i>AI Analysis Result
+                        </h5>
+                        <span class="badge bg-white text-dark">
+                            Confidence: <%= Math.round((aiAnalysis.confidence || 0) * 100) %>%
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Verdict -->
+                    <div class="text-center mb-4">
+                        <% if (aiAnalysis.verdict==='violation' ) { %>
+                            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 4rem;"></i>
+                            <h3 class="text-danger mt-3">Policy Violation Detected</h3>
+                            <% } else if (aiAnalysis.verdict==='harmless' ) { %>
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                                <h3 class="text-success mt-3">No Violation Found</h3>
+                                <% } else { %>
+                                    <i class="bi bi-question-circle-fill text-warning" style="font-size: 4rem;"></i>
+                                    <h3 class="text-warning mt-3">Uncertain - Requires Review</h3>
+                                    <% } %>
+                    </div>
+
+                    <!-- Summary -->
+                    <div class="bg-light rounded p-3 mb-4">
+                        <h6 class="fw-semibold mb-2"><i class="bi bi-chat-left-text me-2"></i>Summary</h6>
+                        <p class="mb-0">
+                            <%= aiAnalysis.summary || 'No summary available' %>
+                        </p>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center h-100">
+                                <small class="text-muted d-block">Category</small>
+                                <strong class="text-capitalize">
+                                    <%= aiAnalysis.category || 'N/A' %>
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center h-100">
+                                <small class="text-muted d-block">Severity</small>
+                                <span class="badge bg-<%= 
+                  report.severity === 'critical' ? 'danger' : 
+                  report.severity === 'high' ? 'warning' : 
+                  report.severity === 'medium' ? 'warning' : 
+                  report.severity === 'low' ? 'info' : 'secondary' 
+                %> text-uppercase">
+                                    <%= report.severity %>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 text-center h-100">
+                                <small class="text-muted d-block">Recommended Action</small>
+                                <strong class="text-capitalize">
+                                    <%= aiAnalysis.recommendedPenalty?.replace('_', ' ' ) || 'N/A' %>
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reasoning -->
+                    <% if (aiAnalysis.reasoning) { %>
+                        <div class="border-start border-4 border-primary ps-3 mb-4">
+                            <h6 class="fw-semibold"><i class="bi bi-lightbulb me-2"></i>AI Reasoning</h6>
+                            <p class="text-muted mb-0">
+                                <%= aiAnalysis.reasoning %>
+                            </p>
+                        </div>
+                        <% } %>
+
+                            <!-- Penalty Info (if violation) -->
+                            <% if (penaltyDisplay) { %>
+                                <div class="alert alert-<%= penaltyDisplay.color %> d-flex align-items-start">
+                                    <i class="bi bi-<%= penaltyDisplay.icon %> fs-4 me-3"></i>
+                                    <div>
+                                        <strong>Recommended Penalty:</strong>
+                                        <%= penaltyDisplay.description %>
+                                            <p class="mb-0 small mt-1">If you agree with this assessment, clicking
+                                                "Accept" will apply this penalty to the reported user.</p>
+                                    </div>
+                                </div>
+                                <% } %>
+                </div>
+            </div>
+
+            <!-- Review Time Info -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-clock me-2"></i>Review Timeline</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-success rounded-pill me-2">✓</span>
+                                <span>AI Analysis: <strong class="text-success">
+                                        <%= estimatedTimes.ai %>
+                                    </strong></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-secondary rounded-pill me-2">◦</span>
+                                <span>Manual Review (if escalated): <strong>
+                                        <%= estimatedTimes.manual %>
+                                    </strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Details -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="mb-0"><i class="bi bi-file-text me-2"></i>Report Details</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Target User -->
+                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                        <img src="<%= report.targetUser?.profileImage || '/images/default-avatar.png' %>"
+                            alt="<%= report.targetUser?.name %>" class="rounded-circle me-3"
+                            style="width: 50px; height: 50px; object-fit: cover;">
+                        <div>
+                            <small class="text-muted">Reported User</small>
+                            <h6 class="mb-0">
+                                <%= report.targetUser?.name || 'Unknown User' %>
+                            </h6>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="mb-3">
+                        <small class="text-muted">Your Report</small>
+                        <p class="mb-0">
+                            <%= report.reason %>
+                        </p>
+                    </div>
+
+                    <!-- Evidence -->
+                    <% if (report.evidence && report.evidence.length> 0) { %>
+                        <div>
+                            <small class="text-muted d-block mb-2">Evidence Submitted (<%= report.evidence.length %>
+                                    file(s))</small>
+                            <div class="row g-2">
+                                <% report.evidence.forEach(function(img, idx) { %>
+                                    <div class="col-4 col-md-3">
+                                        <a href="<%= img %>" target="_blank">
+                                            <img src="<%= img %>" class="img-thumbnail"
+                                                style="width:100%;height:80px;object-fit:cover;"
+                                                alt="Evidence <%= idx + 1 %>">
+                                        </a>
+                                    </div>
+                                    <% }); %>
+                            </div>
+                        </div>
+                        <% } %>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <% if (report.status==='ai_reviewed' ) { %>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="fw-semibold mb-3">What would you like to do?</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <form action="/reports/<%= report.id %>/accept" method="POST">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-success btn-lg w-100">
+                                        <i class="bi bi-check-lg me-2"></i>
+                                        <% if (aiAnalysis.verdict==='violation' ) { %>
+                                            I Agree - Apply Penalty
+                                            <% } else { %>
+                                                I Accept This Result
+                                                <% } %>
+                                    </button>
+                                    <small class="text-muted d-block text-center mt-2">
+                                        <% if (aiAnalysis.verdict==='violation' ) { %>
+                                            The reported user will receive the recommended penalty.
+                                            <% } else { %>
+                                                No action will be taken. Thank you for your report.
+                                                <% } %>
+                                    </small>
+                                </form>
+                            </div>
+                            <div class="col-md-6">
+                                <form action="/reports/<%= report.id %>/escalate" method="POST">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button type="submit" class="btn btn-outline-warning btn-lg w-100">
+                                        <i class="bi bi-person-exclamation me-2"></i>I Disagree - Manual Review
+                                    </button>
+                                    <small class="text-muted d-block text-center mt-2">
+                                        Escalate to human moderators. Estimated time: 24-48 hours.
+                                    </small>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% } else if (report.status==='escalated' ) { %>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-hourglass-split me-2"></i>
+                        <strong>Escalated to Manual Review</strong> - Our team will review this report within 24-48
+                        hours.
+                    </div>
+                    <% } else if (report.status==='resolved' || report.status==='auto_penalized' ) { %>
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Report Resolved</strong>
+                            <% if (report.penaltyApplied) { %>
+                                - Penalty applied: <%= report.penaltyApplied %>
+                                    <% } %>
+                        </div>
+                        <% } %>
+
+                            <div class="text-center mt-4">
+                                <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Back
+                                </a>
+                            </div>
+        </div>
+    </div>
+</div>

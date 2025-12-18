@@ -1,33 +1,37 @@
-<%- include('../partials/header') %>
-<div class="min-vh-100 d-flex align-items-center">
+<div class="d-flex align-items-center" style="animation: fadeIn 0.5s ease-out;">
   <div class="container-fluid">
-    <div class="row g-0 min-vh-100">
+    <div class="row g-0">
       <!-- Left Panel - Branding (Hidden on mobile) -->
-      <div class="col-lg-6 d-none d-lg-flex bg-primary bg-gradient text-white p-5 position-relative overflow-hidden">
-        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10" style="background: radial-gradient(circle, white 1px, transparent 1px); background-size: 50px 50px;"></div>
-        <div class="position-relative z-1 d-flex flex-column justify-content-center" style="max-width: 500px; margin: auto;">
-          <div class="mb-4">
+      <div class="col-lg-6 d-none d-lg-flex bg-primary bg-gradient text-white p-5 position-relative overflow-hidden"
+        style="animation: slideInLeft 0.6s ease-out;">
+        <div class="position-absolute top-0 start-0 w-100 h-100 opacity-10"
+          style="background: radial-gradient(circle, white 1px, transparent 1px); background-size: 50px 50px;"></div>
+        <div class="position-relative z-1 d-flex flex-column justify-content-center"
+          style="max-width: 500px; margin: auto;">
+          <div class="mb-4" style="animation: float 3s ease-in-out infinite;">
             <i class="fas fa-exchange-alt display-1 opacity-75"></i>
           </div>
-          <h1 class="display-4 fw-bold mb-3">Welcome Back to<br>SkillSwap MY</h1>
-          <p class="fs-5 opacity-75 mb-5">Connect, Learn, and Grow Together</p>
-          
+          <h1 class="display-4 fw-bold mb-3" style="animation: fadeInUp 0.6s ease-out 0.1s both;">Welcome Back
+            to<br>SkillSwap MY</h1>
+          <p class="fs-5 opacity-75 mb-5" style="animation: fadeInUp 0.6s ease-out 0.2s both;">Connect, Learn, and
+            Grow Together</p>
+
           <div class="d-flex flex-column gap-4">
-            <div class="d-flex align-items-start gap-3">
+            <div class="d-flex align-items-start gap-3" style="animation: fadeInUp 0.6s ease-out 0.3s both;">
               <i class="fas fa-users-cog fs-1 opacity-75 flex-shrink-0"></i>
               <div>
                 <h5 class="fw-semibold mb-1">Exchange Skills</h5>
                 <p class="mb-0 opacity-75">Learn from peers while sharing your expertise</p>
               </div>
             </div>
-            <div class="d-flex align-items-start gap-3">
+            <div class="d-flex align-items-start gap-3" style="animation: fadeInUp 0.6s ease-out 0.4s both;">
               <i class="fas fa-calendar-check fs-1 opacity-75 flex-shrink-0"></i>
               <div>
                 <h5 class="fw-semibold mb-1">Flexible Scheduling</h5>
                 <p class="mb-0 opacity-75">Set your availability and find the perfect match</p>
               </div>
             </div>
-            <div class="d-flex align-items-start gap-3">
+            <div class="d-flex align-items-start gap-3" style="animation: fadeInUp 0.6s ease-out 0.5s both;">
               <i class="fas fa-shield-alt fs-1 opacity-75 flex-shrink-0"></i>
               <div>
                 <h5 class="fw-semibold mb-1">Safe & Secure</h5>
@@ -39,100 +43,103 @@
       </div>
 
       <!-- Right Panel - Login Form -->
-      <div class="col-lg-6 bg-light d-flex align-items-center justify-content-center p-4">
-        <div class="w-100 bg-white rounded-3 shadow-sm p-4 p-lg-5" style="max-width: 480px;">
-          <div class="text-center mb-4">
+      <div class="col-lg-6 bg-light d-flex align-items-center justify-content-center p-4"
+        style="animation: slideInRight 0.6s ease-out;">
+        <div class="w-100 bg-white rounded-3 shadow-sm p-4 p-lg-5"
+          style="max-width: 480px; animation: scaleUp 0.5s ease-out 0.2s both;">
+          <div class="text-center mb-4" style="animation: fadeInDown 0.4s ease-out 0.3s both;">
             <h2 class="h2 fw-bold mb-2">Sign In</h2>
             <p class="text-muted mb-0">Enter your credentials to access your account</p>
           </div>
-          
-          <div>
-          <div>
-            <form method="POST" action="/auth/login" id="loginForm">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              
-              <!-- Email Field -->
-              <div class="mb-3">
-                <label class="form-label fw-medium">Email Address</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-light">
-                    <i class="fas fa-envelope text-muted"></i>
-                  </span>
-                  <input class="form-control" type="email" name="email" id="email" required 
-                         placeholder="your.email@example.com" autocomplete="email">
-                </div>
-                <div class="invalid-feedback d-block" id="emailFeedback"></div>
-              </div>
 
-              <!-- Password Field -->
-              <div class="mb-3">
-                <label class="form-label fw-medium">Password</label>
-                <div class="input-group">
-                  <span class="input-group-text bg-light">
-                    <i class="fas fa-lock text-muted"></i>
-                  </span>
-                  <input class="form-control" type="password" name="password" id="password" required 
-                         placeholder="Enter your password" autocomplete="current-password">
-                  <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                    <i class="fas fa-eye" id="toggleIcon"></i>
+          <div>
+            <div>
+              <form method="POST" action="/auth/login" id="loginForm">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+                <!-- Email Field -->
+                <div class="mb-3">
+                  <label class="form-label fw-medium">Email Address</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-envelope text-muted"></i>
+                    </span>
+                    <input class="form-control" type="email" name="email" id="email" required
+                      placeholder="your.email@example.com" autocomplete="email">
+                  </div>
+                  <div class="invalid-feedback d-block" id="emailFeedback"></div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-3">
+                  <label class="form-label fw-medium">Password</label>
+                  <div class="input-group">
+                    <span class="input-group-text bg-light">
+                      <i class="fas fa-lock text-muted"></i>
+                    </span>
+                    <input class="form-control" type="password" name="password" id="password" required
+                      placeholder="Enter your password" autocomplete="current-password">
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                      <i class="fas fa-eye" id="toggleIcon"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback d-block" id="passwordFeedback"></div>
+                </div>
+
+                <!-- Remember Me & Forgot Password -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
+                    <label class="form-check-label" for="rememberMe">
+                      Remember me
+                    </label>
+                  </div>
+                  <a href="/auth/forgot" class="text-primary text-decoration-none small">
+                    Forgot password?
+                  </a>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-grid mb-3">
+                  <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">
+                    <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status"></span>
+                    <i class="fas fa-sign-in-alt me-2" id="submitIcon"></i>
+                    <span id="submitText">Sign In</span>
                   </button>
                 </div>
-                <div class="invalid-feedback d-block" id="passwordFeedback"></div>
-              </div>
 
-              <!-- Remember Me & Forgot Password -->
-              <div class="d-flex justify-content-between align-items-center mb-4">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe">
-                  <label class="form-check-label" for="rememberMe">
-                    Remember me
-                  </label>
+                <!-- Register Link -->
+                <div class="text-center">
+                  <p class="text-muted mb-0">
+                    Don't have an account?
+                    <a href="/auth/register" class="text-primary text-decoration-none fw-semibold">
+                      Sign up
+                    </a>
+                  </p>
                 </div>
-                <a href="/auth/forgot" class="text-primary text-decoration-none small">
-                  Forgot password?
-                </a>
-              </div>
+              </form>
 
-              <!-- Submit Button -->
-              <div class="d-grid mb-3">
-                <button class="btn btn-primary btn-lg" type="submit" id="submitBtn">
-                  <span class="spinner-border spinner-border-sm me-2 d-none" id="submitSpinner" role="status"></span>
-                  <i class="fas fa-sign-in-alt me-2" id="submitIcon"></i>
-                  <span id="submitText">Sign In</span>
-                </button>
-              </div>
-
-              <!-- Register Link -->
-              <div class="text-center">
-                <p class="text-muted mb-0">
-                  Don't have an account? 
-                  <a href="/auth/register" class="text-primary text-decoration-none fw-semibold">
-                    Sign up
-                  </a>
-                </p>
-              </div>
-            </form>
-
-            <!-- Help Links -->
-            <div class="mt-4 pt-4 border-top">
-              <div class="row text-center g-3">
-                <div class="col-4">
-                  <a href="/about" class="text-muted text-decoration-none d-block">
-                    <i class="fas fa-info-circle d-block mb-1 fs-5"></i>
-                    <small>About</small>
-                  </a>
-                </div>
-                <div class="col-4">
-                  <a href="#" class="text-muted text-decoration-none d-block">
-                    <i class="fas fa-headset d-block mb-1 fs-5"></i>
-                    <small>Support</small>
-                  </a>
-                </div>
-                <div class="col-4">
-                  <a href="#" class="text-muted text-decoration-none d-block">
-                    <i class="fas fa-shield-alt d-block mb-1 fs-5"></i>
-                    <small>Privacy</small>
-                  </a>
+              <!-- Help Links -->
+              <div class="mt-4 pt-4 border-top">
+                <div class="row text-center g-3">
+                  <div class="col-4">
+                    <a href="/about" class="text-muted text-decoration-none d-block">
+                      <i class="fas fa-info-circle d-block mb-1 fs-5"></i>
+                      <small>About</small>
+                    </a>
+                  </div>
+                  <div class="col-4">
+                    <a href="#" class="text-muted text-decoration-none d-block">
+                      <i class="fas fa-headset d-block mb-1 fs-5"></i>
+                      <small>Support</small>
+                    </a>
+                  </div>
+                  <div class="col-4">
+                    <a href="#" class="text-muted text-decoration-none d-block">
+                      <i class="fas fa-shield-alt d-block mb-1 fs-5"></i>
+                      <small>Privacy</small>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -141,144 +148,153 @@
       </div>
     </div>
   </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-  const emailInput = document.getElementById('email');
-  const passwordInput = document.getElementById('password');
-  const submitBtn = document.getElementById('submitBtn');
-  const submitSpinner = document.getElementById('submitSpinner');
-  const submitIcon = document.getElementById('submitIcon');
-  const submitText = document.getElementById('submitText');
-  const togglePassword = document.getElementById('togglePassword');
-  const toggleIcon = document.getElementById('toggleIcon');
-  const loginForm = document.getElementById('loginForm');
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitSpinner = document.getElementById('submitSpinner');
+      const submitIcon = document.getElementById('submitIcon');
+      const submitText = document.getElementById('submitText');
+      const togglePassword = document.getElementById('togglePassword');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const loginForm = document.getElementById('loginForm');
 
-  // Password visibility toggle
-  togglePassword.addEventListener('click', function() {
-    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordInput.setAttribute('type', type);
-    
-    if (type === 'text') {
-      toggleIcon.className = 'fas fa-eye-slash';
-    } else {
-      toggleIcon.className = 'fas fa-eye';
-    }
-  });
+      // Password visibility toggle
+      togglePassword.addEventListener('click', function () {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
 
-  // Add input animations and validation
-  const inputs = document.querySelectorAll('.form-control');
-  inputs.forEach(input => {
-    input.addEventListener('focus', function() {
-      this.parentElement.classList.add('shadow-sm');
-      this.style.transform = 'scale(1.02)';
-      this.style.transition = 'transform 0.2s ease-in-out';
-      this.classList.remove('is-invalid');
-    });
-    
-    input.addEventListener('blur', function() {
-      this.parentElement.classList.remove('shadow-sm');
-      this.style.transform = 'scale(1)';
-      validateInput(this);
-    });
+        if (type === 'text') {
+          toggleIcon.className = 'fas fa-eye-slash';
+        } else {
+          toggleIcon.className = 'fas fa-eye';
+        }
+      });
 
-    input.addEventListener('input', function() {
-      this.classList.remove('is-invalid');
+      // Add input animations and validation
+      const inputs = document.querySelectorAll('.form-control');
+      inputs.forEach(input => {
+        input.addEventListener('focus', function () {
+          this.parentElement.classList.add('shadow-sm');
+          this.style.transform = 'scale(1.02)';
+          this.style.transition = 'transform 0.2s ease-in-out';
+          this.classList.remove('is-invalid');
+        });
+
+        input.addEventListener('blur', function () {
+          this.parentElement.classList.remove('shadow-sm');
+          this.style.transform = 'scale(1)';
+          validateInput(this);
+        });
+
+        input.addEventListener('input', function () {
+          this.classList.remove('is-invalid');
+          updateSubmitButton();
+        });
+      });
+
+      function validateInput(input) {
+        const value = input.value.trim();
+        let isValid = true;
+
+        if (input.type === 'email') {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          isValid = emailRegex.test(value);
+
+          if (!isValid && value.length > 0) {
+            input.classList.add('is-invalid');
+            document.getElementById('emailFeedback').textContent = 'Please enter a valid email address';
+          }
+        } else if (input.type === 'password') {
+          isValid = value.length >= 1;
+
+          if (!isValid && value.length > 0) {
+            input.classList.add('is-invalid');
+            document.getElementById('passwordFeedback').textContent = 'Password is required';
+          }
+        }
+
+        return isValid;
+      }
+
+      function updateSubmitButton() {
+        const emailValid = emailInput.value.trim().length > 0 && !emailInput.classList.contains('is-invalid');
+        const passwordValid = passwordInput.value.trim().length > 0;
+
+        if (emailValid && passwordValid) {
+          submitBtn.disabled = false;
+          submitBtn.className = 'btn btn-primary btn-lg py-3';
+        } else {
+          submitBtn.disabled = true;
+          submitBtn.className = 'btn btn-outline-secondary btn-lg py-3';
+        }
+      }
+
+      // Form submission with loading animation
+      loginForm.addEventListener('submit', function (e) {
+        const emailValid = validateInput(emailInput);
+        const passwordValid = validateInput(passwordInput);
+
+        if (!emailValid || !passwordValid) {
+          e.preventDefault();
+
+          // Shake animation for invalid inputs
+          const invalidInputs = document.querySelectorAll('.is-invalid');
+          invalidInputs.forEach(input => {
+            input.style.animation = 'shake 0.5s ease-in-out';
+            setTimeout(() => {
+              input.style.animation = '';
+            }, 500);
+          });
+
+          return false;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitSpinner.classList.remove('d-none');
+        submitIcon.classList.add('d-none');
+        submitText.textContent = 'Signing In...';
+      });
+
+      // Initial validation
       updateSubmitButton();
     });
-  });
+  </script>
 
-  function validateInput(input) {
-    const value = input.value.trim();
-    let isValid = true;
-    
-    if (input.type === 'email') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      isValid = emailRegex.test(value);
-      
-      if (!isValid && value.length > 0) {
-        input.classList.add('is-invalid');
-        document.getElementById('emailFeedback').textContent = 'Please enter a valid email address';
+  <style>
+    /* Minimal custom styles - mostly using Bootstrap 5 classes */
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
       }
-    } else if (input.type === 'password') {
-      isValid = value.length >= 1;
-      
-      if (!isValid && value.length > 0) {
-        input.classList.add('is-invalid');
-        document.getElementById('passwordFeedback').textContent = 'Password is required';
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
       }
     }
-    
-    return isValid;
-  }
 
-  function updateSubmitButton() {
-    const emailValid = emailInput.value.trim().length > 0 && !emailInput.classList.contains('is-invalid');
-    const passwordValid = passwordInput.value.trim().length > 0;
-    
-    if (emailValid && passwordValid) {
-      submitBtn.disabled = false;
-      submitBtn.className = 'btn btn-primary btn-lg py-3';
-    } else {
-      submitBtn.disabled = true;
-      submitBtn.className = 'btn btn-outline-secondary btn-lg py-3';
-    }
-  }
-
-  // Form submission with loading animation
-  loginForm.addEventListener('submit', function(e) {
-    const emailValid = validateInput(emailInput);
-    const passwordValid = validateInput(passwordInput);
-    
-    if (!emailValid || !passwordValid) {
-      e.preventDefault();
-      
-      // Shake animation for invalid inputs
-      const invalidInputs = document.querySelectorAll('.is-invalid');
-      invalidInputs.forEach(input => {
-        input.style.animation = 'shake 0.5s ease-in-out';
-        setTimeout(() => {
-          input.style.animation = '';
-        }, 500);
-      });
-      
-      return false;
+    /* Small enhancements for transitions */
+    .btn {
+      transition: all 0.2s ease-in-out;
     }
 
-    // Show loading state
-    submitBtn.disabled = true;
-    submitSpinner.classList.remove('d-none');
-    submitIcon.classList.add('d-none');
-    submitText.textContent = 'Signing In...';
-  });
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
 
-  // Initial validation
-  updateSubmitButton();
-});
-</script>
+    .input-group:focus-within {
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+      border-radius: 0.375rem;
+    }
+  </style>
 
-<style>
-/* Minimal custom styles - mostly using Bootstrap 5 classes */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-/* Small enhancements for transitions */
-.btn {
-  transition: all 0.2s ease-in-out;
-}
-
-.btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-}
-
-.input-group:focus-within {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
-  border-radius: 0.375rem;
-}
-</style>
-
-<%- include('../partials/footer') %>
+  <%- include('../partials/footer') %>

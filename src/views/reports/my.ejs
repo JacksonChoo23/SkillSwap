@@ -1,0 +1,135 @@
+<!-- src/views/reports/my.ejs -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-flag me-2"></i>My Reports</h2>
+                <a href="/reports/new" class="btn btn-danger">
+                    <i class="bi bi-plus-lg me-2"></i>New Report
+                </a>
+            </div>
+
+            <% if (!reports || reports.length===0) { %>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="mt-3">No Reports Yet</h5>
+                        <p class="text-muted">You haven't submitted any reports.</p>
+                    </div>
+                </div>
+                <% } else { %>
+                    <div class="card border-0 shadow-sm">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Reported User</th>
+                                        <th>Status</th>
+                                        <th>AI Verdict</th>
+                                        <th>Severity</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% reports.forEach(function(report) { %>
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <img src="<%= report.targetUser?.profileImage || '/images/default-avatar.png' %>"
+                                                        alt="<%= report.targetUser?.name %>" class="rounded-circle me-2"
+                                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                                    <span>
+                                                        <%= report.targetUser?.name || 'Unknown' %>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<%= 
+                        report.status === 'resolved' || report.status === 'auto_penalized' ? 'success' :
+                        report.status === 'escalated' ? 'warning' :
+                        report.status === 'dismissed' ? 'secondary' :
+                        report.status === 'pending_ai' ? 'info' : 'primary'
+                      %>">
+                                                    <%= report.status.replace('_', ' ' ) %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-<%= 
+                        report.aiVerdict === 'violation' ? 'danger' :
+                        report.aiVerdict === 'harmless' ? 'success' :
+                        report.aiVerdict === 'pending' ? 'secondary' : 'warning'
+                      %>">
+                                                    <%= report.aiVerdict %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <% if (report.severity !=='none' ) { %>
+                                                    <span class="badge bg-<%= 
+                          report.severity === 'critical' ? 'danger' :
+                          report.severity === 'high' ? 'warning' :
+                          report.severity === 'medium' ? 'warning' : 'info'
+                        %> text-uppercase">
+                                                        <%= report.severity %>
+                                                    </span>
+                                                    <% } else { %>
+                                                        <span class="text-muted">-</span>
+                                                        <% } %>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    <%= new Date(report.createdAt).toLocaleDateString() %>
+                                                </small>
+                                            </td>
+                                            <td>
+                                                <a href="/reports/<%= report.id %>/review"
+                                                    class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye me-1"></i>View
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <% } %>
+
+                        <!-- Legend -->
+                        <div class="card mt-4 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-2"></i>Status Guide</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <span class="badge bg-info me-2">pending ai</span>
+                                        <small class="text-muted">Being analyzed</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="badge bg-primary me-2">ai reviewed</span>
+                                        <small class="text-muted">Awaiting your decision</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="badge bg-warning me-2">escalated</span>
+                                        <small class="text-muted">Sent to human review</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="badge bg-success me-2">resolved</span>
+                                        <small class="text-muted">Completed</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="badge bg-success me-2">auto penalized</span>
+                                        <small class="text-muted">Penalty applied</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <span class="badge bg-secondary me-2">dismissed</span>
+                                        <small class="text-muted">No action</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+        </div>
+    </div>
+</div>

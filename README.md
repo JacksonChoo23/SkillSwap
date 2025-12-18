@@ -5,24 +5,26 @@ A peer skill exchange platform for Malaysia where users can teach and learn skil
 ## Features
 
 - **User Authentication**: Secure registration, login, and password reset
-- **Profile Management**: Edit bio, location, skills, and availability
-- **Skill Matching**: Find compatible skill exchange partners
-- **Skill Value Calculator**: Fair time-for-time exchange calculations
-- **Messaging System**: Internal message board for communication
-- **Session Management**: Schedule, confirm, and complete skill sessions
-- **Rating System**: Rate sessions on communication, skill, attitude, and punctuality
-- **Admin Panel**: Manage users, listings, reports, and system settings
-- **Content Moderation**: Automatic content filtering and admin review
-- **WhatsApp Integration**: Direct messaging via WhatsApp deep links
+- **Advanced Admin Dashboard**: KPI statistics, growth charts, and AI health monitoring
+- **AI-Powered Suggestions**: Integration with Google Gemini for optimized listing content
+- **Dynamic UI/UX**: Global pre-navigation loader and Apple-style animations
+- **Universal Alerts**: Centered SweetAlert2 notifications across all workflows
+- **Payment & Invoice Tracking**: Simulated transaction management and reporting
+- **Profile Management**: Detailed achievements, badges, and progress export (CSV)
+- **Skill Matching**: Score-based recommendation engine (60% tags, 40% availability)
+- **Messaging System**: Threaded conversations with content moderation
+- **Session Management**: Full workflow from request to rating with start-code verification
+- **WhatsApp Integration**: Direct one-click contact for offline coordination
 
 ## Tech Stack
 
 - **Backend**: Node.js 20 + Express
-- **Views**: EJS (server-rendered) + Bootstrap 5
+- **Frontend**: EJS Templating + Bootstrap 5 + SweetAlert2
+- **AI Service**: Google Gemini AI (Generative AI & Moderation)
 - **Database**: MySQL 8 with Sequelize ORM
-- **Authentication**: Passport.js (local) with bcrypt
-- **Security**: Helmet, CSRF protection, rate limiting, input validation
-- **Logging**: Morgan (dev) + Winston (prod)
+- **Security**: Passport.js, Helmet, CSRF protection, Rate limiting
+- **Logging**: Winston (Production) + Morgan (Development)
+- **UI Enhancements**: Custom animations.js & global loader.js
 
 ## Prerequisites
 
@@ -101,12 +103,21 @@ skillswap-my/
 │   ├── services/        # Business logic services
 │   ├── middlewares/     # Custom middleware
 │   └── views/           # EJS templates
-├── public/              # Static assets
+├── public/              # Static assets (CSS, JS, Images)
 ├── logs/                # Application logs
-├── app.js              # Main application file
+├── tests/               # Validation and verification scripts
+├── academic_class_diagram.md  # UML Documentation
+├── PROJECT_DETAILED_REPORT.md # Comprehensive Project Status
+├── app.js              # Main application entry point
 ├── package.json        # Dependencies and scripts
 └── README.md           # This file
 ```
+
+## 📚 Documentation
+
+For deeper technical insights, please refer to:
+- [Academic Class Diagram](file:///d:/APU_FYP_Code/academic_class_diagram.md) - Detailed UML architecture
+- [Project Detailed Report](file:///d:/APU_FYP_Code/PROJECT_DETAILED_REPORT.md) - Full feature roadmap and implementation status
 
 ## Key Features Explained
 

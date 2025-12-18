@@ -1,5 +1,5 @@
 const express = require('express');
-const { TipToken, User } = require('../models');
+const { TipToken, User, Notification } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Tips history error:', error);
-    req.session.error = 'Error loading tips.';
+    req.flash('error', 'Error loading tips.');
     res.redirect('/profile');
   }
 });
@@ -52,30 +52,30 @@ router.get('/', async (req, res) => {
 router.post('/send', validate(schemas.tip), async (req, res) => {
   try {
     if (isRateLimited(req)) {
-      req.session.error = 'Too many tips sent. Please try again later.';
+      req.flash('error', 'Too many tips sent. Please try again later.');
       return res.redirect('back');
     }
 
     const { toUserId, amount, note } = req.body;
     const toId = parseInt(toUserId);
     if (!Number.isInteger(toId)) {
-      req.session.error = 'Invalid recipient.';
+      req.flash('error', 'Invalid recipient.');
       return res.redirect('back');
     }
     if (toId === req.user.id) {
-      req.session.error = 'You cannot tip yourself.';
+      req.flash('error', 'You cannot tip yourself.');
       return res.redirect('back');
     }
 
     const recipient = await User.findByPk(toId);
     if (!recipient) {
-      req.session.error = 'Recipient not found.';
+      req.flash('error', 'Recipient not found.');
       return res.redirect('back');
     }
 
     const amt = parseInt(amount);
     if (!Number.isFinite(amt) || amt < 1 || amt > 10) {
-      req.session.error = 'Tip amount must be between 1 and 10.';
+      req.flash('error', 'Tip amount must be between 1 and 10.');
       return res.redirect('back');
     }
 
@@ -86,15 +86,24 @@ router.post('/send', validate(schemas.tip), async (req, res) => {
       note: note || ''
     });
 
-    req.session.success = 'Tip sent!';
+    // Notify recipient
+    await Notification.create({
+      user_id: toId,
+      title: 'Tip Received!',
+      message: `You received a tip of ${amt} tokens from ${req.user.name || 'a user'}! ${note ? `Note: ${note}` : ''}`,
+      status: 'unread'
+    });
+
+    req.flash('success', 'Tip sent successfully!');
     res.redirect('back');
   } catch (error) {
     console.error('Send tip error:', error);
-    req.session.error = 'Error sending tip.';
+    req.flash('error', 'Error sending tip. Please try again.');
     res.redirect('back');
   }
 });
 
 module.exports = router;
+
 
 

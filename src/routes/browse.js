@@ -1,6 +1,7 @@
 const express = require('express');
-const { User, UserSkill, Skill, Category, Availability } = require('../models');
+const { User, UserSkill, Skill, Category, Availability, Rating } = require('../models');
 const { Op } = require('sequelize');
+const cacheService = require('../services/cacheService');
 
 const router = express.Router();
 
@@ -8,6 +9,11 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     const { category, level, location, type, search } = req.query;
+
+    // Pagination params
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 12));
+    const offset = (page - 1) * limit;
 
     // Build where clause for users
     const userWhere = { isPublic: true, role: 'user' };
@@ -19,7 +25,15 @@ router.get('/', async (req, res) => {
     const skillInclude = {
       model: UserSkill,
       as: 'userSkills',
-      include: [{ model: Skill, include: [Category] }]
+      required: false,
+      include: [{
+        model: Skill,
+        required: false,
+        include: [{
+          model: Category,
+          required: false
+        }]
+      }]
     };
 
     if (category || level || type) {
@@ -31,23 +45,51 @@ router.get('/', async (req, res) => {
         skillInclude.where.level = level;
       }
       if (category) {
+        // Use Sequelize.literal to properly reference the joined table
         skillInclude.include[0].where = { categoryId: category };
+        skillInclude.include[0].required = true;
+        skillInclude.required = true;
       }
     }
 
-    const users = await User.findAll({
-      where: userWhere,
-      include: [
-        skillInclude,
-        {
-          model: Availability,
-          as: 'availabilities'
-        }
-      ],
-      order: [['name', 'ASC']]
-    });
+    // Generate cache key for browse queries
+    const hasFilters = category || level || location || type || search;
+    const cacheKey = hasFilters ? null : `browse_users_page_${page}_limit_${limit}`;
 
-    // Filter by search term if provided
+    // Try to get from cache if no filters applied
+    let count, users;
+    const cached = cacheKey ? cacheService.get(cacheKey) : null;
+
+    if (cached) {
+      count = cached.count;
+      users = cached.users;
+    } else {
+      const result = await User.findAndCountAll({
+        where: userWhere,
+        include: [
+          skillInclude,
+          {
+            model: Availability,
+            as: 'availabilities'
+          }
+        ],
+        order: [['name', 'ASC']],
+        limit,
+        offset,
+        distinct: true // Important for correct count with includes
+      });
+
+      count = result.count;
+      // Convert to plain objects before caching to avoid clone issues
+      users = result.rows.map(u => u.get({ plain: true }));
+
+      // Cache for 60 seconds if no filters
+      if (cacheKey) {
+        cacheService.set(cacheKey, { count, users }, 60);
+      }
+    }
+
+    // Filter by search term if provided (post-query filter for simplicity)
     let filteredUsers = users;
     if (search) {
       const searchLower = search.toLowerCase();
@@ -63,28 +105,46 @@ router.get('/', async (req, res) => {
     }
 
     // Filter out the logged-in user's account
-    filteredUsers = filteredUsers.filter(user => user.id !== req.user.id);
+    if (req.user) {
+      filteredUsers = filteredUsers.filter(user => user.id !== req.user.id);
+    }
 
-    const categories = await Category.findAll({
-      where: { isActive: true },
-      order: [['name', 'ASC']]
-    });
+    // Cache categories and skills for 5 minutes
+    const categories = await cacheService.getOrFetch('browse_categories', async () => {
+      const cats = await Category.findAll({
+        where: { isActive: true },
+        order: [['name', 'ASC']]
+      });
+      return cats.map(c => c.get({ plain: true }));
+    }, 300);
 
-    const skills = await Skill.findAll({
-      include: [Category],
-      order: [['name', 'ASC']]
-    });
+    const skills = await cacheService.getOrFetch('browse_skills', async () => {
+      const sks = await Skill.findAll({
+        include: [Category],
+        order: [['name', 'ASC']]
+      });
+      return sks.map(s => s.get({ plain: true }));
+    }, 300);
+
+    const totalPages = Math.ceil(count / limit);
 
     res.render('browse/index', {
       title: 'Browse Users - SkillSwap MY',
       users: filteredUsers,
       categories,
       skills,
-      filters: { category, level, location, type, search }
+      filters: { category, level, location, type, search },
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: count,
+        limit,
+        baseUrl: '/browse'
+      }
     });
   } catch (error) {
     console.error('Browse error:', error);
-    req.session.error = 'Error loading browse page.';
+    req.flash('error', `Error loading browse page: ${error.message}`);
     res.redirect('/');
   }
 });
@@ -113,9 +173,23 @@ router.get('/user/:id', async (req, res) => {
       return res.redirect('/browse');
     }
 
+    // Fetch ratings
+    const ratings = await Rating.findAll({
+      where: { rateeId: id },
+      include: [
+        {
+          model: User,
+          as: 'rater',
+          attributes: ['id', 'name', 'profileImage']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
     res.render('browse/user', {
       title: `${user.name} - SkillSwap MY`,
       profileUser: user,
+      ratings,
       from: req.query.from
     });
   } catch (error) {

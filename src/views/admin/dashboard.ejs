@@ -1,132 +1,92 @@
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h4 mb-0">Admin Dashboard</h1>
-  <div>
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/users">Users</a>
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/listings">Listings</a>
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/reports">Reports</a>
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/categories">Categories</a>
-    <a class="btn btn-outline-secondary btn-sm" href="/admin/weights">Weights</a>
-  </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Admin Dashboard</h1>
+  <span class="text-muted small">Last updated: <%= new Date().toLocaleString() %></span>
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-6 col-md-3">
-    <div class="card text-center">
+<!-- KPI Stats Row -->
+<div class="row g-4 mb-4">
+  <!-- Total Users -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <div class="text-muted small">Users</div>
-        <div class="h4 mb-0"><%= stats.totalUsers %></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <div class="text-muted small">Listings</div>
-        <div class="h4 mb-0"><%= stats.totalListings %></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <div class="text-muted small">Pending</div>
-        <div class="h4 mb-0"><%= stats.pendingListings %></div>
-      </div>
-    </div>
-  </div>
-  <div class="col-6 col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <div class="text-muted small">Open Reports</div>
-        <div class="h4 mb-0"><%= stats.openReports %></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4">
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Recent Listings</h2>
-        <% if (!recentListings.length) { %>
-          <div class="text-muted small">No data.</div>
-        <% } else { %>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>Owner</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% recentListings.forEach(l => { %>
-                  <tr>
-                    <td><a href="/listings/<%= l.id %>"><%= l.title %></a></td>
-                    <td><%= l.User?.name || 'User' %></td>
-                    <td><span class="badge <%= l.status==='approved'?'bg-success':(l.status==='pending'?'bg-warning text-dark':'bg-secondary') %>"><%= l.status %></span></td>
-                    <td><%= new Date(l.createdAt).toLocaleString() %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">Total Users</div>
+            <div class="h2 mb-0 fw-bold">
+              <%= stats.totalUsers %>
+            </div>
+            <small class="<%= stats.userGrowth >= 0 ? 'text-success' : 'text-danger' %>">
+              <i class="bi bi-arrow-<%= stats.userGrowth >= 0 ? 'up' : 'down' %>"></i>
+              <%= Math.abs(stats.userGrowth) %>% vs last month
+            </small>
           </div>
-          <a class="btn btn-outline-secondary btn-sm" href="/admin/listings">Manage</a>
-        <% } %>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Recent Reports</h2>
-        <% if (!recentReports.length) { %>
-          <div class="text-muted small">No data.</div>
-        <% } else { %>
-          <div class="table-responsive">
-            <table class="table table-sm align-middle">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Reporter</th>
-                  <th>Target</th>
-                  <th>Status</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                <% recentReports.forEach(r => { %>
-                  <tr>
-                    <td>#<%= r.id %></td>
-                    <td><%= r.reporter?.name || 'User' %></td>
-                    <td><%= r.targetUser?.name || 'User' %></td>
-                    <td><span class="badge <%= r.status==='open'?'bg-danger':'bg-success' %>"><%= r.status %></span></td>
-                    <td><%= new Date(r.createdAt).toLocaleString() %></td>
-                  </tr>
-                <% }) %>
-              </tbody>
-            </table>
+          <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-people-fill text-primary fs-4"></i>
           </div>
-          <a class="btn btn-outline-secondary btn-sm" href="/admin/reports">Manage</a>
-        <% } %>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0">Notification Center</h5>
-      </div>
+  <!-- Total Listings -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
       <div class="card-body">
-        <div id="notificationList" class="list-group">
-          <div class="text-center text-muted">
-            <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
-            <p>Loading notifications...</p>
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">Listings</div>
+            <div class="h2 mb-0 fw-bold">
+              <%= stats.totalListings %>
+            </div>
+            <small class="text-success">
+              +<%= stats.listingsLastMonth %> this month
+            </small>
+          </div>
+          <div class="bg-success bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-collection-fill text-success fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sessions -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">Sessions</div>
+            <div class="h2 mb-0 fw-bold">
+              <%= stats.totalSessions %>
+            </div>
+            <small class="text-info">
+              <%= stats.completedSessions %> completed
+            </small>
+          </div>
+          <div class="bg-info bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-calendar-check-fill text-info fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">Revenue</div>
+            <div class="h2 mb-0 fw-bold">MYR <%= parseFloat(stats.totalRevenue || 0).toFixed(2) %>
+            </div>
+            <small class="text-success">
+              +MYR <%= parseFloat(stats.revenueLastMonth || 0).toFixed(2) %> this month
+            </small>
+          </div>
+          <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-currency-dollar text-warning fs-4"></i>
           </div>
         </div>
       </div>
@@ -134,48 +94,275 @@
   </div>
 </div>
 
-<script>
-  async function loadNotifications() {
-    try {
-        const response = await fetch('/listings/api/notifications');
-      const data = await response.json();
-
-      const list = document.getElementById('notificationList');
-      list.innerHTML = '';
-
-      if (data.notifications && data.notifications.length > 0) {
-        data.notifications.forEach(notification => {
-          const item = document.createElement('a');
-          item.href = '#';
-          item.className = `list-group-item list-group-item-action ${notification.status === 'unread' ? 'fw-bold' : ''}`;
-          item.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center">
-              <span>${notification.title}</span>
-              <small class="text-muted">${new Date(notification.created_at).toLocaleString()}</small>
+<!-- Second KPI Row -->
+<div class="row g-4 mb-4">
+  <!-- AI Health Status -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">AI Health</div>
+            <div class="h5 mb-0 fw-bold <%= aiHealth.online ? 'text-success' : 'text-danger' %>">
+              <%= aiHealth.online ? 'Online' : 'Offline' %>
             </div>
-            <p class="mb-0 small text-muted">${notification.message}</p>
-          `;
-          item.addEventListener('click', async () => {
-            await markAsRead(notification.id);
-            item.classList.remove('fw-bold');
-          });
-          list.appendChild(item);
-        });
-      } else {
-        list.innerHTML = '<div class="text-center text-muted"><i class="fas fa-inbox fa-2x mb-2"></i><p>No notifications found.</p></div>';
+            <small class="text-muted">
+              <%= aiHealth.message %>
+            </small>
+          </div>
+          <div class="bg-<%= aiHealth.online ? 'success' : 'secondary' %> bg-opacity-10 rounded-3 p-3">
+            <i
+              class="bi bi-<%= aiHealth.online ? 'check-circle-fill' : 'x-circle-fill' %> text-<%= aiHealth.online ? 'success' : 'secondary' %> fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Open Reports Card (moved from first row) -->
+  <div class="col-xl-3 col-md-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="text-muted small text-uppercase fw-bold mb-1">Open Reports</div>
+            <div class="h2 mb-0 fw-bold">
+              <%= stats.openReports %>
+            </div>
+            <small class="<%= stats.openReports > 0 ? 'text-danger' : 'text-muted' %>">
+              <%= stats.openReports> 0 ? 'Requires attention' : 'All clear' %>
+            </small>
+          </div>
+          <div class="bg-danger bg-opacity-10 rounded-3 p-3">
+            <i class="bi bi-flag-fill text-danger fs-4"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <!-- User Growth Chart -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3">
+        <h6 class="m-0 fw-bold">User Growth (Last 30 Days)</h6>
+      </div>
+      <div class="card-body">
+        <canvas id="userGrowthChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Distribution -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3">
+        <h6 class="m-0 fw-bold">Skills by Category</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="categoryChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Second Charts Row -->
+<div class="row g-4 mb-4">
+  <!-- Session Status -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3">
+        <h6 class="m-0 fw-bold">Session Status</h6>
+      </div>
+      <div class="card-body d-flex align-items-center justify-content-center">
+        <canvas id="sessionStatusChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity Feed -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3">
+        <h6 class="m-0 fw-bold">Recent Activity</h6>
+      </div>
+      <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+        <ul class="list-group list-group-flush">
+          <% if (activityFeed && activityFeed.length> 0) { %>
+            <% activityFeed.forEach(item=> { %>
+              <li class="list-group-item">
+                <div class="d-flex align-items-center">
+                  <% if (item.type==='user' ) { %>
+                    <span class="badge bg-primary me-2"><i class="bi bi-person-plus"></i></span>
+                    <span>New user <strong>
+                        <%= item.data.name %>
+                      </strong> registered</span>
+                    <% } else if (item.type==='listing' ) { %>
+                      <span class="badge bg-success me-2"><i class="bi bi-plus-circle"></i></span>
+                      <span>Listing "<strong>
+                          <%= item.data.title %>
+                        </strong>" created by <%= item.data.User?.name || 'User' %></span>
+                      <% } else if (item.type==='report' ) { %>
+                        <span class="badge bg-danger me-2"><i class="bi bi-flag"></i></span>
+                        <span>Report #<%= item.data.id %> filed by <%= item.data.reporter?.name || 'User' %></span>
+                        <% } %>
+                          <small class="text-muted ms-auto">
+                            <%= new Date(item.time).toLocaleString() %>
+                          </small>
+                </div>
+              </li>
+              <% }) %>
+                <% } else { %>
+                  <li class="list-group-item text-muted text-center">No recent activity</li>
+                  <% } %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Row: Quick Links & Open Reports -->
+<div class="row g-4">
+  <!-- Quick Actions -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3">
+        <h6 class="m-0 fw-bold">Quick Actions</h6>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a href="/admin/users" class="btn btn-outline-primary"><i class="bi bi-people me-2"></i>Manage Users</a>
+          <a href="/admin/listings" class="btn btn-outline-success"><i class="bi bi-collection me-2"></i>Manage
+            Listings</a>
+          <a href="/admin/reports" class="btn btn-outline-danger"><i class="bi bi-flag me-2"></i>View Reports (<%=
+              stats.openReports %> open)</a>
+          <a href="/admin/categories" class="btn btn-outline-secondary"><i class="bi bi-tags me-2"></i>Manage
+            Categories</a>
+          <a href="/payment" class="btn btn-outline-warning"><i class="bi bi-credit-card me-2"></i>View Payments</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Reports -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 fw-bold text-danger">Open Reports</h6>
+        <a href="/admin/reports" class="btn btn-sm btn-outline-danger">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <% if (!recentReports || recentReports.length===0) { %>
+          <div class="text-center text-muted py-4">No open reports.</div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Reporter</th>
+                    <th>Target</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% recentReports.forEach(r=> { %>
+                    <tr>
+                      <td><a href="/reports/<%= r.id %>/review" class="text-decoration-none fw-bold">#<%= r.id %></a>
+                      </td>
+                      <td>
+                        <%= r.reporter?.name || '-' %>
+                      </td>
+                      <td>
+                        <%= r.targetUser?.name || '-' %>
+                      </td>
+                      <td><span class="badge <%= r.status === 'open' ? 'bg-danger' : 'bg-success' %>">
+                          <%= r.status %>
+                        </span></td>
+                      <td><small>
+                          <%= new Date(r.createdAt).toLocaleDateString() %>
+                        </small></td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <% } %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<div id="chartData" data-user-growth="<%= userGrowthData %>" data-category-dist="<%= categoryDistribution %>"
+  data-session-status="<%= sessionStatusData %>" style="display:none;"></div>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Parse data from data attributes (avoids formatter issues with EJS)
+    const dataEl = document.getElementById('chartData');
+    const userGrowthData = JSON.parse(dataEl.dataset.userGrowth);
+    const categoryDistribution = JSON.parse(dataEl.dataset.categoryDist);
+    const sessionStatusData = JSON.parse(dataEl.dataset.sessionStatus);
+
+    // User Growth Chart
+    new Chart(document.getElementById('userGrowthChart'), {
+      type: 'line',
+      data: {
+        labels: userGrowthData.map(d => d.date),
+        datasets: [{
+          label: 'New Users',
+          data: userGrowthData.map(d => d.count),
+          borderColor: '#0d6efd',
+          backgroundColor: 'rgba(13, 110, 253, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, ticks: { stepSize: 1 } },
+          x: { ticks: { maxTicksLimit: 10 } }
+        }
       }
-    } catch (error) {
-      console.error('Error loading notifications:', error);
-    }
-  }
+    });
 
-  async function markAsRead(id) {
-    try {
-      await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  }
+    // Category Distribution Chart
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: categoryDistribution.map(c => c.name),
+        datasets: [{
+          data: categoryDistribution.map(c => c.count),
+          backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#6f42c1', '#0dcaf0', '#fd7e14', '#20c997']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
 
-  document.addEventListener('DOMContentLoaded', loadNotifications);
+    // Session Status Chart
+    new Chart(document.getElementById('sessionStatusChart'), {
+      type: 'pie',
+      data: {
+        labels: sessionStatusData.map(s => s.status.charAt(0).toUpperCase() + s.status.slice(1)),
+        datasets: [{
+          data: sessionStatusData.map(s => s.count),
+          backgroundColor: ['#ffc107', '#198754', '#dc3545']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+      }
+    });
+  });
 </script>

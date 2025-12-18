@@ -2,13 +2,14 @@
 const nodemailer = require('nodemailer');
 
 const transport = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT || 2525),
-  secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT) === 465,
-  auth: {
+  host: process.env.SMTP_HOST || 'localhost',
+  port: Number(process.env.SMTP_PORT || 1025),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: process.env.SMTP_USER ? {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS
-  },
+  } : undefined,
+  ignoreTLS: true, // often needed for localhost
   logger: process.env.MAIL_DEBUG === '1',
   debug: process.env.MAIL_DEBUG === '1'
 });
@@ -33,7 +34,16 @@ async function sendMail({ to, subject, html, text }) {
 }
 
 async function sendResetEmail({ to, name, token }) {
-  const base = process.env.BASE_URL || 'http://localhost:3000';
+  let base = process.env.BASE_URL || 'http://localhost:3000';
+  // Ensure protocol
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    base = 'http://' + base;
+  }
+  // Remove trailing slash if present to avoid double slashes
+  if (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+
   const url = `${base}/auth/reset/${token}`;
   const html = `
     <p>Hi ${name || ''},</p>
@@ -46,7 +56,16 @@ async function sendResetEmail({ to, name, token }) {
 }
 
 async function sendActivationEmail({ to, name, token }) {
-  const base = process.env.BASE_URL || 'http://localhost:3000';
+  let base = process.env.BASE_URL || 'http://localhost:3000';
+  // Ensure protocol
+  if (!base.startsWith('http://') && !base.startsWith('https://')) {
+    base = 'http://' + base;
+  }
+  // Remove trailing slash if present
+  if (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+
   const url = `${base}/auth/activate/${token}`;
   const html = `
     <p>Hi ${name || ''},</p>
@@ -55,6 +74,15 @@ async function sendActivationEmail({ to, name, token }) {
     <p>If you did not register for this account, please ignore this email.</p>
   `;
   const text = `Verify your email: ${url}`;
+
+  // Log the activation link clearly for testing
+  console.log('\n' + '='.repeat(80));
+  console.log('📧 ACTIVATION EMAIL LINK');
+  console.log('='.repeat(80));
+  console.log(`To: ${to}`);
+  console.log(`Activation Link: ${url}`);
+  console.log('='.repeat(80) + '\n');
+
   return sendMail({ to, subject: 'Verify your email - SkillSwap MY', html, text });
 }
 

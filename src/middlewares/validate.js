@@ -61,8 +61,12 @@ const schemas = {
   session: Joi.object({
     teacherId: Joi.number().integer().positive().required(),
     skillId: Joi.number().integer().positive().required(),
-    startAt: Joi.date().greater('now').required(),
-    endAt: Joi.date().greater(Joi.ref('startAt')).required()
+    startAt: Joi.date().greater('now').required().messages({
+      'date.greater': 'Session start time must be in the future.'
+    }),
+    endAt: Joi.date().greater(Joi.ref('startAt')).required().messages({
+      'date.greater': 'Session end time must be after start time.'
+    })
   }),
 
   sessionCode: Joi.object({
@@ -88,7 +92,8 @@ const schemas = {
   }),
 
   tip: Joi.object({
-    amount: Joi.number().integer().min(1).required(),
+    toUserId: Joi.number().integer().positive().required(),
+    amount: Joi.number().integer().min(1).max(10).required(),
     note: Joi.string().max(200).allow('')
   }),
 

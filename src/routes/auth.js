@@ -3,6 +3,7 @@ const express = require('express');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 const { Op } = require('sequelize');
 const { User } = require('../models');
 const { sendResetEmail, sendActivationEmail } = require('../../utils/mailer');
@@ -11,25 +12,54 @@ const { isNotAuthenticated } = require('../middlewares/auth');
 
 const router = express.Router();
 
+// Strict rate limiter for login
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: 'Too many login attempts from this IP, please try again after 15 minutes',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Rate limiter for registration (prevent automated signups)
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 registration attempts per window
+  message: 'Too many registration attempts. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Rate limiter for forgot password (prevent enumeration attacks)
+const forgotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 3, // Limit each IP to 3 forgot password requests per window
+  message: 'Too many password reset requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Register page
 router.get('/register', isNotAuthenticated, (req, res) => {
   res.render('auth/register', { title: 'Register - SkillSwap MY', csrfToken: req.csrfToken() });
 });
 
 // Register POST
-router.post('/register', isNotAuthenticated, validate(schemas.register), async (req, res) => {
+router.post('/register', isNotAuthenticated, registerLimiter, validate(schemas.register), async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      req.session.error = 'Email already registered.';
+      req.flash('error', 'Email already registered.');
       return res.redirect('/auth/register');
     }
 
     const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
 
-    const activationToken = crypto.randomBytes(32).toString('hex');
+    // Generate activation token - raw for email, hashed for storage
+    const activationTokenRaw = crypto.randomBytes(32).toString('hex');
+    const activationToken = crypto.createHash('sha256').update(activationTokenRaw).digest('hex');
 
     await User.create({
       name,
@@ -43,21 +73,21 @@ router.post('/register', isNotAuthenticated, validate(schemas.register), async (
       await sendActivationEmail({
         to: email,
         name: name,
-        token: activationToken
+        token: activationTokenRaw // Send raw token in email
       });
     } catch (mailErr) {
       console.error('Send activation email failed:', mailErr.message);
       // In dev, log the token so we can activate manually
       if (process.env.NODE_ENV !== 'production') {
-        console.log(`[DEV Activation Token] ${activationToken}`);
+        console.log(`[DEV Activation Token] ${activationTokenRaw}`);
       }
     }
 
-    req.session.success = 'Registration successful! Please check your email to activate your account.';
+    req.flash('success', 'Registration successful! Please check your email to activate your account.');
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Registration error:', error);
-    req.session.error = 'Registration failed. Please try again.';
+    req.flash('error', 'Registration failed. Please try again.');
     res.redirect('/auth/register');
   }
 });
@@ -65,11 +95,15 @@ router.post('/register', isNotAuthenticated, validate(schemas.register), async (
 // Activation Route
 router.get('/activate/:token', async (req, res) => {
   try {
+    console.log('[DEBUG] Activation route hit with token:', req.params.token);
     const { token } = req.params;
-    const user = await User.findOne({ where: { activationToken: token } });
+    // Hash the token from URL to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({ where: { activationToken: hashedToken } });
+    console.log('[DEBUG] User found:', user ? user.email : 'No user');
 
     if (!user) {
-      req.session.error = 'Invalid or expired activation token.';
+      req.flash('error', 'Invalid or expired activation token.');
       return res.redirect('/auth/login');
     }
 
@@ -78,37 +112,41 @@ router.get('/activate/:token', async (req, res) => {
       activationToken: null
     });
 
-    req.session.success = 'Account activated successfully! You can now log in.';
+    req.flash('success', 'Account activated successfully! You can now log in.');
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Activation error:', error);
-    req.session.error = 'Activation failed. Please try again.';
+    req.flash('error', 'Activation failed. Please try again.');
     res.redirect('/auth/login');
   }
 });
 
 // Login page
 router.get('/login', isNotAuthenticated, (req, res) => {
-  res.render('auth/login', { title: 'Login - SkillSwap MY', csrfToken: req.csrfToken() });
+  res.render('auth/login', { title: 'Login', csrfToken: req.csrfToken() });
 });
 
 // Login POST
-router.post('/login', isNotAuthenticated, validate(schemas.login), (req, res, next) => {
+router.post('/login', isNotAuthenticated, loginLimiter, validate(schemas.login), (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
     if (!user) {
-      req.session.error = info?.message || 'Invalid email or password.';
+      req.flash('error', info?.message || 'Invalid email or password.');
       return res.redirect('/auth/login');
     }
-    if (!user.isVerified) {
-      req.session.error = 'Please verify your email address before logging in.';
+    if (!user.isVerified && user.role !== 'admin') {
+      req.flash('error', 'Please verify your email address before logging in.');
       return res.redirect('/auth/login');
     }
     req.logIn(user, (err2) => {
       if (err2) return next(err2);
-      req.session.user = { id: user.id };
-      req.session.success = `Welcome back, ${user.name}!`;
-      res.redirect('/profile');
+      req.flash('success', `Welcome back, ${user.name}!`);
+      // Redirect admin users to admin panel, others to profile
+      if (user.role === 'admin') {
+        res.redirect('/admin');
+      } else {
+        res.redirect('/profile');
+      }
     });
   })(req, res, next);
 });
@@ -117,7 +155,7 @@ router.post('/login', isNotAuthenticated, validate(schemas.login), (req, res, ne
 router.get('/logout', (req, res, next) => {
   req.logout((err) => {
     if (err) return next(err);
-    req.session.success = 'You have been logged out successfully.';
+    req.flash('success', 'You have been logged out successfully.');
     res.redirect('/');
   });
 });
@@ -132,7 +170,7 @@ router.get('/forgot', isNotAuthenticated, (req, res) => {
 });
 
 // Forgot POST
-router.post('/forgot', isNotAuthenticated, async (req, res) => {
+router.post('/forgot', isNotAuthenticated, forgotLimiter, async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -141,30 +179,31 @@ router.post('/forgot', isNotAuthenticated, async (req, res) => {
 
     // 统一返回
     const done = () => {
-      req.session.success = 'If an account exists, we sent a reset email.';
+      req.flash('success', 'If an account exists, we sent a reset email.');
       return res.redirect('/auth/login');
     };
 
     if (!user) return done();
 
-    // 生成 token + 过期时间
-    const resetToken = crypto.randomBytes(32).toString('hex');
+    // Generate token - raw for email, hashed for storage
+    const resetTokenRaw = crypto.randomBytes(32).toString('hex');
+    const resetToken = crypto.createHash('sha256').update(resetTokenRaw).digest('hex');
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
     await user.update({ resetToken, resetTokenExpiry });
 
-    const base = process.env.BASE_URL || 'http://localhost:3000';
-    const url = `${base}/auth/reset/${resetToken}`;
+    let base = process.env.BASE_URL || 'http://localhost:3000';
+    if (!base.startsWith('http')) base = `http://${base}`;
+    if (base.endsWith('/')) base = base.slice(0, -1);
+
+    const url = `${base}/auth/reset/${resetTokenRaw}`; // Use raw token in URL
 
     // 发邮件
     try {
       await sendResetEmail({
         to: user.email,
         name: user.name,
-        token: resetToken, // sendResetEmail expects 'token' not 'url' directly if we use the new signature, but let's check mailer.js. 
-        // Wait, mailer.js sendResetEmail takes { to, name, token }. 
-        // The original code passed { to, name, url }.
-        // I should fix this call to match the definition in mailer.js
+        token: resetTokenRaw, // Send raw token in email
       });
     } catch (mailErr) {
       console.error('Send email failed:', mailErr.message);
@@ -177,7 +216,7 @@ router.post('/forgot', isNotAuthenticated, async (req, res) => {
     return done();
   } catch (error) {
     console.error('Forgot password error:', error);
-    req.session.error = 'Something went wrong.';
+    req.flash('error', 'Something went wrong.');
     res.redirect('/auth/forgot');
   }
 });
@@ -186,23 +225,25 @@ router.post('/forgot', isNotAuthenticated, async (req, res) => {
 router.get('/reset/:token', isNotAuthenticated, async (req, res) => {
   try {
     const { token } = req.params;
+    // Hash the token from URL to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
       where: {
-        resetToken: token,
-        resetTokenExpiry: { [Op.gt]: new Date() } // 别再用 reset_expires_at
+        resetToken: hashedToken,
+        resetTokenExpiry: { [Op.gt]: new Date() }
       }
     });
 
     if (!user) {
-      req.session.error = 'Invalid or expired reset token.';
+      req.flash('error', 'Invalid or expired reset token.');
       return res.redirect('/auth/forgot');
     }
 
     res.render('auth/reset', { title: 'Reset Password - SkillSwap MY', token, csrfToken: req.csrfToken() });
   } catch (error) {
     console.error('Reset password page error:', error);
-    req.session.error = 'An error occurred. Please try again.';
+    req.flash('error', 'An error occurred. Please try again.');
     res.redirect('/auth/forgot');
   }
 });
@@ -213,28 +254,29 @@ router.post('/reset/:token', isNotAuthenticated, validate(schemas.resetPassword)
     const { token } = req.params;
     const { password } = req.body;
 
-    // Manual validation removed, handled by middleware
+    // Hash the token from URL to compare with stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
       where: {
-        resetToken: token,
+        resetToken: hashedToken,
         resetTokenExpiry: { [Op.gt]: new Date() }
       }
     });
 
     if (!user) {
-      req.session.error = 'Invalid or expired reset token.';
+      req.flash('error', 'Invalid or expired reset token.');
       return res.redirect('/auth/forgot');
     }
 
     const passwordHash = await bcrypt.hash(password, parseInt(process.env.BCRYPT_ROUNDS) || 12);
     await user.update({ passwordHash, resetToken: null, resetTokenExpiry: null });
 
-    req.session.success = 'Password reset successful! Please log in with your new password.';
+    req.flash('success', 'Password reset successful! Please log in with your new password.');
     res.redirect('/auth/login');
   } catch (error) {
     console.error('Reset password error:', error);
-    req.session.error = 'An error occurred. Please try again.';
+    req.flash('error', 'An error occurred. Please try again.');
     res.redirect('/auth/forgot');
   }
 });

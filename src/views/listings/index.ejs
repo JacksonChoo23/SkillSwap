@@ -1,74 +1,102 @@
-<%
-const _list = Array.isArray(listings) ? listings : [];
-%>
+<% const _list=Array.isArray(listings) ? listings : []; %>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h1 class="h4 m-0">Skill Listings</h1>
-  <% if (isAuthenticated) { %>
-    <a class="btn btn-primary" href="/listings/create">Create</a>
-  <% } %>
-</div>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 m-0">Skill Listings</h1>
+    <% if (isAuthenticated) { %>
+      <a class="btn btn-primary" href="/listings/create">Create</a>
+      <% } %>
+  </div>
 
-<% if (_list.length) { %>
-  <div class="row row-cols-1 row-cols-md-2 g-3">
-    <% _list.forEach(l => { %>
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-body">
-            <h2 class="h5 m-0"><a href="/listings/<%= l.id %>"><%= l.title %></a></h2>
-            <div class="small text-muted mt-1">
-              <% if (l.Skill) { %>
-                <span class="badge bg-success">Teaching</span>
-                <span class="badge bg-secondary"><%= l.Skill.name %></span>
-              <% } %>
-              <% if (l.LearnSkill) { %>
-                <span class="badge bg-info text-dark">Learn</span>
-                <span class="badge bg-secondary"><%= l.LearnSkill.name %></span>
-              <% } %>
+  <div class="card mb-4">
+    <div class="card-body">
+      <form action="/listings" method="GET" class="d-flex gap-2">
+        <input type="text" name="search" class="form-control" placeholder="Search by title, description, or skill..."
+          value="<%= typeof search !== 'undefined' ? search : '' %>">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <% if (typeof search !=='undefined' && search) { %>
+          <a href="/listings" class="btn btn-outline-secondary">Clear</a>
+          <% } %>
+      </form>
+    </div>
+  </div>
+
+  <% if (_list.length) { %>
+    <div class="row row-cols-1 row-cols-md-2 g-3">
+      <% _list.forEach(l=> { %>
+        <div class="col">
+          <div class="card h-100">
+            <div class="card-body">
+              <h2 class="h5 m-0"><a href="/listings/<%= l.id %>">
+                  <%= l.title %>
+                </a></h2>
+              <div class="small text-muted mt-1">
+                <% if (l.Skill) { %>
+                  <span class="badge bg-success">Teaching</span>
+                  <span class="badge bg-secondary">
+                    <%= l.Skill.name %>
+                  </span>
+                  <% } %>
+                    <% if (l.LearnSkill) { %>
+                      <span class="badge bg-info text-dark">Learn</span>
+                      <span class="badge bg-secondary">
+                        <%= l.LearnSkill.name %>
+                      </span>
+                      <% } %>
+              </div>
+              <% if (l.description) { %>
+                <p class="text-muted mt-2 mb-0">
+                  <%= l.description %>
+                </p>
+                <% } %>
             </div>
-            <% if (l.description) { %><p class="text-muted mt-2 mb-0"><%= l.description %></p><% } %>
-          </div>
-          <div class="card-footer d-flex justify-content-between align-items-center">
-            <div class="small text-muted">
-              <% if (l.User) { %>
-                by <%= l.User.name %><% if (l.User.location) { %> · <%= l.User.location %><% } %>
-              <% } %>
-            </div>
-            <div class="d-flex gap-2">
-              <a class="btn btn-sm btn-outline-primary" href="/listings/<%= l.id %>">View</a>
-              <% if (isAuthenticated && user && user.id === l.userId) { %>
-                <a class="btn btn-sm btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
-                <button class="btn btn-sm btn-outline-danger" data-del="<%= l.id %>">Delete</button>
-              <% } %>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <div class="small text-muted">
+                <% if (l.User) { %>
+                  by <%= l.User.name %>
+                    <% if (l.User.location) { %> · <%= l.User.location %>
+                        <% } %>
+                          <% } %>
+              </div>
+              <div class="d-flex gap-2">
+                <a class="btn btn-sm btn-outline-primary" href="/listings/<%= l.id %>">View</a>
+                <% if (isAuthenticated && user && user.id===l.userId) { %>
+                  <a class="btn btn-sm btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
+                  <button class="btn btn-sm btn-outline-danger" data-del="<%= l.id %>">Delete</button>
+                  <% } %>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    <% }) %>
-  </div>
-<% } else { %>
-  <div class="alert alert-info">No listings.</div>
-<% } %>
+        <% }) %>
+    </div>
 
-<script>
-document.addEventListener('click', async (e) => {
-  const btn = e.target.closest('button[data-del]');
-  if (!btn) return;
-  const id = btn.getAttribute('data-del');
-  if (!confirm('Delete this listing?')) return;
-  try {
-    const res = await fetch(`/listings/${id}`, {
-      method: 'DELETE',
-      headers: { 'CSRF-Token': '<%= csrfToken %>' }
-    });
-    const data = await res.json();
-    if (res.ok && data && data.success) {
-      location.reload();
-    } else {
-      alert(data && data.error ? data.error : 'Delete failed.');
-    }
-  } catch (err) {
-    alert('Delete failed.');
-  }
-});
-</script>
+    <%# Pagination %>
+      <% if (typeof pagination !=='undefined' && pagination) { %>
+        <%- include('../partials/pagination', pagination) %>
+          <% } %>
+            <% } else { %>
+              <div class="alert alert-info">No listings.</div>
+              <% } %>
+
+                <script>
+                  document.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('button[data-del]');
+                    if (!btn) return;
+                    const id = btn.getAttribute('data-del');
+                    if (!confirm('Delete this listing?')) return;
+                    try {
+                      const res = await fetch(`/listings/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'CSRF-Token': '<%= csrfToken %>' }
+                      });
+                      const data = await res.json();
+                      if (res.ok && data && data.success) {
+                        location.reload();
+                      } else {
+                        alert(data && data.error ? data.error : 'Delete failed.');
+                      }
+                    } catch (err) {
+                      alert('Delete failed.');
+                    }
+                  });
+                </script>

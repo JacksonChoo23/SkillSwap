@@ -57,7 +57,9 @@ const files = [
   'Category.js',
   'UserProgress.js',
   'ContactHistory.js',
-  'SavedSuggestion.js'
+  'SavedSuggestion.js',
+  'Transaction.js',
+  'Invoice.js'
 ];
 
 // 加载并规范化
@@ -72,7 +74,7 @@ for (const f of files) {
 const {
   User, Skill, UserSkill, Availability, Listing, MessageThread, Message,
   LearningSession, Rating, Report, TipToken, Notification, CalculatorWeight, Category,
-  UserProgress, ContactHistory, SavedSuggestion
+  UserProgress, ContactHistory, SavedSuggestion, Transaction, Invoice
 } = db;
 
 // User <-> UserSkill
@@ -88,17 +90,17 @@ User.hasMany(Listing, { foreignKey: 'userId', as: 'listings' });
 Listing.belongsTo(User, { foreignKey: 'userId' });
 
 // ★ Listing <-> Skill（teach）
-Skill.hasMany(Listing,  { foreignKey: 'skillId', as: 'listings' });
+Skill.hasMany(Listing, { foreignKey: 'skillId', as: 'listings' });
 Listing.belongsTo(Skill, { foreignKey: 'skillId', as: 'Skill' });
 
 // ★ Listing <-> Skill（learn - optional swap target）
-Skill.hasMany(Listing,  { foreignKey: 'learnSkillId', as: 'learnListings' });
+Skill.hasMany(Listing, { foreignKey: 'learnSkillId', as: 'learnListings' });
 Listing.belongsTo(Skill, { foreignKey: 'learnSkillId', as: 'LearnSkill' });
 
 // User <-> MessageThread（双向参与）
-User.hasMany(MessageThread, { foreignKey: 'creatorId',     as: 'createdThreads' });
+User.hasMany(MessageThread, { foreignKey: 'creatorId', as: 'createdThreads' });
 User.hasMany(MessageThread, { foreignKey: 'participantId', as: 'participatedThreads' });
-MessageThread.belongsTo(User, { foreignKey: 'creatorId',     as: 'creator' });
+MessageThread.belongsTo(User, { foreignKey: 'creatorId', as: 'creator' });
 MessageThread.belongsTo(User, { foreignKey: 'participantId', as: 'participant' });
 
 // MessageThread <-> Message
@@ -156,14 +158,21 @@ UserProgress.belongsTo(User, { foreignKey: 'userId' });
 UserProgress.belongsTo(LearningSession, { foreignKey: 'sessionId' });
 
 // ContactHistory
-User.hasMany(ContactHistory, { as: 'outgoingContacts', foreignKey: { name: 'user_id',      field: 'user_id' } });
+User.hasMany(ContactHistory, { as: 'outgoingContacts', foreignKey: { name: 'user_id', field: 'user_id' } });
 User.hasMany(ContactHistory, { as: 'incomingContacts', foreignKey: { name: 'peer_user_id', field: 'peer_user_id' } });
-ContactHistory.belongsTo(User, { as: 'actor', foreignKey: { name: 'user_id',      field: 'user_id' } });
-ContactHistory.belongsTo(User, { as: 'peer',  foreignKey: { name: 'peer_user_id', field: 'peer_user_id' } });
+ContactHistory.belongsTo(User, { as: 'actor', foreignKey: { name: 'user_id', field: 'user_id' } });
+ContactHistory.belongsTo(User, { as: 'peer', foreignKey: { name: 'peer_user_id', field: 'peer_user_id' } });
 
 // SavedSuggestion
 User.hasMany(SavedSuggestion, { foreignKey: 'user_id', as: 'savedSuggestions' });
 SavedSuggestion.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Transaction & Invoice
+User.hasMany(Transaction, { foreignKey: 'user_id', as: 'transactions' });
+Transaction.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+Transaction.hasOne(Invoice, { foreignKey: 'transaction_id', as: 'invoice' });
+Invoice.belongsTo(Transaction, { foreignKey: 'transaction_id', as: 'transaction' });
 
 module.exports = {
   sequelize,

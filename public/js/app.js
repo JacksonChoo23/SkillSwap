@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }, 5000);
 
+    // Set active navigation link based on current page
+    setActiveNavLink();
+
+    // Setup navigation loader for page transitions
+    setupNavigationLoader();
+
     // Form validation
     setupFormValidation();
 
@@ -37,6 +43,86 @@ document.addEventListener('DOMContentLoaded', function() {
     // WhatsApp integration
     setupWhatsAppIntegration();
 });
+
+// Set active navigation link
+function setActiveNavLink() {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    
+    navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        
+        // Remove any existing active class
+        link.classList.remove('active');
+        
+        // Check if current path matches the link href
+        if (href && currentPath === href) {
+            link.classList.add('active');
+        } else if (href && href !== '/' && currentPath.startsWith(href)) {
+            // For paths like /admin, /listings, etc.
+            link.classList.add('active');
+        } else if (href === '/' && currentPath === '/') {
+            // Special case for home page
+            link.classList.add('active');
+        }
+    });
+}
+
+// Setup navigation loader for page transitions
+function setupNavigationLoader() {
+    // Use event delegation on document to catch all link clicks
+    document.addEventListener('click', function(e) {
+        // Find the clicked link (or parent link)
+        const link = e.target.closest('a[href^="/"]');
+        
+        if (!link) return;
+        
+        const href = link.getAttribute('href');
+        
+        // Don't show loader for anchors, logout, dropdown toggles, or external links
+        if (!href || 
+            href === '#' || 
+            href.includes('logout') || 
+            link.target === '_blank' ||
+            link.getAttribute('data-bs-toggle')) {
+            return;
+        }
+        
+        // Show loader immediately for all internal navigation
+        const shouldShowLoader = 
+            href.includes('/listings/create') || 
+            href.includes('/create') ||
+            href.includes('/match') || 
+            href.includes('/browse') ||
+            href.includes('/admin') ||
+            href.includes('/listings') ||
+            href.includes('/sessions') ||
+            href.includes('/notifications') ||
+            href.includes('/profile') ||
+            href.includes('/calculator');
+        
+        if (shouldShowLoader) {
+            // Determine custom text
+            let customText = 'Loading...';
+            if (href.includes('/listings/create') || href.includes('/create')) {
+                customText = 'Generating AI Suggestions...';
+            } else if (href.includes('/match')) {
+                customText = 'Finding Matches...';
+            } else if (href.includes('/browse')) {
+                customText = 'Loading Users...';
+            }
+            
+            showNavigationLoader(customText);
+        }
+    }, true); // Use capture phase to ensure we catch it early
+}
+
+// Show loader during navigation
+function showNavigationLoader(customText) {
+    if (typeof PageLoader !== 'undefined' && PageLoader.show) {
+        PageLoader.show(customText);
+    }
+}
 
 // Form validation
 function setupFormValidation() {

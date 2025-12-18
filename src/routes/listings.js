@@ -1,5 +1,6 @@
 const express = require('express');
 const { Listing, User, Skill, UserSkill, SavedSuggestion } = require('../models');
+const { Op } = require('sequelize');
 const { validate, schemas } = require('../middlewares/validate');
 const { isAuthenticated } = require('../middlewares/auth');
 const { checkAdultAndToxicContent, generateListingSuggestions } = require('../../utils/geminiModeration');
@@ -16,7 +17,7 @@ const loadUserTeachingSkills = async (userId) => {
     }],
     order: [[Skill, 'name', 'ASC']]
   });
-  
+
   return userSkills.map(us => us.Skill);
 };
 
@@ -30,30 +31,59 @@ const loadUserLearningSkills = async (userId) => {
     }],
     order: [[Skill, 'name', 'ASC']]
   });
-  
+
   return userSkills.map(us => us.Skill);
 };
 
 // 列表页（只看 active）
 router.get('/', async (req, res) => {
   try {
-    const listings = await Listing.findAll({
-      where: { status: 'active' },
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 12));
+    const offset = (page - 1) * limit;
+    const search = req.query.search || '';
+
+    const where = { status: 'active' };
+    if (search) {
+      where[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+        { '$User.name$': { [Op.like]: `%${search}%` } },
+        { '$Skill.name$': { [Op.like]: `%${search}%` } },
+        { '$LearnSkill.name$': { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    const { count, rows: listings } = await Listing.findAndCountAll({
+      where,
       include: [
         { model: User, attributes: ['id', 'name', 'location'] },
         { model: Skill, as: 'Skill', attributes: ['id', 'name'] },
         { model: Skill, as: 'LearnSkill', attributes: ['id', 'name'] }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
+      limit,
+      offset,
+      distinct: true
     });
+
+    const totalPages = Math.ceil(count / limit);
 
     res.render('listings/index', {
       title: 'Skill Listings - SkillSwap MY',
-      listings
+      listings,
+      search,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: count,
+        limit,
+        baseUrl: '/listings'
+      }
     });
   } catch (error) {
     console.error('Listings error:', error);
-    req.session.error = 'Error loading listings.';
+    req.flash('error', 'Error loading listings.');
     res.redirect('/');
   }
 });
@@ -64,32 +94,10 @@ router.get('/create', isAuthenticated, async (req, res) => {
     const userId = req.user?.id || req.session?.user?.id;
     const teachSkills = await loadUserTeachingSkills(userId);
     const learnSkills = await loadUserLearningSkills(userId);
-    
-    // Get user's skills for AI suggestions
-    let aiSuggestions = null;
-    
-    if (userId) {
-      try {
-        // Fetch user's full information including location
-        const user = await User.findByPk(userId, {
-          attributes: ['id', 'name', 'location']
-        });
-        
-        // Fetch user's skills
-        const userSkills = await UserSkill.findAll({
-          where: { userId },
-          include: [{ model: Skill, attributes: ['id', 'name'] }]
-        });
-        
-        // Generate AI suggestions with user context
-        const suggestions = await generateListingSuggestions(userSkills, 'teach', { user });
-        aiSuggestions = suggestions.suggestions;
-      } catch (suggestionError) {
-        console.error('AI suggestion error:', suggestionError);
-        // Continue without suggestions if AI fails
-      }
-    }
-    
+
+    // Don't auto-generate AI suggestions on page load
+    // User must click "AI Suggestions" button to generate
+
     res.render('listings/create', {
       title: 'Create Listing',
       teachSkills,
@@ -97,7 +105,7 @@ router.get('/create', isAuthenticated, async (req, res) => {
       moderationFlagged: null,
       successMessage: null,
       form: null,
-      aiSuggestions,
+      aiSuggestions: null,
       aiRewrite: null
     });
   } catch (e) {
@@ -121,19 +129,19 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
     const listingType = req.query.type || 'teach'; // 'teach' or 'learn'
     const teachSkillId = req.query.teach_skill_id;
     const learnSkillId = req.query.learn_skill_id;
-    
+
     if (!userId) {
       return res.json({ error: 'User not authenticated' });
     }
-    
+
     // Fetch user's full information including location
     const user = await User.findByPk(userId, {
       attributes: ['id', 'name', 'location']
     });
-    
+
     // Build skills array based on selected skill IDs from form
     const userSkills = [];
-    
+
     if (teachSkillId) {
       const teachSkill = await Skill.findByPk(teachSkillId, {
         attributes: ['id', 'name']
@@ -145,7 +153,7 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
         });
       }
     }
-    
+
     if (learnSkillId) {
       const learnSkill = await Skill.findByPk(learnSkillId, {
         attributes: ['id', 'name']
@@ -157,7 +165,7 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
         });
       }
     }
-    
+
     // If no skills selected, fall back to user's profile skills
     if (userSkills.length === 0) {
       const profileSkills = await UserSkill.findAll({
@@ -166,13 +174,13 @@ router.get('/ai-suggestions', isAuthenticated, async (req, res) => {
       });
       userSkills.push(...profileSkills);
     }
-    
+
     // Generate AI suggestions with user context
     const result = await generateListingSuggestions(userSkills, listingType, { user });
     res.json(result);
   } catch (error) {
     console.error('AI suggestions error:', error);
-    res.json({ 
+    res.json({
       suggestions: {
         title: "",
         description: "",
@@ -249,12 +257,12 @@ router.post('/create', isAuthenticated, async (req, res) => {
     if (!chosenSkillId) {
       return refill({ moderationFlagged: { message: 'Please select a skill to teach', scores: {} } });
     }
-    
+
     // 验证用户在 user_skills 表中有这个技能并且类型是 teach
     const userSkill = await UserSkill.findOne({
       where: { userId, skillId: chosenSkillId, type: 'teach' }
     });
-    
+
     if (!userSkill) {
       return refill({ moderationFlagged: { message: 'You can only create listings for skills you can teach. Please add this skill to your profile first.', scores: {} } });
     }
@@ -269,7 +277,7 @@ router.post('/create', isAuthenticated, async (req, res) => {
       const userLearnSkill = await UserSkill.findOne({
         where: { userId, skillId: chosenLearnSkillId, type: 'learn' }
       });
-      
+
       if (!userLearnSkill) {
         return refill({ moderationFlagged: { message: 'You can only select skills you want to learn from your profile.', scores: {} } });
       }
@@ -344,11 +352,11 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
     }
     const teachSkills = await loadUserTeachingSkills(userId);
     const learnSkills = await loadUserLearningSkills(userId);
-    res.render('listings/edit', { 
-      title: 'Edit Listing - SkillSwap MY', 
-      listing, 
+    res.render('listings/edit', {
+      title: 'Edit Listing - SkillSwap MY',
+      listing,
       teachSkills,
-      learnSkills 
+      learnSkills
     });
   } catch (error) {
     console.error('Edit listing error:', error);
@@ -397,13 +405,13 @@ router.post('/:id/edit', isAuthenticated, validate(schemas.listing), async (req,
       req.session.error = 'Please select a skill you want to learn.';
       return res.redirect(`/listings/${id}/edit`);
     }
-    
+
     // 验证用户在 user_skills 表中有这个技能并且类型是 teach
     if (chosenSkillId) {
       const userSkill = await UserSkill.findOne({
         where: { userId, skillId: chosenSkillId, type: 'teach' }
       });
-      
+
       if (!userSkill) {
         req.session.error = 'You can only list skills you can teach. Please add this skill to your profile first.';
         return res.redirect(`/listings/${id}/edit`);
@@ -474,8 +482,8 @@ router.post('/save-suggestion', isAuthenticated, async (req, res) => {
       notes: Array.isArray(notes) ? notes : []
     });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Suggestion saved successfully',
       suggestion: savedSuggestion
     });
@@ -529,9 +537,9 @@ router.patch('/saved-suggestions/:id/favorite', isAuthenticated, async (req, res
     suggestion.is_favorite = !suggestion.is_favorite;
     await suggestion.save();
 
-    res.json({ 
-      success: true, 
-      is_favorite: suggestion.is_favorite 
+    res.json({
+      success: true,
+      is_favorite: suggestion.is_favorite
     });
   } catch (error) {
     console.error('Toggle favorite error:', error);

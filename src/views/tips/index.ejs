@@ -1,6 +1,6 @@
 <div class="d-flex align-items-center justify-content-between mb-3">
   <h1 class="h4 mb-0">My Tips</h1>
-  <a class="btn btn-outline-secondary" href="/profile">Back to Profile</a>
+  <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
 </div>
 
 <div class="row g-3">
@@ -8,21 +8,27 @@
     <div class="card h-100">
       <div class="card-body">
         <h2 class="h6 text-muted mb-3">Received</h2>
-        <% if (!received || received.length === 0) { %>
+        <% if (!received || received.length===0) { %>
           <div class="text-muted small">No tips received.</div>
-        <% } else { %>
-          <ul class="list-group list-group-flush">
-            <% received.forEach(t => { %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  From <strong><%= t.fromUser?.name || 'User' %></strong>
-                  <% if (t.note) { %><div class="small text-muted"><%= t.note %></div><% } %>
-                </div>
-                <span class="badge bg-success">+<%= t.amount %></span>
-              </li>
-            <% }) %>
-          </ul>
-        <% } %>
+          <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% received.forEach(t=> { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    From <strong>
+                      <%= t.fromUser?.name || 'User' %>
+                    </strong>
+                    <% if (t.note) { %>
+                      <div class="small text-muted">
+                        <%= t.note %>
+                      </div>
+                      <% } %>
+                  </div>
+                  <span class="badge bg-success">+<%= t.amount %></span>
+                </li>
+                <% }) %>
+            </ul>
+            <% } %>
       </div>
     </div>
   </div>
@@ -31,24 +37,28 @@
     <div class="card h-100">
       <div class="card-body">
         <h2 class="h6 text-muted mb-3">Sent</h2>
-        <% if (!sent || sent.length === 0) { %>
+        <% if (!sent || sent.length===0) { %>
           <div class="text-muted small">No tips sent.</div>
-        <% } else { %>
-          <ul class="list-group list-group-flush">
-            <% sent.forEach(t => { %>
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                  To <strong><%= t.toUser?.name || 'User' %></strong>
-                  <% if (t.note) { %><div class="small text-muted"><%= t.note %></div><% } %>
-                </div>
-                <span class="badge bg-secondary">-<%= t.amount %></span>
-              </li>
-            <% }) %>
-          </ul>
-        <% } %>
+          <% } else { %>
+            <ul class="list-group list-group-flush">
+              <% sent.forEach(t=> { %>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    To <strong>
+                      <%= t.toUser?.name || 'User' %>
+                    </strong>
+                    <% if (t.note) { %>
+                      <div class="small text-muted">
+                        <%= t.note %>
+                      </div>
+                      <% } %>
+                  </div>
+                  <span class="badge bg-secondary">-<%= t.amount %></span>
+                </li>
+                <% }) %>
+            </ul>
+            <% } %>
       </div>
     </div>
   </div>
 </div>
-
-

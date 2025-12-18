@@ -1,0 +1,22 @@
+<% const starRating=typeof rating !=='undefined' ? Number(rating) : 0; const starSize=typeof size !=='undefined' ? size
+    : 'md' ; const displayValue=typeof showValue !=='undefined' ? showValue : false; const max=typeof maxStars
+    !=='undefined' ? maxStars : 5; const fullStars=Math.floor(starRating); const decimal=starRating - fullStars; const
+    hasHalfStar=decimal>= 0.25 && decimal < 0.75; const hasExtraFullStar=decimal>= 0.75;
+        const emptyStars = max - fullStars - (hasHalfStar ? 1 : 0) - (hasExtraFullStar ? 1 : 0);
+        %>
+        <div class="star-rating star-rating-<%= starSize %>" data-rating="<%= starRating.toFixed(2) %>">
+            <% for (let i=0; i < fullStars + (hasExtraFullStar ? 1 : 0); i++) { %>
+                <i class="fas fa-star star filled"></i>
+                <% } %>
+                    <% if (hasHalfStar) { %>
+                        <i class="fas fa-star-half-alt star half-filled"></i>
+                        <% } %>
+                            <% for (let i=0; i < emptyStars; i++) { %>
+                                <i class="far fa-star star"></i>
+                                <% } %>
+        </div>
+        <% if (displayValue) { %>
+            <span class="rating-value ms-2">
+                <%= starRating.toFixed(1) %>
+            </span>
+            <% } %>

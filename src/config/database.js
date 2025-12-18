@@ -28,12 +28,18 @@ const options = {
   dialectModule: mysql2,
   logging: process.env.NODE_ENV === 'development'
     ? (msg) => {
-        // Normalize whitespace and trim long SQL for readability
-        const single = String(msg).replace(/\s+/g, ' ').trim();
-        logger.debug(single);
-      }
+      // Normalize whitespace and trim long SQL for readability
+      const single = String(msg).replace(/\s+/g, ' ').trim();
+      logger.debug(single);
+    }
     : (cfg.logging || false),
-  pool: cfg.pool || { max: 5, min: 0, acquire: 30000, idle: 10000 },
+  // Connection pool configuration - configurable via env vars for production tuning
+  pool: {
+    max: parseInt(process.env.DB_POOL_MAX) || cfg.pool?.max || 10,
+    min: parseInt(process.env.DB_POOL_MIN) || cfg.pool?.min || 2,
+    acquire: parseInt(process.env.DB_POOL_ACQUIRE) || cfg.pool?.acquire || 30000,
+    idle: parseInt(process.env.DB_POOL_IDLE) || cfg.pool?.idle || 10000
+  },
   define: cfg.define || { timestamps: true, underscored: true }
 };
 

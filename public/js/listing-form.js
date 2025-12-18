@@ -103,10 +103,30 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('saveSuggestion')?.addEventListener('click', saveSuggestion);
     document.getElementById('loadSavedSuggestions')?.addEventListener('click', showSavedSuggestions);
 
-    // Render server-side suggestions if available
-    if (serverSuggestions) {
-        renderSuggestions(serverSuggestions);
-    }
+    // Add event listeners for AI suggestion trigger buttons
+    document.getElementById('generateTeachSuggestions')?.addEventListener('click', function () {
+        triggerAiSuggestions('teach');
+    });
+    document.getElementById('generateLearnSuggestions')?.addEventListener('click', function () {
+        triggerAiSuggestions('learn');
+    });
+
+    // Add event listener for submit button in modal
+    document.getElementById('submitFormButton')?.addEventListener('click', submitForm);
+
+    // Add event listeners for filter buttons in saved suggestions modal
+    document.querySelectorAll('[data-filter-type]').forEach(button => {
+        button.addEventListener('click', function (e) {
+            const filterType = this.getAttribute('data-filter-type');
+            loadSuggestions(filterType);
+        });
+    });
+
+    // Don't render server-side suggestions automatically
+    // User must click "AI Suggestions" button to generate
+    // if (serverSuggestions) {
+    //     renderSuggestions(serverSuggestions);
+    // }
 
     // Initial check for skill selection
     checkSkillSelection();
@@ -214,7 +234,7 @@ function renderSuggestions(data) {
   <div class="mb-3">
     <label class="fw-semibold text-primary small text-uppercase">Suggested Title</label>
     <p class="mb-2 bg-light p-3 rounded border">${data.title}</p>
-    <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('title', this)">
+    <button type="button" class="btn btn-sm btn-outline-success apply-suggestion-btn" data-suggestion-type="title">
       <i class="fas fa-check me-1"></i>Use Title
     </button>
   </div>
@@ -226,7 +246,7 @@ function renderSuggestions(data) {
   <div class="mb-3">
     <label class="fw-semibold text-primary small text-uppercase">Suggested Description</label>
     <p class="mb-2 bg-light p-3 rounded border">${data.description}</p>
-    <button type="button" class="btn btn-sm btn-outline-success" onclick="applySuggestion('description', this)">
+    <button type="button" class="btn btn-sm btn-outline-success apply-suggestion-btn" data-suggestion-type="description">
       <i class="fas fa-check me-1"></i>Use Description
     </button>
   </div>
@@ -246,8 +266,16 @@ function renderSuggestions(data) {
 
     content.innerHTML = html;
 
-    // Scroll to suggestions
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Add event listeners for apply suggestion buttons
+    content.querySelectorAll('.apply-suggestion-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const type = this.getAttribute('data-suggestion-type');
+            applySuggestion(type, this);
+        });
+    });
+
+    // Don't auto-scroll - let user scroll naturally to see suggestions in sidebar
+    // card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function regenerateSuggestions() {
@@ -271,20 +299,11 @@ async function regenerateSuggestions() {
     content.innerHTML = '<div class="text-center py-5"><i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i><p class="text-muted">Asking AI for creative ideas...</p></div>';
 
     try {
-        // Add cache busting and no-cache headers for fresh suggestions
-        const timestamp = Date.now();
-        let url = `/listings/ai-suggestions?type=${type}&nocache=${timestamp}`;
+        let url = `${window.location.origin}/listings/ai-suggestions?type=${type}`;
         if (teachSkillId) url += `&teach_skill_id=${teachSkillId}`;
         if (learnSkillId) url += `&learn_skill_id=${learnSkillId}`;
 
-        const response = await fetch(url, {
-            cache: 'no-store',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-            }
-        });
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.suggestions) {
@@ -322,11 +341,15 @@ async function saveSuggestion() {
         const skillId = document.querySelector('select[name="skill_id"]').value;
         const skillCategory = teachSkillsData[skillId] || '';
 
-        const response = await fetch('/listings/save-suggestion', {
+        // Get CSRF token from the form input
+        const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+
+        const response = await fetch(`${window.location.origin}/listings/save-suggestion`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'CSRF-Token': csrfToken // Add CSRF token header
             },
             body: JSON.stringify({
                 title,
@@ -372,7 +395,7 @@ async function loadSuggestions(type) {
         const listContainer = document.getElementById('savedSuggestionsList');
         listContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
-        let url = '/listings/saved-suggestions';
+        let url = `${window.location.origin}/listings/saved-suggestions`;
         const params = new URLSearchParams();
 
         if (type === 'favorites') {
@@ -395,11 +418,11 @@ async function loadSuggestions(type) {
   <div class="d-flex justify-content-between align-items-start mb-2">
     <h6 class="card-title fw-bold mb-1 text-primary">${suggestion.title}</h6>
     <div class="d-flex gap-1">
-      <button class="btn btn-sm ${suggestion.is_favorite ? 'btn-warning' : 'btn-outline-warning'} rounded-circle" 
-              onclick="toggleFavorite(${suggestion.id}, this)">
+      <button class="btn btn-sm ${suggestion.is_favorite ? 'btn-warning' : 'btn-outline-warning'} rounded-circle favorite-btn" 
+              data-suggestion-id="${suggestion.id}">
         <i class="fas fa-star"></i>
       </button>
-      <button class="btn btn-sm btn-outline-danger rounded-circle" onclick="deleteSuggestion(${suggestion.id}, this)">
+      <button class="btn btn-sm btn-outline-danger rounded-circle delete-suggestion-btn" data-suggestion-id="${suggestion.id}">
         <i class="fas fa-trash"></i>
       </button>
     </div>
@@ -410,13 +433,38 @@ async function loadSuggestions(type) {
       <span class="badge bg-${suggestion.suggestion_type === 'teach' ? 'primary' : 'info'} rounded-pill">${suggestion.suggestion_type}</span>
       ${suggestion.skill_category ? `<span class="badge bg-secondary rounded-pill">${suggestion.skill_category}</span>` : ''}
     </div>
-    <button class="btn btn-sm btn-outline-success rounded-pill px-3" onclick="applySavedSuggestion('${suggestion.title}', '${suggestion.description}')">
+    <button class="btn btn-sm btn-outline-success rounded-pill px-3 apply-saved-suggestion-btn" 
+            data-title="${suggestion.title.replace(/"/g, '&quot;')}" 
+            data-description="${suggestion.description.replace(/"/g, '&quot;')}">
       <i class="fas fa-plus me-1"></i>Use
     </button>
   </div>
 </div>
 </div>
 `).join('');
+
+            // Add event listeners for dynamically created buttons
+            listContainer.querySelectorAll('.favorite-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-suggestion-id');
+                    toggleFavorite(id, this);
+                });
+            });
+
+            listContainer.querySelectorAll('.delete-suggestion-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const id = this.getAttribute('data-suggestion-id');
+                    deleteSuggestion(id, this);
+                });
+            });
+
+            listContainer.querySelectorAll('.apply-saved-suggestion-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const title = this.getAttribute('data-title');
+                    const description = this.getAttribute('data-description');
+                    applySavedSuggestion(title, description);
+                });
+            });
         } else {
             listContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2"></i><p>No saved suggestions found.</p></div>';
         }
@@ -435,10 +483,11 @@ async function loadSuggestions(type) {
 
 async function toggleFavorite(id, button) {
     try {
-        const response = await fetch(`/listings/saved-suggestions/${id}/favorite`, {
+        const response = await fetch(`${window.location.origin}/listings/saved-suggestions/${id}/favorite`, {
             method: 'PATCH',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'CSRF-Token': document.querySelector('input[name="_csrf"]')?.value
             }
         });
 
@@ -464,10 +513,11 @@ async function deleteSuggestion(id, button) {
     }
 
     try {
-        const response = await fetch(`/listings/saved-suggestions/${id}`, {
+        const response = await fetch(`${window.location.origin}/listings/saved-suggestions/${id}`, {
             method: 'DELETE',
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'CSRF-Token': document.querySelector('input[name="_csrf"]')?.value
             }
         });
 

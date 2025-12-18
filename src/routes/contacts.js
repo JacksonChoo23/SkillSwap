@@ -2,7 +2,7 @@
 
 const express = require('express');
 const { Op } = require('sequelize');
-const { User, ContactHistory } = require('../models');
+const { User, ContactHistory, Notification } = require('../models');
 const { validate } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -42,7 +42,7 @@ router.get('/go/wa/:peerId', ensureAuth, async (req, res, next) => {
       return res.status(429).send('Too many requests');
     }
 
-    const peer = await User.findByPk(peerId, { attributes: ['id','name','whatsappNumber'] });
+    const peer = await User.findByPk(peerId, { attributes: ['id', 'name', 'whatsappNumber'] });
     if (!peer || !peer.whatsappNumber) {
       return res.status(400).send('Peer has no WhatsApp number');
     }
@@ -73,6 +73,16 @@ router.get('/go/wa/:peerId', ensureAuth, async (req, res, next) => {
       await t.rollback();
       throw e;
     }
+
+    // Notify peer about the contact attempt
+    try {
+      await Notification.create({
+        user_id: peerId,
+        title: 'New Contact via WhatsApp',
+        message: `${req.user.name} reached out to you via WhatsApp.`,
+        status: 'unread'
+      });
+    } catch (e) { console.error('Notify WhatsApp contact error:', e); }
 
     const base = 'https://wa.me';
     // Normalize to digits only for wa.me (no plus sign)

@@ -36,6 +36,9 @@ const reportsRoutes = require('./src/routes/reports');
 const aboutRouter = require('./src/routes/about');
 const notificationsRoutes = require('./src/routes/notifications');
 const skillsRoutes = require('./src/routes/skills');
+const leaderboardRoutes = require('./src/routes/leaderboard');
+const paymentRoutes = require('./src/routes/payment');
+const dashboardRoutes = require('./src/routes/dashboard');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -55,8 +58,8 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "data:", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "https://*.fontawesome.com"],
+        fontSrc: ["'self'", "data:", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com", "https://*.fontawesome.com"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", ...(isDev ? ["https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"] : [])],
         objectSrc: ["'none'"],
@@ -80,9 +83,9 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// Parsers
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Parsers with size limits to prevent DoS attacks
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Sessions (use lowercase table 'sessions')
 const sessionStore = new SequelizeStore({
@@ -98,6 +101,7 @@ app.use(
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
+    rolling: false, // Don't extend session on every request
     cookie: {
       secure: process.env.NODE_ENV === 'production', // set TRUST_PROXY=1 if behind proxy
       httpOnly: true,
@@ -126,31 +130,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Locals (keep simple defaults)
 app.use((req, res, next) => {
   const viaPassport = typeof req.isAuthenticated === 'function' ? req.isAuthenticated() : false;
-  const viaSession = !!(req.session && req.session.user);
 
-  res.locals.isAuthenticated = viaPassport || viaSession;
-  res.locals.currentUser = req.user || req.session?.user || null;
+  res.locals.isAuthenticated = viaPassport;
+  res.locals.currentUser = req.user || null;
   res.locals.title = res.locals.title || 'SkillSwap';
 
-  // flash 优先
-  const fSuccess = req.flash('success');
-  const fError = req.flash('error');
-  const fInfo = req.flash('info');
-
-  // 兼容旧的 session 写法
-  const sSuccess = req.session?.success;
-  const sError = req.session?.error;
-  const sInfo = req.session?.info;
-
-  res.locals.success = (fSuccess && fSuccess.length ? fSuccess : (sSuccess ? (Array.isArray(sSuccess) ? sSuccess : [sSuccess]) : []));
-  res.locals.error = (fError && fError.length ? fError : (sError ? (Array.isArray(sError) ? sError : [sError]) : []));
-  res.locals.info = (fInfo && fInfo.length ? fInfo : (sInfo ? (Array.isArray(sInfo) ? sInfo : [sInfo]) : []));
-
-  if (req.session) {
-    delete req.session.success;
-    delete req.session.error;
-    delete req.session.info;
-  }
+  // OPTIMIZED: Read all flash messages at once to reduce session access
+  const messages = req.flash();
+  res.locals.success = messages.success || [];
+  res.locals.error = messages.error || [];
+  res.locals.info = messages.info || [];
 
   next();
 });
@@ -158,7 +147,17 @@ app.use((req, res, next) => {
 
 
 // CSRF (after session)
-app.use(csrf({ cookie: false }));
+// CSRF (after session)
+const csrfProtection = csrf({ cookie: false });
+app.use((req, res, next) => {
+  // Skip global CSRF for report submission (multipart/form-data)
+  // We handle it manually in the reports route after multer
+  if (req.originalUrl.startsWith('/reports') && req.method === 'POST') {
+    req.csrfToken = () => 'skipped-for-upload';
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
 app.use((req, res, next) => {
   res.locals.csrfToken = req.csrfToken();
   res.locals.user = req.user || null;
@@ -178,6 +177,7 @@ app.use('/auth', authRoutes);
 app.use('/profile', isAuthenticated, profileRoutes);
 app.use('/listings', listingRoutes);
 app.use('/browse', browseRoutes);
+app.use('/about', aboutRouter);
 app.use('/match', isAuthenticated, matchRoutes);
 
 // keep /messages but redirect to history
@@ -194,16 +194,16 @@ app.use('/reports', isAuthenticated, reportsRoutes);
 app.use('/admin', isAuthenticated, isAdmin, adminRoutes);
 app.use('/notifications', isAuthenticated, notificationsRoutes);
 app.use('/skills', isAuthenticated, skillsRoutes);
+app.use('/leaderboard', leaderboardRoutes);
+app.use('/payment', isAuthenticated, paymentRoutes);
+app.use('/dashboard', isAuthenticated, dashboardRoutes);
 // Pages
-app.get('/about', (req, res) => {
-  // Locals middleware already sets isAuthenticated, currentUser, csrfToken
-  res.render('about', {
-    title: 'About - SkillSwap MY'
-    // csrfToken, user, isAuthenticated are in res.locals
-  });
-});
+
 
 app.get('/', (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.redirect('/dashboard');
+  }
   res.render('home', { title: 'SkillSwap MY - Peer Skill Exchange' });
 });
 

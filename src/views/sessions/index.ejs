@@ -1,166 +1,178 @@
-<%
-  const teaching = Array.isArray(teachingSessions) ? teachingSessions : [];
-  const learning = Array.isArray(learningSessions) ? learningSessions : [];
-  const fmt = d => d ? new Date(d).toLocaleString() : '';
+<% const teaching=Array.isArray(teachingSessions) ? teachingSessions : []; const
+  learning=Array.isArray(learningSessions) ? learningSessions : []; const fmt=d=> d ? new Date(d).toLocaleString() : '';
   const badge = s => (
-    s === 'requested'  ? 'bg-warning text-dark' :
-    s === 'confirmed'  ? 'bg-primary' :
-    s === 'in_progress'? 'bg-info text-dark' :
-    s === 'completed'  ? 'bg-success' :
-    s === 'cancelled'  ? 'bg-secondary' : 'bg-light text-dark'
+  s === 'requested' ? 'bg-warning text-dark' :
+  s === 'confirmed' ? 'bg-primary' :
+  s === 'in_progress'? 'bg-info text-dark' :
+  s === 'completed' ? 'bg-success' :
+  s === 'cancelled' ? 'bg-secondary' :
+  s === 'expired' ? 'bg-danger' : 'bg-light text-dark'
   );
-%>
+  // Show 'EXPIRED' for cancelled sessions that are past their start time
+  const badgeLabel = (session) => {
+  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) { return 'EXPIRED' ; } return
+    session.status.toUpperCase().replace('_', ' ' ); }; const badgeClass=(session)=> {
+    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) { return 'bg-danger' ; } return
+      badge(session.status); }; %>
 
-<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-  <h1 class="h4 mb-0">My Sessions</h1>
-</div>
+      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+        <h1 class="h4 mb-0">My Sessions</h1>
+      </div>
 
-<!-- Request a Session (manual IDs for now) -->
-<div class="card mb-4">
-  <div class="card-body">
-    <h2 class="h6 text-muted mb-3">Request a Session</h2>
-    <form method="POST" action="/sessions/request" class="row g-2">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="col-12 col-md-3">
-        <label class="form-label">Teacher ID</label>
-        <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
-      </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label">Skill ID</label>
-        <input type="number" class="form-control" name="skillId" placeholder="e.g. 5" required>
-      </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label">Start</label>
-        <input type="datetime-local" class="form-control" name="startAt" required>
-      </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label">End</label>
-        <input type="datetime-local" class="form-control" name="endAt" required>
-      </div>
-      <div class="col-12 mt-1 d-grid d-md-block">
-        <button class="btn btn-primary">Request</button>
-      </div>
-    </form>
-    <div class="form-text mt-2">
-      Tip: Use Browse to find a teacher and note their ID and skill.
-    </div>
-  </div>
-  </div>
-
-<div class="row g-4">
-  <!-- Teaching -->
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Teaching</h2>
-
-        <% if (teaching.length === 0) { %>
-          <div class="text-muted small">No sessions.</div>
-        <% } else { %>
-          <div class="list-group">
-            <% teaching.forEach(s => { %>
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                  <div class="me-3">
-                    <div class="d-flex align-items-center">
-                      <span class="badge <%= badge(s.status) %> me-2 text-uppercase"><%= s.status %></span>
-                      <strong><%= s.Skill?.name || 'Skill' %></strong>
-                    </div>
-                    <div class="small text-muted mt-1">
-                      With learner: <%= s.student?.name || 'User' %>
-                    </div>
-                    <div class="small text-muted">
-                      <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
-                    </div>
-                  </div>
-                  <div class="text-end">
-                    <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
-                    <div>
-                      <% if (s.status === 'requested') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/confirm" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-primary btn-sm">Confirm</button>
-                        </form>
-                        <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
-                      <% } else if (s.status === 'confirmed') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/generate-code" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-primary btn-sm">Generate Code</button>
-                        </form>
-                        <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
-                      <% } else if (s.status === 'in_progress') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/end" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-success btn-sm">End Session</button>
-                        </form>
-                      <% } %>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <% }) %>
+      <!-- Request a Session (manual IDs for now) -->
+      <div class="card mb-4">
+        <div class="card-body">
+          <h2 class="h6 text-muted mb-3">Request a Session</h2>
+          <form method="POST" action="/sessions/request" class="row g-2">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="col-12 col-md-3">
+              <label class="form-label">Teacher ID</label>
+              <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">Skill ID</label>
+              <input type="number" class="form-control" name="skillId" placeholder="e.g. 5" required>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">Start</label>
+              <input type="datetime-local" class="form-control" name="startAt" required>
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label">End</label>
+              <input type="datetime-local" class="form-control" name="endAt" required>
+            </div>
+            <div class="col-12 mt-1 d-grid d-md-block">
+              <button class="btn btn-primary">Request</button>
+            </div>
+          </form>
+          <div class="form-text mt-2">
+            Tip: Use Browse to find a teacher and note their ID and skill.
           </div>
-        <% } %>
+        </div>
       </div>
-    </div>
-  </div>
 
-  <!-- Learning -->
-  <div class="col-12 col-lg-6">
-    <div class="card">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Learning</h2>
+      <div class="row g-4">
+        <!-- Teaching -->
+        <div class="col-12 col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <h2 class="h6 text-muted mb-3">Teaching</h2>
 
-        <% if (learning.length === 0) { %>
-          <div class="text-muted small">No sessions.</div>
-        <% } else { %>
-          <div class="list-group">
-            <% learning.forEach(s => { %>
-              <div class="list-group-item">
-                <div class="d-flex justify-content-between">
-                  <div class="me-3">
-                    <div class="d-flex align-items-center">
-                      <span class="badge <%= badge(s.status) %> me-2 text-uppercase"><%= s.status %></span>
-                      <strong><%= s.Skill?.name || 'Skill' %></strong>
-                    </div>
-                    <div class="small text-muted mt-1">
-                      With teacher: <%= s.teacher?.name || 'User' %>
-                    </div>
-                    <div class="small text-muted">
-                      <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
-                    </div>
+              <% if (teaching.length===0) { %>
+                <div class="text-muted small">No sessions.</div>
+                <% } else { %>
+                  <div class="list-group">
+                    <% teaching.forEach(s=> { %>
+                      <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                          <div class="me-3">
+                            <div class="d-flex align-items-center">
+                              <span class="badge <%= badgeClass(s) %> me-2">
+                                <%= badgeLabel(s) %>
+                              </span>
+                              <strong>
+                                <%= s.Skill?.name || 'Skill' %>
+                              </strong>
+                            </div>
+                            <div class="small text-muted mt-1">
+                              With learner: <%= s.student?.name || 'User' %>
+                            </div>
+                            <div class="small text-muted">
+                              <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
+                            </div>
+                          </div>
+                          <div class="text-end">
+                            <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
+                            <div>
+                              <% if (s.status==='requested' ) { %>
+                                <form method="POST" action="/sessions/<%= s.id %>/confirm" class="d-inline">
+                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                  <button class="btn btn-primary btn-sm">Confirm</button>
+                                </form>
+                                <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
+                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                  <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                                </form>
+                                <% } else if (s.status==='confirmed' ) { %>
+                                  <form method="POST" action="/sessions/<%= s.id %>/generate-code" class="d-inline">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button class="btn btn-primary btn-sm">Generate Code</button>
+                                  </form>
+                                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                                  </form>
+                                  <% } else if (s.status==='in_progress' ) { %>
+                                    <form method="POST" action="/sessions/<%= s.id %>/end" class="d-inline">
+                                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                      <button class="btn btn-success btn-sm">End Session</button>
+                                    </form>
+                                    <% } %>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <% }) %>
                   </div>
-                  <div class="text-end">
-                    <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
-                    <div>
-                      <% if (s.status === 'requested') { %>
-                        <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
-                      <% } else if (s.status === 'confirmed') { %>
-                        <!-- Enter code on session detail page -->
-                        <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                          <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                        </form>
-                      <% } else if (s.status === 'in_progress') { %>
-                        <span class="badge bg-info text-dark">In progress</span>
-                      <% } %>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            <% }) %>
+                  <% } %>
+            </div>
           </div>
-        <% } %>
+        </div>
+
+        <!-- Learning -->
+        <div class="col-12 col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <h2 class="h6 text-muted mb-3">Learning</h2>
+
+              <% if (learning.length===0) { %>
+                <div class="text-muted small">No sessions.</div>
+                <% } else { %>
+                  <div class="list-group">
+                    <% learning.forEach(s=> { %>
+                      <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                          <div class="me-3">
+                            <div class="d-flex align-items-center">
+                              <span class="badge <%= badgeClass(s) %> me-2">
+                                <%= badgeLabel(s) %>
+                              </span>
+                              <strong>
+                                <%= s.Skill?.name || 'Skill' %>
+                              </strong>
+                            </div>
+                            <div class="small text-muted mt-1">
+                              With teacher: <%= s.teacher?.name || 'User' %>
+                            </div>
+                            <div class="small text-muted">
+                              <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
+                            </div>
+                          </div>
+                          <div class="text-end">
+                            <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
+                            <div>
+                              <% if (s.status==='requested' ) { %>
+                                <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
+                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                  <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                                </form>
+                                <% } else if (s.status==='confirmed' ) { %>
+                                  <!-- Enter code on session detail page -->
+                                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
+                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                                    <button class="btn btn-outline-danger btn-sm">Cancel</button>
+                                  </form>
+                                  <% } else if (s.status==='in_progress' ) { %>
+                                    <span class="badge bg-info text-dark">In progress</span>
+                                    <% } %>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <% }) %>
+                  </div>
+                  <% } %>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>

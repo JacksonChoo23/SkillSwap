@@ -1,47 +1,74 @@
+<!-- Report Modal - Redirects to AI-First Report Page -->
 <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="POST" action="/reports">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="targetUserId" id="reportTargetId">
-        <input type="hidden" name="sessionId" id="reportSessionId">
-        <input type="hidden" name="messageThreadId" id="reportThreadId">
-        <div class="modal-header">
-          <h5 class="modal-title">Report User</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-flag me-2"></i>Report User</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+          <i class="bi bi-robot fs-1 text-primary"></i>
         </div>
-        <div class="modal-body">
-          <div class="mb-2">Reporting <strong id="reportTargetName"></strong></div>
-          <div class="mb-3">
-            <label class="form-label">Reason</label>
-            <textarea class="form-control" name="reason" rows="4" required minlength="10" maxlength="1000" placeholder="Describe the issue..."></textarea>
+        <p class="text-center mb-3">
+          You are about to report <strong id="reportTargetName">this user</strong>.
+        </p>
+
+        <!-- AI Review Info -->
+        <div class="alert alert-info small mb-3">
+          <i class="bi bi-lightning-charge me-1"></i>
+          <strong>AI-Powered Review</strong><br>
+          Our AI will analyze your report with evidence for faster processing.
+        </div>
+
+        <!-- Time Comparison -->
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="bg-success bg-opacity-10 rounded p-2 text-center">
+              <small class="text-success fw-bold">AI Review</small>
+              <div class="small text-muted">&lt; 1 minute</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="bg-secondary bg-opacity-10 rounded p-2 text-center">
+              <small class="text-secondary fw-bold">Manual Review</small>
+              <div class="small text-muted">24-48 hours</div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-danger" type="submit">Submit Report</button>
-        </div>
-      </form>
+
+        <p class="text-muted small text-center mb-0">
+          <i class="bi bi-image me-1"></i>You can upload screenshots and evidence on the next page.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="reportContinueBtn" class="btn btn-danger">
+          <i class="bi bi-arrow-right me-1"></i>Continue to Report
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  (function(){
+  (function () {
     const modalEl = document.getElementById('reportModal');
     let bsModal;
-    function ensure(){ if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
+    function ensure() { if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
+
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.js-report');
       if (!btn) return;
-      document.getElementById('reportTargetId').value = btn.getAttribute('data-target-id');
-      document.getElementById('reportTargetName').textContent = btn.getAttribute('data-target-name') || 'User';
-      document.getElementById('reportSessionId').value = btn.getAttribute('data-session-id') || '';
-      document.getElementById('reportThreadId').value = btn.getAttribute('data-thread-id') || '';
+
+      const targetId = btn.getAttribute('data-target-id');
+      const targetName = btn.getAttribute('data-target-name') || 'User';
+
+      document.getElementById('reportTargetName').textContent = targetName;
+      document.getElementById('reportContinueBtn').href = `/reports/new?targetUserId=${targetId}`;
+
       ensure();
       bsModal.show();
     });
   })();
 </script>
-
-

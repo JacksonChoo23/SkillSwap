@@ -91,27 +91,195 @@
         </div>
       </div>
 
-      <div class="mt-3 d-flex gap-2">
-        <% if (typeof from !=='undefined' && from==='match' ) { %>
-          <a class="btn btn-outline-secondary" href="/match">Back to matches</a>
-          <% } else { %>
-            <a class="btn btn-outline-secondary" href="/browse">Back to browse</a>
-            <% } %>
-              <% if (isAuthenticated) { %>
-                <a class="btn btn-primary" href="/messages?to=<%= u.id %>">Message</a>
-                <% if (u.whatsappNumber) { %>
-                  <a class="btn btn-success" target="_blank" rel="noopener"
-                    href="https://wa.me/<%= String(u.whatsappNumber).replace(/\D/g, '') %>?text=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY!') %>">
-                    <i class="fab fa-whatsapp me-1"></i>WhatsApp
-                  </a>
-                  <% } %>
-                    <% if (!u.whatsappNumber && u.email) { %>
-                      <a class="btn btn-success"
-                        href="mailto:<%= u.email %>?subject=<%- encodeURIComponent('Hello from SkillSwap MY') %>&body=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY and would like to connect!') %>">
-                        <i class="fas fa-envelope me-1"></i>E-mail
-                      </a>
-                      <% } %>
-                        <% } else { %>
-                          <a class="btn btn-primary" href="/auth/login">Login to message</a>
+      <!-- Ratings Section -->
+      <div class="card mt-4 border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h2 class="h5 mb-4 fw-bold">Ratings & Reviews</h2>
+
+          <% if (ratings && ratings.length> 0) { %>
+            <% const avgComm=ratings.reduce((acc, r)=> acc + r.communication, 0) / ratings.length;
+              const avgSkill = ratings.reduce((acc, r) => acc + r.skill, 0) / ratings.length;
+              const avgAtt = ratings.reduce((acc, r) => acc + r.attitude, 0) / ratings.length;
+              const avgPunc = ratings.reduce((acc, r) => acc + r.punctuality, 0) / ratings.length;
+              const overall = (avgComm + avgSkill + avgAtt + avgPunc) / 4;
+
+              const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+              ratings.forEach(r => {
+              const rAvg = Math.round((r.communication + r.skill + r.attitude + r.punctuality) / 4);
+              if (rAvg >= 1 && rAvg <= 5) distribution[rAvg]++; }); %>
+
+                <!-- New Rating Summary Card -->
+                <div class="rating-summary-card mb-5">
+                  <div class="d-flex flex-wrap">
+                    <!-- Overall Score -->
+                    <div class="overall-score d-flex flex-column justify-content-center align-items-center">
+                      <div class="number">
+                        <%= overall.toFixed(1) %>
+                      </div>
+                      <%- include('../partials/star_rating', { rating: overall, size: 'lg' }) %>
+                        <div class="total-reviews">
+                          <%= ratings.length %> review<%= ratings.length !==1 ? 's' : '' %>
+                        </div>
+                    </div>
+
+                    <!-- Rating Distribution -->
+                    <div class="rating-distribution py-2">
+                      <% for(let i=5; i>=1; i--) { %>
+                        <div class="dist-row">
+                          <div class="dist-label">
+                            <%= i %> <i class="fas fa-star text-muted" style="font-size: 0.7rem;"></i>
+                          </div>
+                          <div class="dist-bar">
+                            <div class="dist-fill"
+                              style="width: <%- (distribution[i] / ratings.length * 100).toFixed(2) %>%">
+                            </div>
+                          </div>
+                          <div class="dist-count">
+                            <%= distribution[i] %>
+                          </div>
+                        </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Category Breakdown -->
+                    <div class="category-ratings py-2">
+                      <div class="category-item">
+                        <div class="category-label">
+                          <span>Communication</span>
+                          <span class="fw-bold">
+                            <%= avgComm.toFixed(1) %>
+                          </span>
+                        </div>
+                        <div class="category-bar">
+                          <div class="category-fill" style="width: <%- (avgComm / 5 * 100).toFixed(2) %>%"></div>
+                        </div>
+                      </div>
+                      <div class="category-item">
+                        <div class="category-label">
+                          <span>Skill Level</span>
+                          <span class="fw-bold">
+                            <%= avgSkill.toFixed(1) %>
+                          </span>
+                        </div>
+                        <div class="category-bar">
+                          <div class="category-fill" style="width: <%- (avgSkill / 5 * 100).toFixed(2) %>%"></div>
+                        </div>
+                      </div>
+                      <div class="category-item">
+                        <div class="category-label">
+                          <span>Attitude</span>
+                          <span class="fw-bold">
+                            <%= avgAtt.toFixed(1) %>
+                          </span>
+                        </div>
+                        <div class="category-bar">
+                          <div class="category-fill" style="width: <%- (avgAtt / 5 * 100).toFixed(2) %>%"></div>
+                        </div>
+                      </div>
+                      <div class="category-item">
+                        <div class="category-label">
+                          <span>Punctuality</span>
+                          <span class="fw-bold">
+                            <%= avgPunc.toFixed(1) %>
+                          </span>
+                        </div>
+                        <div class="category-bar">
+                          <div class="category-fill" style="width: <%- (avgPunc / 5 * 100).toFixed(2) %>%"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Reviews List -->
+                <div class="reviews-list">
+                  <h3 class="h6 text-muted text-uppercase mb-3 ls-1">Latest Reviews</h3>
+                  <% ratings.forEach(rating=> { %>
+                    <% const rAvg=(rating.communication + rating.skill + rating.attitude + rating.punctuality) / 4; %>
+                      <div class="review-card">
+                        <div class="review-header">
+                          <div class="reviewer-profile">
+                            <% if (rating.rater && rating.rater.profileImage) { %>
+                              <img src="<%= rating.rater.profileImage %>" alt="<%= rating.rater.name %>"
+                                class="reviewer-img">
+                              <% } else { %>
+                                <div
+                                  class="reviewer-img bg-light d-flex align-items-center justify-content-center text-secondary">
+                                  <i class="fas fa-user fa-lg"></i>
+                                </div>
+                                <% } %>
+                                  <div class="reviewer-meta">
+                                    <h6>
+                                      <%= rating.rater ? rating.rater.name : 'Anonymous' %>
+                                    </h6>
+                                    <span class="date">
+                                      <%= new Date(rating.createdAt).toLocaleDateString(undefined, { year: 'numeric' ,
+                                        month: 'long' , day: 'numeric' }) %>
+                                    </span>
+                                  </div>
+                          </div>
+                          <div class="review-main-rating">
+                            <%- include('../partials/star_rating', { rating: rAvg, size: 'sm' , showValue: true }) %>
+                          </div>
+                        </div>
+
+                        <% if (rating.comment) { %>
+                          <div class="review-body">
+                            <%= rating.comment %>
+                          </div>
                           <% } %>
+
+                            <div class="review-tags">
+                              <div class="review-tag" title="Communication">
+                                <i class="fas fa-comments"></i>
+                                <%= rating.communication.toFixed(1) %>
+                              </div>
+                              <div class="review-tag" title="Skill Level">
+                                <i class="fas fa-book"></i>
+                                <%= rating.skill.toFixed(1) %>
+                              </div>
+                              <div class="review-tag" title="Attitude">
+                                <i class="fas fa-smile"></i>
+                                <%= rating.attitude.toFixed(1) %>
+                              </div>
+                              <div class="review-tag" title="Punctuality">
+                                <i class="fas fa-clock"></i>
+                                <%= rating.punctuality.toFixed(1) %>
+                              </div>
+                            </div>
+                      </div>
+                      <% }) %>
+                </div>
+
+                <% } else { %>
+                  <div class="text-center py-5">
+                    <div class="mb-3">
+                      <i class="fas fa-star text-muted opacity-25" style="font-size: 4rem;"></i>
+                    </div>
+                    <h5 class="text-muted">No reviews yet</h5>
+                    <p class="text-muted small">Be the first to leave a review for this user!</p>
+                  </div>
+                  <% } %>
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
+        <% if (isAuthenticated) { %>
+          <a class="btn btn-primary" href="/messages?to=<%= u.id %>">Message</a>
+          <% if (u.whatsappNumber) { %>
+            <a class="btn btn-success" target="_blank" rel="noopener"
+              href="https://wa.me/<%= String(u.whatsappNumber).replace(/\D/g, '') %>?text=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY!') %>">
+              <i class="fab fa-whatsapp me-1"></i>WhatsApp
+            </a>
+            <% } %>
+              <% if (!u.whatsappNumber && u.email) { %>
+                <a class="btn btn-success"
+                  href="mailto:<%= u.email %>?subject=<%- encodeURIComponent('Hello from SkillSwap MY') %>&body=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY and would like to connect!') %>">
+                  <i class="fas fa-envelope me-1"></i>E-mail
+                </a>
+                <% } %>
+                  <% } else { %>
+                    <a class="btn btn-primary" href="/auth/login">Login to message</a>
+                    <% } %>
       </div>

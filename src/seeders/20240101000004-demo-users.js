@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    const passwordHash = await bcrypt.hash('Admin@123', 12);
+    const passwordHash = await bcrypt.hash('Admin123!', 12);
 
     await queryInterface.bulkInsert('users', [
       // Admin user
@@ -16,6 +16,7 @@ module.exports = {
         location: 'Kuala Lumpur, Malaysia',
         is_public: true,
         role: 'admin',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -28,6 +29,7 @@ module.exports = {
         location: 'Kuala Lumpur, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -39,6 +41,7 @@ module.exports = {
         location: 'Penang, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -50,6 +53,7 @@ module.exports = {
         location: 'Johor Bahru, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -61,6 +65,7 @@ module.exports = {
         location: 'Kuala Lumpur, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -72,6 +77,7 @@ module.exports = {
         location: 'Malacca, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -83,6 +89,7 @@ module.exports = {
         location: 'Kuala Lumpur, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -94,6 +101,7 @@ module.exports = {
         location: 'Shah Alam, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -105,6 +113,7 @@ module.exports = {
         location: 'Kuala Lumpur, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       },
@@ -116,6 +125,7 @@ module.exports = {
         location: 'Petaling Jaya, Malaysia',
         is_public: true,
         role: 'user',
+        is_verified: true,
         created_at: new Date(),
         updated_at: new Date()
       }

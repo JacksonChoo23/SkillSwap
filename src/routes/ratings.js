@@ -1,5 +1,5 @@
 const express = require('express');
-const { Rating, LearningSession, User } = require('../models');
+const { Rating, LearningSession, User, Notification } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 
 const router = express.Router();
@@ -9,9 +9,11 @@ router.post('/:sessionId', validate(schemas.rating), async (req, res) => {
   try {
     const { sessionId } = req.params;
     const { rateeId, communication, skill, attitude, punctuality, comment } = req.body;
-    
+
+    console.log(`[Rating] Submitting rating for session ${sessionId} by user ${req.user.id} to ${rateeId}`);
+
     const session = await LearningSession.findByPk(sessionId);
-    
+
     if (!session) {
       req.session.error = 'Session not found.';
       return res.redirect('/sessions');
@@ -65,6 +67,21 @@ router.post('/:sessionId', validate(schemas.rating), async (req, res) => {
       punctuality: parseInt(punctuality),
       comment: comment || ''
     });
+
+    // Notify the user who was rated
+    // Fire and forget (or use setImmediate if strictly backgrounding)
+    (async () => {
+      try {
+        await Notification.create({
+          user_id: parseInt(rateeId),
+          title: 'New Rating Received',
+          message: `You received a new rating from ${req.user.name} for the session on ${session.Skill ? session.Skill.name : 'your skill'}.`,
+          status: 'unread'
+        });
+      } catch (e) {
+        console.error('Failed to create rating notification:', e);
+      }
+    })();
 
     req.session.success = 'Rating submitted successfully.';
     res.redirect(`/sessions/${sessionId}`);

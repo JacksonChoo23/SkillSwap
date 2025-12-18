@@ -95,13 +95,19 @@ class MatchingService {
         const finalScore = (tagOverlapScore * 0.6) + (availabilityOverlapScore * 0.4);
 
         if (finalScore > 0) {
+          // Get teach skills with names for session request modal
+          const matchTeachSkillsWithNames = match.userSkills
+            .filter(us => us.type === 'teach' && us.Skill)
+            .map(us => ({ id: us.Skill.id, name: us.Skill.name }));
+
           matches.push({
             user: match,
             score: finalScore,
             tagOverlapScore,
             availabilityOverlapScore,
             teachOverlap,
-            learnOverlap
+            learnOverlap,
+            teachSkills: matchTeachSkillsWithNames
           });
         }
       }

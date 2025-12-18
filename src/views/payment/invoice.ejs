@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice <%= invoice.invoiceNumber %> - SkillSwap MY</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #4a90a4;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .invoice-header h1 {
+            color: #4a90a4;
+            margin: 0;
+        }
+
+        .invoice-info {
+            text-align: right;
+        }
+
+        .invoice-info p {
+            margin: 5px 0;
+        }
+
+        .invoice-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .details-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .details-table th,
+        .details-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .details-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .total-row td {
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-top: 2px solid #4a90a4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-void {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-refunded {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .print-btn {
+            background-color: #4a90a4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+
+        .print-btn:hover {
+            background-color: #3a7a94;
+        }
+
+        @media print {
+
+            .print-btn,
+            .back-btn {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="print-btn" onclick="window.print()">Print Invoice</button>
+    <a href="/payment" class="back-btn" style="margin-left: 10px;">← Back to History</a>
+
+    <div class="invoice-header">
+        <div>
+            <h1>SkillSwap MY</h1>
+            <p>Peer Skill Exchange Platform</p>
+        </div>
+        <div class="invoice-info">
+            <p class="invoice-number">
+                <%= invoice.invoiceNumber %>
+            </p>
+            <p>Issued: <%= new Date(invoice.issuedDate).toLocaleDateString() %>
+            </p>
+            <p>
+                <span class="status-badge status-<%= invoice.status %>">
+                    <%= invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1) %>
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Bill To</div>
+        <p><strong>
+                <%= user.name %>
+            </strong></p>
+        <p>
+            <%= user.email %>
+        </p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Transaction Details</div>
+        <table class="details-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th style="text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <%= transaction.description || 'SkillSwap Payment' %>
+                    </td>
+                    <td style="text-align: right;">MYR <%= parseFloat(transaction.amount).toFixed(2) %>
+                    </td>
+                </tr>
+                <tr class="total-row">
+                    <td>Total</td>
+                    <td style="text-align: right;">MYR <%= parseFloat(invoice.amount).toFixed(2) %>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for using SkillSwap MY!</p>
+        <p>Transaction ID: <%= transaction.id %> | Invoice generated on <%= new Date().toLocaleDateString() %>
+        </p>
+    </div>
+</body>
+
+</html>

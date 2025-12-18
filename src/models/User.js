@@ -80,6 +80,36 @@ const User = sequelize.define('User', {
     field: 'activation_token'
   },
 
+  // Suspension & Penalty fields
+  isSuspended: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'is_suspended'
+  },
+  suspensionEndDate: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'suspension_end_date'
+  },
+  suspensionReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'suspension_reason'
+  },
+  isBanned: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'is_banned'
+  },
+  warningCount: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'warning_count'
+  },
+
   // 时间戳：DB 用 created_at / updated_at
   createdAt: {
     type: DataTypes.DATE,

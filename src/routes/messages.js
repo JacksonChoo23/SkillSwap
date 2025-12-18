@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 router.get('/thread/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const thread = await MessageThread.findByPk(id, {
       include: [
         {
@@ -106,9 +106,9 @@ router.post('/thread/:id', validate(schemas.message), async (req, res) => {
   try {
     const { id } = req.params;
     const { content } = req.body;
-    
+
     const thread = await MessageThread.findByPk(id);
-    
+
     if (!thread) {
       req.session.error = 'Thread not found.';
       return res.redirect('/messages');
@@ -153,9 +153,9 @@ router.post('/start/:listingId', validate(schemas.message), async (req, res) => 
   try {
     const { listingId } = req.params;
     const { content } = req.body;
-    
+
     const listing = await Listing.findByPk(listingId);
-    
+
     if (!listing || listing.status !== 'approved') {
       req.session.error = 'Listing not found or not available.';
       return res.redirect('/listings');
@@ -220,7 +220,7 @@ async function notifyUserForMessageRequest(userId, messageDetails) {
 
     // Create a notification
     await Notification.create({
-      userId,
+      user_id: userId,
       title: 'New Message Request!',
       message: `You have a new message request: ${messageDetails}.`,
       status: 'unread',

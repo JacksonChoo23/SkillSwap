@@ -1,5 +1,6 @@
 // utils/geminiModeration.js
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Bottleneck = require("bottleneck");
 
 const apiKey = process.env.GEMINI_API_KEY;
 let genAI = null;
@@ -80,6 +81,67 @@ const generationConfig = {
   maxOutputTokens: 512
 };
 
+// Rate limiter: 1 request every 4 seconds (15 requests per minute max)
+const limiter = new Bottleneck({
+  minTime: 4000 // 4 seconds between requests
+});
+
+// Sleep utility for exponential backoff
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Exponential backoff retry wrapper
+async function runModelWithRetry(model, prompt, cfg = generationConfig, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      // Attempt the API call
+      const res = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: cfg
+      });
+
+      let raw = "";
+      try {
+        raw = res.response.text().trim();
+      } catch {
+        raw =
+          res?.response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim?.() || "";
+      }
+
+      // Clean up common JSON formatting issues from AI responses
+      if (raw) {
+        // Remove markdown code blocks if present
+        raw = raw.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '');
+
+        // Remove any leading/trailing non-JSON content
+        const jsonStart = raw.indexOf('{');
+        const jsonEnd = raw.lastIndexOf('}');
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          raw = raw.substring(jsonStart, jsonEnd + 1);
+        }
+
+        // Fix common escape sequence issues
+        raw = raw.replace(/\\\n/g, '\\n').replace(/\\\"/g, '\\"');
+      }
+
+      return raw;
+    } catch (error) {
+      // Check if it's a 429 (Too Many Requests) or 503 (Service Unavailable)
+      const isRateLimitError = error.status === 429 || error.status === 503;
+      const shouldRetry = isRateLimitError && i < retries - 1;
+
+      if (shouldRetry) {
+        // Wait longer for each retry (e.g., 2s, 4s, 8s)
+        const delay = Math.pow(2, i) * 2000;
+        console.warn(`Gemini API quota hit (${error.status}). Retrying in ${delay}ms... (attempt ${i + 1}/${retries})`);
+        await sleep(delay);
+      } else {
+        // If it's a different error or we ran out of retries, throw it
+        throw error;
+      }
+    }
+  }
+}
+
 function num(x) {
   const n = Number(x);
   return Number.isFinite(n) ? Math.min(1, Math.max(0, n)) : 0;
@@ -118,20 +180,20 @@ function safeJsonParse(jsonString, fallbackData = {}) {
     console.warn('Invalid JSON string provided to safeJsonParse');
     return fallbackData;
   }
-  
+
   try {
     const parsed = JSON.parse(jsonString);
     return parsed;
   } catch (error) {
     console.warn('JSON parsing failed:', error.message);
     console.warn('Raw content:', jsonString.substring(0, 200) + '...');
-    
+
     // Try to extract suggestions from malformed JSON
     try {
       // Look for title and description patterns in the response
       const titleMatch = jsonString.match(/"title"\s*:\s*"([^"]+)"/);
       const descriptionMatch = jsonString.match(/"description"\s*:\s*"([^"]+)"/);
-      
+
       if (titleMatch || descriptionMatch) {
         return {
           suggestions: {
@@ -144,42 +206,14 @@ function safeJsonParse(jsonString, fallbackData = {}) {
     } catch (extractError) {
       console.warn('Failed to extract partial data:', extractError.message);
     }
-    
+
     return fallbackData;
   }
 }
 
+// Wrap the retry function with rate limiter
 async function runModel(model, prompt, cfg = generationConfig) {
-  const res = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: cfg
-  });
-
-  let raw = "";
-  try {
-    raw = res.response.text().trim();
-  } catch {
-    raw =
-      res?.response?.candidates?.[0]?.content?.parts?.[0]?.text?.trim?.() || "";
-  }
-  
-  // Clean up common JSON formatting issues from AI responses
-  if (raw) {
-    // Remove markdown code blocks if present
-    raw = raw.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '');
-    
-    // Remove any leading/trailing non-JSON content
-    const jsonStart = raw.indexOf('{');
-    const jsonEnd = raw.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      raw = raw.substring(jsonStart, jsonEnd + 1);
-    }
-    
-    // Fix common escape sequence issues
-    raw = raw.replace(/\\\n/g, '\\n').replace(/\\\"/g, '\\"');
-  }
-  
-  return raw;
+  return limiter.schedule(() => runModelWithRetry(model, prompt, cfg));
 }
 
 // 保留：旧 API（只做判定）
@@ -214,7 +248,7 @@ const getSkillCategory = (skillName) => {
     business: ['marketing', 'accounting', 'finance', 'sales', 'management', 'entrepreneurship', 'leadership', 'project management', 'excel', 'powerpoint'],
     academic: ['mathematics', 'physics', 'chemistry', 'biology', 'history', 'geography', 'economics', 'psychology', 'sociology', 'philosophy']
   };
-  
+
   const skillLower = skillName.toLowerCase();
   for (const [category, skills] of Object.entries(categories)) {
     if (skills.some(skill => skillLower.includes(skill) || skill.includes(skillLower))) {
@@ -228,21 +262,21 @@ const getSkillCategory = (skillName) => {
 const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
   const teachSkills = (userSkills || []).filter(skill => skill.type === 'teach');
   const learnSkills = (userSkills || []).filter(skill => skill.type === 'learn');
-  
+
   const relevantSkills = listingType === 'teach' ? teachSkills : learnSkills;
   const primarySkillData = relevantSkills[0];
   const primarySkill = primarySkillData?.Skill?.name || primarySkillData?.skillName;
   const primaryLevel = primarySkillData?.level || 'intermediate';
   const userLocation = context.user?.location;
-  
+
   const skillCategory = primarySkill ? getSkillCategory(primarySkill) : 'general';
-  
+
   const categorySpecificSuggestions = {
     programming: {
       teach: {
         titles: [
           "Expert {skill} Developer & Mentor",
-          "Learn {skill} from Industry Professional", 
+          "Learn {skill} from Industry Professional",
           "Professional {skill} Coding Bootcamp",
           "{skill} Development Made Easy",
           "Senior {skill} Developer - Ready to Teach"
@@ -329,12 +363,12 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
       }
     }
   };
-  
+
   const commonSuggestions = {
     teach: {
       titles: [
         "Expert {skill} Tutor Available",
-        "Learn {skill} with Experienced Guide", 
+        "Learn {skill} with Experienced Guide",
         "Professional {skill} Teaching Sessions",
         "{skill} Mentor Ready to Help",
         "Master {skill} - Let Me Teach You"
@@ -367,14 +401,14 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
       ],
       notes: [
         "Be honest about your current skill level",
-        "Mention your learning goals and timeline", 
+        "Mention your learning goals and timeline",
         "Describe your preferred learning style",
         "Include what you hope to achieve",
         "Add details about your availability for sessions"
       ]
     }
   };
-  
+
   // Use category-specific suggestions if available, otherwise fall back to common
   const suggestions = categorySpecificSuggestions[skillCategory]?.[listingType] || commonSuggestions[listingType];
   let title = suggestions.titles[0];
@@ -384,36 +418,36 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
   if (relevantSkills.length > 0 && primarySkill) {
     const randomTitleIndex = Math.floor(Math.random() * suggestions.titles.length);
     const randomDescIndex = Math.floor(Math.random() * suggestions.descriptions.length);
-    
+
     title = suggestions.titles[randomTitleIndex].replace(/\{skill\}/g, primarySkill);
     description = suggestions.descriptions[randomDescIndex].replace(/\{skill\}/g, primarySkill);
-    
+
     // Level-specific customizations for teaching
     if (listingType === 'teach') {
       const levelAdjectives = {
         beginner: ['Patient', 'Supportive', 'Encouraging'],
-        intermediate: ['Experienced', 'Knowledgeable', 'Professional'], 
+        intermediate: ['Experienced', 'Knowledgeable', 'Professional'],
         advanced: ['Expert', 'Senior', 'Master']
       };
-      
+
       const levelDescriptions = {
         beginner: 'I understand the learning journey and focus on building strong fundamentals with patience and encouragement.',
         intermediate: 'I have solid experience and can guide you through practical applications and real-world scenarios.',
         advanced: 'I bring deep expertise and can help you master advanced concepts and industry best practices.'
       };
-      
+
       // Add level-appropriate adjective to title if it doesn't already have one
       const adjective = levelAdjectives[primaryLevel][Math.floor(Math.random() * levelAdjectives[primaryLevel].length)];
       if (!title.includes('Expert') && !title.includes('Professional') && !title.includes('Senior')) {
         title = title.replace(primarySkill, `${primarySkill} (${adjective} Level)`);
       }
-      
+
       // Enhance description with level-specific content
       if (!description.includes('experience') && !description.includes('expertise')) {
         description += ` ${levelDescriptions[primaryLevel]}`;
       }
     }
-    
+
     // Level-specific customizations for learning
     if (listingType === 'learn') {
       const learnerDescriptions = {
@@ -421,12 +455,12 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
         intermediate: "I have some basic knowledge but want to deepen my understanding and fill knowledge gaps.",
         advanced: "I have solid fundamentals and want to master advanced techniques and best practices."
       };
-      
+
       // Find the user's level for the skill they want to learn (if they have any experience)
       const learningLevel = 'beginner'; // Default for new learners
       description += ` ${learnerDescriptions[learningLevel]}`;
     }
-    
+
     // Add estimated years for programming
     if (skillCategory === 'programming' && listingType === 'teach') {
       const experienceYears = {
@@ -438,14 +472,14 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
     }
   } else {
     title = listingType === 'teach' ? "Share Your Knowledge & Skills" : "Learn New Skills & Grow";
-    description = listingType === 'teach' ? 
+    description = listingType === 'teach' ?
       "I have valuable knowledge and experience to share. Let's connect and learn from each other!" :
       "I'm eager to learn new skills and grow. Looking for patient teachers and mentors to guide me.";
   }
 
   // Get appropriate notes based on category and type
   let notes = suggestions.notes || commonSuggestions[listingType].notes;
-  
+
   // Add location-aware enhancements
   if (userLocation) {
     // Enhance description with location context
@@ -461,10 +495,10 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
         `From ${userLocation} area, flexible with session location and timing.`
       ]
     };
-    
+
     const enhancement = locationEnhancements[listingType][Math.floor(Math.random() * locationEnhancements[listingType].length)];
     description += ` ${enhancement}`;
-    
+
     // Add location-specific notes
     const locationNotes = [
       `Consider mentioning your availability for in-person sessions in ${userLocation}`,
@@ -472,7 +506,7 @@ const getFallbackSuggestions = (userSkills, listingType, context = {}) => {
       "Mention any travel distance you're comfortable with",
       "Consider time zone preferences for online sessions"
     ];
-    
+
     notes = [...notes, ...locationNotes.slice(0, 2)];
   }
 
@@ -499,10 +533,10 @@ async function generateListingSuggestions(userSkills, listingType = 'teach', con
 
   const teachSkills = (userSkills || []).filter(skill => skill.type === 'teach');
   const learnSkills = (userSkills || []).filter(skill => skill.type === 'learn');
-  
+
   const relevantSkills = listingType === 'teach' ? teachSkills : learnSkills;
   const otherSkills = listingType === 'teach' ? learnSkills : teachSkills;
-  
+
   // Use fallback for users with no skills
   if (relevantSkills.length === 0) {
     return getFallbackSuggestions(userSkills, listingType, context);
@@ -512,7 +546,7 @@ async function generateListingSuggestions(userSkills, listingType = 'teach', con
   const primarySkill = primarySkillData?.Skill?.name || primarySkillData?.skillName;
   const primaryLevel = primarySkillData?.level || 'intermediate';
   const userLocation = context.user?.location;
-  
+
   const skillNames = relevantSkills.map(skill => skill.Skill?.name || skill.skillName).filter(Boolean);
   const otherSkillNames = otherSkills.map(skill => skill.Skill?.name || skill.skillName).filter(Boolean);
 
@@ -542,15 +576,15 @@ Create suggestions that:
 ${userLocation ? '6. Include location-relevant details when appropriate' : ''}
 
 For ${primaryLevel} level ${listingType === 'teach' ? 'teachers' : 'learners'}:
-${listingType === 'teach' ? 
-  primaryLevel === 'beginner' ? '- Focus on patience, understanding, and building fundamentals' :
-  primaryLevel === 'intermediate' ? '- Emphasize practical experience and real-world applications' :
-  '- Highlight deep expertise, advanced techniques, and industry best practices'
-:
-  primaryLevel === 'beginner' ? '- Show enthusiasm and commitment to learning' :
-  primaryLevel === 'intermediate' ? '- Mention existing knowledge and desire to advance' :
-  '- Focus on mastering advanced concepts and techniques'
-}
+${listingType === 'teach' ?
+      primaryLevel === 'beginner' ? '- Focus on patience, understanding, and building fundamentals' :
+        primaryLevel === 'intermediate' ? '- Emphasize practical experience and real-world applications' :
+          '- Highlight deep expertise, advanced techniques, and industry best practices'
+      :
+      primaryLevel === 'beginner' ? '- Show enthusiasm and commitment to learning' :
+        primaryLevel === 'intermediate' ? '- Mention existing knowledge and desire to advance' :
+          '- Focus on mastering advanced concepts and techniques'
+    }
 
 Keep title under 80 characters and description under 500 characters.
 
@@ -559,27 +593,27 @@ Return ONLY JSON in the required schema.`;
   try {
     const raw = await runModel(suggestModel, prompt);
     console.log('AI Response received, length:', raw.length);
-    
+
     const result = safeJsonParse(raw, {
       suggestions: {
         title: `${listingType === 'teach' ? 'Teaching' : 'Learning'} ${primarySkill}`,
         description: `I'm ${listingType === 'teach' ? 'offering to teach' : 'looking to learn'} ${skillNames.slice(0, 2).join(' and ')}. ${listingType === 'teach' ? 'I have experience and can help you get started.' : 'I\'m eager to learn and practice with others.'}`,
         notes: [
           "Be specific about what you're offering or seeking",
-          "Mention your experience level or current knowledge", 
+          "Mention your experience level or current knowledge",
           "Include what students can expect to learn or achieve",
           "Add details about your teaching style or learning preferences"
         ]
       }
     });
-    
+
     return {
       suggestions: {
         title: result.suggestions?.title || `${listingType === 'teach' ? 'Teaching' : 'Learning'} ${primarySkill}`,
         description: result.suggestions?.description || `I'm ${listingType === 'teach' ? 'offering to teach' : 'looking to learn'} ${skillNames.slice(0, 2).join(' and ')}. ${listingType === 'teach' ? 'I have experience and can help you get started.' : 'I\'m eager to learn and practice with others.'}`,
         notes: Array.isArray(result.suggestions?.notes) ? result.suggestions.notes : [
           "Be specific about what you're offering or seeking",
-          "Mention your experience level or current knowledge", 
+          "Mention your experience level or current knowledge",
           "Include what students can expect to learn or achieve",
           "Add details about your teaching style or learning preferences"
         ],
@@ -626,7 +660,7 @@ Description:
         notes: []
       }
     });
-    
+
     return {
       suggestions: {
         title: result.suggestions?.title || "",
@@ -642,8 +676,225 @@ Description:
   }
 }
 
+// Health check for Gemini AI service
+async function checkGeminiHealth() {
+  // If API key is missing, return offline status immediately
+  if (!apiKey) {
+    return {
+      online: false,
+      message: 'API key not configured'
+    };
+  }
+
+  // If AI models are not available, return offline
+  if (!modelsAvailable || !genAI) {
+    return {
+      online: false,
+      message: 'Failed to initialize Gemini AI'
+    };
+  }
+
+  try {
+    // Perform a lightweight API call to check connectivity
+    // Using countTokens is much cheaper than generating content
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+    await model.countTokens('ping');
+
+    return {
+      online: true,
+      message: 'Connected'
+    };
+  } catch (error) {
+    console.error('Gemini health check failed:', error.message);
+    return {
+      online: false,
+      message: error.message || 'Connection failed'
+    };
+  }
+}
+
+// Report evidence analysis using multimodal model
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Analyze report evidence (text + images) using Gemini Pro
+ * @param {string} reportText - The report reason/description
+ * @param {string[]} filePaths - Array of file paths for evidence images
+ * @returns {Object} Analysis result with verdict, severity, confidence, and reasoning
+ */
+async function analyzeReportEvidence(reportText, filePaths = []) {
+  // If AI not available, return uncertain verdict
+  if (!modelsAvailable || !genAI) {
+    return {
+      success: false,
+      verdict: 'uncertain',
+      severity: 'none',
+      confidence: 0,
+      summary: 'AI analysis unavailable',
+      reasoning: 'The AI moderation system is not configured.',
+      category: 'unknown',
+      recommendedPenalty: 'manual_review'
+    };
+  }
+
+  try {
+    // Use Gemini 2.0 Flash for multimodal analysis (verified working)
+    const reportModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      systemInstruction: `You are a content moderation AI for a skill exchange platform. Analyze user reports for policy violations.
+
+Output ONLY valid JSON. No fences. No prose.
+Schema:
+{
+  "isViolation": boolean,
+  "confidence": number (0.0 to 1.0),
+  "verdict": "violation" | "harmless" | "uncertain",
+  "severity": "none" | "low" | "medium" | "high" | "critical",
+  "category": string,
+  "summary": string (max 100 chars),
+  "reasoning": string (max 300 chars),
+  "recommendedPenalty": string
+}
+
+Severity Guidelines:
+- none: No violation detected
+- low: Minor issues (spam, irrelevant content) -> Warning
+- medium: Harassment, inappropriate language -> 3-day suspension
+- high: Hate speech, scam attempts -> 7-day suspension
+- critical: Threats, illegal content, child safety -> Permanent ban
+
+Categories: spam, harassment, hate_speech, scam_attempt, threats, inappropriate_content, fake_profile, illegal_content, child_safety, other
+
+Be thorough but fair. Consider context. If uncertain, set confidence < 0.7.`
+    });
+
+    // Build content parts
+    const parts = [];
+
+    // Add text prompt
+    parts.push({
+      text: `Analyze this user report for policy violations:
+
+Report Text:
+"""
+${(reportText || '').slice(0, 5000)}
+"""
+
+${filePaths.length > 0 ? `Evidence files attached: ${filePaths.length} image(s)` : 'No evidence files attached.'}
+
+Provide your analysis in the required JSON schema.`
+    });
+
+    // Add image parts if available
+    for (const filePath of filePaths.slice(0, 5)) { // Max 5 images
+      try {
+        const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+        if (fs.existsSync(absolutePath)) {
+          const fileData = fs.readFileSync(absolutePath);
+          const base64Data = fileData.toString('base64');
+          const mimeType = getMimeType(absolutePath);
+
+          if (mimeType.startsWith('image/')) {
+            parts.push({
+              inlineData: {
+                mimeType,
+                data: base64Data
+              }
+            });
+          }
+        }
+      } catch (fileError) {
+        console.warn(`Failed to read evidence file ${filePath}:`, fileError.message);
+      }
+    }
+
+    // Generate analysis
+    const result = await limiter.schedule(async () => {
+      const response = await reportModel.generateContent({
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          temperature: 0.1,
+          maxOutputTokens: 1024
+        }
+      });
+      return response.response.text();
+    });
+
+    // Parse response
+    let analysis;
+    try {
+      let jsonStr = result.trim();
+      // Clean up common issues
+      jsonStr = jsonStr.replace(/```json\s*/gi, '').replace(/```\s*$/gi, '');
+      const jsonStart = jsonStr.indexOf('{');
+      const jsonEnd = jsonStr.lastIndexOf('}');
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        jsonStr = jsonStr.substring(jsonStart, jsonEnd + 1);
+      }
+      analysis = JSON.parse(jsonStr);
+    } catch (parseError) {
+      console.error('Failed to parse AI report analysis:', parseError);
+      return {
+        success: false,
+        verdict: 'uncertain',
+        severity: 'none',
+        confidence: 0,
+        summary: 'AI analysis failed',
+        reasoning: 'Failed to parse AI response. Manual review required.',
+        category: 'unknown',
+        recommendedPenalty: 'manual_review'
+      };
+    }
+
+    // Normalize and validate response
+    return {
+      success: true,
+      verdict: ['violation', 'harmless', 'uncertain'].includes(analysis.verdict) ? analysis.verdict : 'uncertain',
+      severity: ['none', 'low', 'medium', 'high', 'critical'].includes(analysis.severity) ? analysis.severity : 'none',
+      confidence: Math.min(1, Math.max(0, Number(analysis.confidence) || 0)),
+      summary: String(analysis.summary || '').slice(0, 200),
+      reasoning: String(analysis.reasoning || '').slice(0, 500),
+      category: String(analysis.category || 'other').toLowerCase(),
+      recommendedPenalty: String(analysis.recommendedPenalty || 'manual_review'),
+      isViolation: Boolean(analysis.isViolation)
+    };
+  } catch (error) {
+    console.error('Report analysis error:', error);
+    return {
+      success: false,
+      verdict: 'uncertain',
+      severity: 'none',
+      confidence: 0,
+      summary: 'Analysis error',
+      reasoning: `Error during analysis: ${error.message}`,
+      category: 'unknown',
+      recommendedPenalty: 'manual_review'
+    };
+  }
+}
+
+/**
+ * Get MIME type from file extension
+ */
+function getMimeType(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.pdf': 'application/pdf'
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
+}
+
 module.exports = {
   checkAdultAndToxicContent,
   checkContentWithSuggestions,
-  generateListingSuggestions
+  generateListingSuggestions,
+  checkGeminiHealth,
+  analyzeReportEvidence
 };

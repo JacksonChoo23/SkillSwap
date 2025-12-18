@@ -1,0 +1,243 @@
+/* Star Rating Styles */
+.star-rating {
+    display: inline-flex;
+    gap: 2px;
+    font-size: 1rem;
+    align-items: center;
+}
+
+.star-rating.star-rating-sm {
+    font-size: 0.875rem;
+}
+
+.star-rating.star-rating-lg {
+    font-size: 1.25rem;
+}
+
+.star-rating .star {
+    color: #e4e5e9;
+    position: relative;
+}
+
+.star-rating .star.filled {
+    color: #ffc107;
+}
+
+.star-rating .star.half-filled {
+    color: #e4e5e9;
+}
+
+.star-rating .star.half-filled::before {
+    content: '\f005';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: #ffc107;
+    overflow: hidden;
+    width: 50%;
+}
+
+/* Rating Summary Box */
+.rating-summary-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+}
+
+.overall-score {
+    text-align: center;
+    padding-right: 1.5rem;
+    border-right: 1px solid #e9ecef;
+}
+
+.overall-score .number {
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #212529;
+    margin-bottom: 0.5rem;
+}
+
+.overall-score .total-reviews {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+/* Rating Distribution (5 star, 4 star etc) */
+.rating-distribution {
+    flex: 1;
+    padding: 0 1.5rem;
+}
+
+.dist-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.dist-label {
+    min-width: 45px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.dist-bar {
+    flex: 1;
+    height: 6px;
+    background: #f1f3f5;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.dist-fill {
+    height: 100%;
+    background-color: #ffc107;
+    border-radius: 3px;
+}
+
+.dist-count {
+    min-width: 30px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Category Ratings */
+.category-ratings {
+    padding-left: 1.5rem;
+    border-left: 1px solid #e9ecef;
+}
+
+.category-item {
+    margin-bottom: 0.75rem;
+}
+
+.category-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.category-bar {
+    height: 6px;
+    background: #f1f3f5;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.category-fill {
+    height: 100%;
+    background: #0d6efd;
+    /* Blue for categories to distinguish */
+    border-radius: 3px;
+}
+
+/* Review Cards */
+.review-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.review-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.reviewer-profile {
+    display: flex;
+    gap: 1rem;
+}
+
+.reviewer-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reviewer-meta h6 {
+    margin: 0;
+    font-weight: 600;
+    color: #212529;
+}
+
+.reviewer-meta .date {
+    font-size: 0.8rem;
+    color: #adb5bd;
+}
+
+.review-main-rating {
+    text-align: right;
+}
+
+.review-body {
+    color: #495057;
+    line-height: 1.6;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.review-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.review-tag {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.review-tag i {
+    color: #ffc107;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rating-summary-card .d-flex {
+        flex-direction: column;
+    }
+
+    .overall-score,
+    .rating-distribution,
+    .category-ratings {
+        width: 100%;
+        border: none;
+        padding: 0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .rating-distribution,
+    .category-ratings {
+        text-align: left;
+    }
+}

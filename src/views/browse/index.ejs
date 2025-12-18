@@ -1,125 +1,142 @@
-<%
-  // safe defaults
-  const _users = Array.isArray(users) ? users : [];
-  const _categories = Array.isArray(categories) ? categories : [];
-  const f = filters || {};
-  const selCategory = f.category ? String(f.category) : '';
-  const selLevel = f.level || '';
-  const selLocation = f.location || '';
-  const selType = f.type || '';
-  const selSearch = f.search || '';
-%>
+﻿<% const _users=Array.isArray(users) ? users : []; const _categories=Array.isArray(categories) ? categories : []; const
+  f=filters || {}; const selCategory=f.category ? String(f.category) : '' ; const selLevel=f.level || '' ; const
+  selLocation=f.location || '' ; const selType=f.type || '' ; const selSearch=f.search || '' ; %>
 
-<h1 class="h4 mb-3">Browse Users</h1>
+  <h1 class="h4 mb-3">Browse Users</h1>
 
-<form class="row g-2 mb-3" method="GET" action="/browse">
-  <div class="col-md-4">
-    <input class="form-control" name="search" value="<%= selSearch %>" placeholder="Search name, bio, location, or skill">
-  </div>
-  <div class="col-md-3">
-    <select class="form-select" name="category">
-      <option value="">All categories</option>
-      <% _categories.forEach(c => { %>
-        <option value="<%= c.id %>" <%= (selCategory===String(c.id) ? 'selected' : '') %>><%= c.name %></option>
-      <% }) %>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <select class="form-select" name="level">
-      <option value="">All levels</option>
-      <option value="beginner"     <%= selLevel==='beginner'     ? 'selected' : '' %>>beginner</option>
-      <option value="intermediate" <%= selLevel==='intermediate' ? 'selected' : '' %>>intermediate</option>
-      <option value="advanced"     <%= selLevel==='advanced'     ? 'selected' : '' %>>advanced</option>
-    </select>
-  </div>
-  <div class="col-md-2">
-    <select class="form-select" name="type">
-      <option value="">All types</option>
-      <option value="teach" <%= selType==='teach' ? 'selected' : '' %>>teach</option>
-      <option value="learn" <%= selType==='learn' ? 'selected' : '' %>>learn</option>
-    </select>
-  </div>
-  <div class="col-md-1 d-grid">
-    <button class="btn btn-outline-secondary" type="submit">Apply</button>
-  </div>
-  <div class="col-12 col-md-auto mt-1">
-    <input class="form-control" name="location" value="<%= selLocation %>" placeholder="Location (e.g. KL)">
-  </div>
-</form>
+  <form class="row g-2 mb-3" method="GET" action="/browse">
+    <div class="col-md-4">
+      <input class="form-control" name="search" value="<%= selSearch %>"
+        placeholder="Search name, bio, location, or skill">
+    </div>
+    <div class="col-md-3">
+      <select class="form-select" name="category">
+        <option value="">All categories</option>
+        <% _categories.forEach(c=> { %>
+          <option value="<%= c.id %>" <%=(selCategory===String(c.id) ? 'selected' : '' ) %>><%= c.name %>
+          </option>
+          <% }) %>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select" name="level">
+        <option value="">All levels</option>
+        <option value="beginner" <%=selLevel==='beginner' ? 'selected' : '' %>>beginner</option>
+        <option value="intermediate" <%=selLevel==='intermediate' ? 'selected' : '' %>>intermediate</option>
+        <option value="advanced" <%=selLevel==='advanced' ? 'selected' : '' %>>advanced</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select" name="type">
+        <option value="">All types</option>
+        <option value="teach" <%=selType==='teach' ? 'selected' : '' %>>teach</option>
+        <option value="learn" <%=selType==='learn' ? 'selected' : '' %>>learn</option>
+      </select>
+    </div>
+    <div class="col-md-1 d-grid">
+      <button class="btn btn-outline-secondary" type="submit">Apply</button>
+    </div>
+    <div class="col-12 col-md-auto mt-1">
+      <input class="form-control" name="location" value="<%= selLocation %>" placeholder="Location (e.g. KL)">
+    </div>
+  </form>
 
-<% if (_users.length) { %>
-  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-    <% _users.forEach(u => { %>
-      <div class="col">
-        <div class="card h-100">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-              <h5 class="card-title m-0"><%= u.name %></h5>
-              <% if (u.location) { %>
-                <span class="badge bg-light text-dark border"><%= u.location %></span>
-              <% } %>
-            </div>
+  <% if (_users.length) { %>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+      <% _users.forEach(u=> { %>
+        <div class="col">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <h5 class="card-title m-0">
+                  <%= u.name %>
+                </h5>
+                <% if (u.location) { %>
+                  <span class="badge bg-light text-dark border">
+                    <%= u.location %>
+                  </span>
+                  <% } %>
+              </div>
 
-            <% if (u.bio) { %>
-              <p class="text-muted mt-2 mb-2"><%= u.bio %></p>
-            <% } %>
-
-            <% if (Array.isArray(u.userSkills) && u.userSkills.length) { %>
-              <div class="small">
-                <div class="fw-semibold mb-1">Skills</div>
-                <ul class="list-unstyled mb-0">
-                  <% u.userSkills.slice(0, 5).forEach(us => { %>
-                    <li class="mb-1">
-                      <% if (us.type === 'teach') { %>
-                        <span class="badge bg-success">Teaching</span>
-                      <% } else if (us.type === 'learn') { %>
-                        <span class="badge bg-primary">Learning</span>
-                      <% } %>
-                      <span class="ms-1"><%= us.Skill ? us.Skill.name : '' %></span>
-                      <% if (us.level) { %><span class="text-muted ms-1">(<%= us.level %>)</span><% } %>
-                      <% if (us.Skill && us.Skill.Category && us.Skill.Category.name) { %>
-                        <span class="text-muted ms-1">— <%= us.Skill.Category.name %></span>
-                      <% } %>
-                    </li>
-                  <% }) %>
-                </ul>
-                <% if (u.userSkills.length > 5) { %>
-                  <div class="text-muted small mt-1">and <%= u.userSkills.length - 5 %> more…</div>
+              <% if (u.bio) { %>
+                <p class="text-muted mt-2 mb-2">
+                  <%= u.bio %>
+                </p>
                 <% } %>
-              </div>
-            <% } %>
 
-            <% if (Array.isArray(u.availabilities) && u.availabilities.length) { %>
-              <hr>
-              <div class="small">
-                <div class="fw-semibold mb-1">Availability</div>
-                <ul class="list-inline mb-0">
-                  <% const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; %>
-                  <% u.availabilities.slice(0, 3).forEach(a => { %>
-                    <li class="list-inline-item badge bg-light text-dark border">
-                      <%= (typeof a.dayOfWeek === 'number') ? days[a.dayOfWeek % 7] : a.day_of_week %>
-                      <% if (a.startTime || a.start_time) { %>
-                        <span class="ms-1"><%= (a.startTime || a.start_time) %>–<%= (a.endTime || a.end_time) %></span>
-                      <% } %>
-                    </li>
-                  <% }) %>
-                </ul>
-              </div>
-            <% } %>
-          </div>
-          <div class="card-footer d-flex justify-content-end gap-2">
-            <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>" data-user-name="<%= u.name %>">Tip</button>
-            <% if (u.whatsapp_number || u.whatsappNumber) { %>
-              <a class="btn btn-sm btn-success" rel="noopener" href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>" target="_blank">WhatsApp</a>
-            <% } else if (u.email) { %>
-              <a class="btn btn-sm btn-outline-primary" href="mailto:<%= u.email %>?subject=SkillSwap MY Inquiry">Email</a>
-            <% } %>
-            <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
+                  <% if (Array.isArray(u.userSkills) && u.userSkills.length) { %>
+                    <div class="small">
+                      <div class="fw-semibold mb-1">Skills</div>
+                      <ul class="list-unstyled mb-0">
+                        <% u.userSkills.slice(0, 5).forEach(us=> { %>
+                          <li class="mb-1">
+                            <% if (us.type==='teach' ) { %>
+                              <span class="badge bg-success">Teaching</span>
+                              <% } else if (us.type==='learn' ) { %>
+                                <span class="badge bg-primary">Learning</span>
+                                <% } %>
+                                  <span class="ms-1">
+                                    <%= us.Skill ? us.Skill.name : '' %>
+                                  </span>
+                                  <% if (us.level) { %><span class="text-muted ms-1">(<%= us.level %>)</span>
+                                    <% } %>
+                                      <% if (us.Skill && us.Skill.Category && us.Skill.Category.name) { %>
+                                        <span class="text-muted ms-1">
+                                          <%= us.Skill.Category.name %>
+                                        </span>
+                                        <% } %>
+                          </li>
+                          <% }) %>
+                      </ul>
+                      <% if (u.userSkills.length> 5) { %>
+                        <div class="text-muted small mt-1">and <%= u.userSkills.length - 5 %> more</div>
+                        <% } %>
+                    </div>
+                    <% } %>
+
+                      <% if (Array.isArray(u.availabilities) && u.availabilities.length) { %>
+                        <hr>
+                        <div class="small">
+                          <div class="fw-semibold mb-1">Availability</div>
+                          <ul class="list-inline mb-0">
+                            <% const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; %>
+                              <% u.availabilities.slice(0, 3).forEach(a=> { %>
+                                <li class="list-inline-item badge bg-light text-dark border">
+                                  <%= (typeof a.dayOfWeek==='number' ) ? days[a.dayOfWeek % 7] : a.day_of_week %>
+                                    <% if (a.startTime || a.start_time) { %>
+                                      <span class="ms-1">
+                                        <%= (a.startTime || a.start_time) %>
+                                          <%= (a.endTime || a.end_time) %>
+                                      </span>
+                                      <% } %>
+                                </li>
+                                <% }) %>
+                          </ul>
+                        </div>
+                        <% } %>
+            </div>
+            <div class="card-footer d-flex justify-content-end gap-2">
+              <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>"
+                data-user-name="<%= u.name %>">Tip</button>
+              <% if (u.whatsapp_number || u.whatsappNumber) { %>
+                <a class="btn btn-sm btn-success" rel="noopener"
+                  href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>"
+                  target="_blank">WhatsApp</a>
+                <% } else if (u.email) { %>
+                  <a class="btn btn-sm btn-outline-primary"
+                    href="mailto:<%= u.email %>?subject=SkillSwap MY Inquiry">Email</a>
+                  <% } %>
+                    <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
+            </div>
           </div>
         </div>
-      </div>
-    <% }) %>
-  </div>
-<% } else { %>
-  <div class="alert alert-info">No users match your filters.</div>
-<% } %>
+        <% }) %>
+    </div>
+
+    <%# Pagination %>
+      <% if (typeof pagination !=='undefined' && pagination) { %>
+        <%- include('../partials/pagination', pagination) %>
+          <% } %>
+            <% } else { %>
+              <div class="alert alert-info">No users match your filters.</div>
+              <% } %>

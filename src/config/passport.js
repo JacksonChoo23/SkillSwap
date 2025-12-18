@@ -9,17 +9,29 @@ passport.use(new LocalStrategy({
 }, async (email, password, done) => {
   try {
     const user = await User.findOne({ where: { email } });
-    
+
     if (!user) {
       return done(null, false, { message: 'Invalid email or password.' });
     }
-    
+
+    if (user.isBanned) {
+      return done(null, false, { message: 'Your account has been permanently banned.' });
+    }
+
+    if (user.isSuspended && user.suspensionEndDate && new Date() < new Date(user.suspensionEndDate)) {
+      const dateStr = new Date(user.suspensionEndDate).toLocaleString('en-MY', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      });
+      return done(null, false, { message: `Account suspended until ${dateStr}. Reason: ${user.suspensionReason || 'Violation of terms'}` });
+    }
+
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    
+
     if (!isValidPassword) {
       return done(null, false, { message: 'Invalid email or password.' });
     }
-    
+
     return done(null, user);
   } catch (error) {
     return done(error);

@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
         }
       ]
     });
-    
+
     res.render('match/index', {
       title: 'Find Matches - SkillSwap MY',
       matches,
@@ -41,7 +41,7 @@ async function notifyUserForMatch(userId, matchDetails) {
 
     // Create a notification
     await Notification.create({
-      userId,
+      user_id: userId,
       title: 'New Match Found!',
       message: `You have a new match: ${matchDetails}.`,
       status: 'unread',

@@ -1,95 +1,197 @@
-<%
-  const hasMatches = Array.isArray(matches) && matches.length > 0;
+<% const hasMatches=Array.isArray(matches) && matches.length> 0;
   const topMatch = hasMatches ? matches[0] : null;
-%>
+  %>
 
-<div class="card bg-primary text-white border-0 rounded-4 shadow-sm mb-4">
-  <div class="card-body p-4 p-md-5">
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-      <div>
-        <p class="text-white-50 text-uppercase small mb-1">SkillSwap assistant</p>
-        <h1 class="h3 mb-2">Find Your Ideal SkillSwap Partner</h1>
-        <p class="mb-0 text-white-50">Matches consider what you can teach, what you want to learn, and when you are both available.</p>
-      </div>
-      <% if (topMatch) { %>
-        <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm">
-          <div class="text-uppercase small fw-semibold">Top match score</div>
-          <div class="display-6 fw-bold mb-0"><%= topMatch.score.toFixed(1) %></div>
-          <div class="small text-muted">with <strong><%= topMatch.user.name %></strong></div>
+  <div class="card bg-primary text-white border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+        <div>
+          <p class="text-white-50 text-uppercase small mb-1">SkillSwap assistant</p>
+          <h1 class="h3 mb-2">Find Your Ideal SkillSwap Partner</h1>
+          <p class="mb-0 text-white-50">Matches consider what you can teach, what you want to learn, and when you are
+            both available.</p>
         </div>
-      <% } %>
+        <% if (topMatch) { %>
+          <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm">
+            <div class="text-uppercase small fw-semibold">Top match score</div>
+            <div class="display-6 fw-bold mb-0">
+              <%= topMatch.score.toFixed(1) %>
+            </div>
+            <div class="small text-muted">with <strong>
+                <%= topMatch.user.name %>
+              </strong></div>
+          </div>
+          <% } %>
+      </div>
     </div>
   </div>
-</div>
 
-<% if (hasMatches) { %>
-  <div class="row g-4">
-    <% matches.forEach(match => { %>
-      <div class="col-12 col-md-6 col-xl-4">
-        <div class="card h-100 shadow-sm border-0">
-          <div class="card-body d-flex flex-column">
-            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
-              <div>
-                <h2 class="h5 mb-0"><%= match.user.name %></h2>
-                <% if (match.user.location) { %>
-                  <span class="badge bg-light text-dark border mt-1"><i class="fas fa-location-dot me-1"></i><%= match.user.location %></span>
-                <% } %>
+  <% if (hasMatches) { %>
+    <div class="row g-4">
+      <% matches.forEach(match=> { %>
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                <div>
+                  <h2 class="h5 mb-0">
+                    <%= match.user.name %>
+                  </h2>
+                  <% if (match.user.location) { %>
+                    <span class="badge bg-light text-dark border mt-1"><i class="fas fa-location-dot me-1"></i>
+                      <%= match.user.location %>
+                    </span>
+                    <% } %>
+                </div>
+                <span class="badge bg-primary-subtle text-primary fw-semibold">Score <%= match.score.toFixed(1) %>
+                </span>
               </div>
-              <span class="badge bg-primary-subtle text-primary fw-semibold">Score <%= match.score.toFixed(1) %></span>
-            </div>
 
-            <div class="row row-cols-2 g-2 small mb-3">
-              <div>
-                <div class="text-muted">Teach overlap</div>
-                <div class="fw-semibold"><%= match.teachOverlap || 0 %></div>
-              </div>
-              <div>
-                <div class="text-muted">Learn overlap</div>
-                <div class="fw-semibold"><%= match.learnOverlap || 0 %></div>
-              </div>
-              <div>
-                <div class="text-muted">Tag alignment</div>
-                <div class="fw-semibold"><%= (match.tagOverlapScore * 100).toFixed(0) %>%</div>
-              </div>
-              <div>
-                <div class="text-muted">Availability fit</div>
-                <div class="fw-semibold"><%= (match.availabilityOverlapScore * 100).toFixed(0) %>%</div>
-              </div>
-            </div>
-
-            <% if (Array.isArray(match.sharedTags) && match.sharedTags.length) { %>
-              <div class="mb-3">
-                <div class="text-muted small mb-1">Shared interests</div>
-                <div class="d-flex flex-wrap gap-2">
-                  <% match.sharedTags.slice(0, 4).forEach(tag => { %>
-                    <span class="badge bg-light text-dark border"><%= tag %></span>
-                  <% }) %>
+              <div class="row row-cols-2 g-2 small mb-3">
+                <div>
+                  <div class="text-muted">Teach overlap</div>
+                  <div class="fw-semibold">
+                    <%= match.teachOverlap || 0 %>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted">Learn overlap</div>
+                  <div class="fw-semibold">
+                    <%= match.learnOverlap || 0 %>
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted">Tag alignment</div>
+                  <div class="fw-semibold">
+                    <%= (match.tagOverlapScore * 100).toFixed(0) %>%
+                  </div>
+                </div>
+                <div>
+                  <div class="text-muted">Availability fit</div>
+                  <div class="fw-semibold">
+                    <%= (match.availabilityOverlapScore * 100).toFixed(0) %>%
+                  </div>
                 </div>
               </div>
-            <% } %>
 
-            <div class="mt-auto pt-2 d-flex flex-wrap gap-2">
-              <% const waNumber = match.user.whatsappNumber || match.user.whatsapp_number; %>
-              <% if (waNumber) { %>
-                <a class="btn btn-success btn-sm flex-grow-1" target="_blank" rel="noopener" href="/go/wa/<%= match.user.id %>?text=<%- encodeURIComponent('Hi ' + match.user.name + ', I found you on SkillSwap MY!') %>">
-                  <i class="fab fa-whatsapp me-1"></i> WhatsApp
-                </a>
-              <% } else if (match.user.email) { %>
-                <a class="btn btn-outline-primary btn-sm flex-grow-1" href="mailto:<%= match.user.email %>?subject=SkillSwap%20Match&body=Hi <%= encodeURIComponent(match.user.name) %>,%0D%0A">
-                  <i class="fas fa-envelope me-1"></i> Email
-                </a>
-              <% } %>
-              <a class="btn btn-outline-secondary btn-sm" href="/browse/user/<%= match.user.id %>?from=match">
-                <i class="fas fa-user me-1"></i> View profile
-              </a>
+              <% if (Array.isArray(match.sharedTags) && match.sharedTags.length) { %>
+                <div class="mb-3">
+                  <div class="text-muted small mb-1">Shared interests</div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <% match.sharedTags.slice(0, 4).forEach(tag=> { %>
+                      <span class="badge bg-light text-dark border">
+                        <%= tag %>
+                      </span>
+                      <% }) %>
+                  </div>
+                </div>
+                <% } %>
+
+                  <div class="mt-auto pt-2 d-flex flex-wrap gap-2">
+                    <% const waNumber=match.user.whatsappNumber || match.user.whatsapp_number; %>
+                      <% if (waNumber) { %>
+                        <a class="btn btn-success btn-sm flex-grow-1" target="_blank" rel="noopener"
+                          href="/go/wa/<%= match.user.id %>?text=<%- encodeURIComponent('Hi ' + match.user.name + ', I found you on SkillSwap MY!') %>">
+                          <i class="fab fa-whatsapp me-1"></i> WhatsApp
+                        </a>
+                        <% } else if (match.user.email) { %>
+                          <a class="btn btn-outline-primary btn-sm flex-grow-1"
+                            href="mailto:<%= match.user.email %>?subject=SkillSwap%20Match&body=Hi <%= encodeURIComponent(match.user.name) %>,%0D%0A">
+                            <i class="fas fa-envelope me-1"></i> Email
+                          </a>
+                          <% } %>
+                            <button class="btn btn-primary btn-sm js-quick-request" data-user="<%= match.user.id %>"
+                              data-skill="<%= match.teachSkills && match.teachSkills[0] ? match.teachSkills[0].id : '' %>"
+                              data-name="<%= match.user.name %>">
+                              <i class="fas fa-bolt me-1"></i> Quick Request
+                            </button>
+                            <a class="btn btn-outline-secondary btn-sm"
+                              href="/browse/user/<%= match.user.id %>?from=match">
+                              <i class="fas fa-user me-1"></i> View profile
+                            </a>
+                  </div>
             </div>
           </div>
         </div>
+        <% }); %>
+    </div>
+    <% } else { %>
+      <div class="alert alert-warning text-center" role="alert">
+        <i class="fas fa-circle-info me-2"></i>No matches found yet. Try adding more skills or updating your
+        availability.
       </div>
-    <% }); %>
-  </div>
-<% } else { %>
-  <div class="alert alert-warning text-center" role="alert">
-    <i class="fas fa-circle-info me-2"></i>No matches found yet. Try adding more skills or updating your availability.
-  </div>
-<% } %>
+      <% } %>
+
+        <!-- Quick Request Script -->
+        <script>
+          document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.js-quick-request').forEach(btn => {
+              btn.addEventListener('click', async function () {
+                const teacherId = this.dataset.user;
+                const skillId = this.dataset.skill;
+                const teacherName = this.dataset.name;
+
+                if (!skillId) {
+                  Swal.fire({
+                    icon: 'warning',
+                    title: 'No Skills Available',
+                    text: `${teacherName} has no teaching skills listed. Please contact them directly.`
+                  });
+                  return;
+                }
+
+                // Show loading
+                this.disabled = true;
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Checking...';
+
+                try {
+                  const response = await fetch('/sessions/quick-request', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-Token': '<%= csrfToken %>'
+                    },
+                    body: JSON.stringify({ teacherId, skillId })
+                  });
+
+                  const data = await response.json();
+
+                  if (data.success) {
+                    Swal.fire({
+                      icon: 'success',
+                      title: 'Session Requested!',
+                      text: data.message,
+                      confirmButtonText: 'View My Sessions'
+                    }).then(() => {
+                      window.location.href = '/sessions';
+                    });
+                  } else if (data.noMatch) {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'No Matching Time',
+                      html: `<p>${data.message}</p><p class="text-muted small mt-2">${data.contact}</p>`,
+                      confirmButtonText: 'Got it'
+                    });
+                  } else {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Unable to Request',
+                      text: data.message
+                    });
+                  }
+                } catch (error) {
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again.'
+                  });
+                }
+
+                // Reset button
+                this.disabled = false;
+                this.innerHTML = originalText;
+              });
+            });
+          });
+        </script>

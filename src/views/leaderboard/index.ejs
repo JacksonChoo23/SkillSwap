@@ -1,0 +1,119 @@
+<div class="card bg-primary text-white border-0 rounded-4 shadow-sm mb-4">
+    <div class="card-body p-4 p-md-5">
+        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+                <p class="text-white-50 text-uppercase small mb-1">SkillSwap MY</p>
+                <h1 class="h3 mb-2">Top Contributors</h1>
+                <p class="mb-0 text-white-50">See who's making an impact through teaching and learning.</p>
+            </div>
+            <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm">
+                <div class="text-uppercase small fw-semibold">Total Top 20</div>
+                <div class="display-6 fw-bold mb-0">
+                    <%= leaderboard.length %>
+                </div>
+                <div class="small text-muted">users</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0">
+        <h2 class="h5 mb-0"><i class="fas fa-trophy text-warning me-2"></i>Leaderboard</h2>
+    </div>
+    <div class="card-body p-0">
+        <% if (leaderboard.length===0) { %>
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <p class="mb-0">No leaderboard data yet. Complete sessions to earn points!</p>
+            </div>
+            <% } else { %>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4" style="width: 60px;">Rank</th>
+                                <th>User</th>
+                                <th class="text-end">Teaching</th>
+                                <th class="text-end">Learning</th>
+                                <th class="text-end pe-4">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% leaderboard.forEach(entry=> { %>
+                                <tr>
+                                    <td class="ps-4">
+                                        <% if (entry.rank===1) { %>
+                                            <span class="badge bg-warning text-dark fs-6"><i class="fas fa-crown"></i>
+                                                1</span>
+                                            <% } else if (entry.rank===2) { %>
+                                                <span class="badge bg-secondary fs-6">2</span>
+                                                <% } else if (entry.rank===3) { %>
+                                                    <span class="badge bg-danger fs-6">3</span>
+                                                    <% } else { %>
+                                                        <span class="text-muted">
+                                                            <%= entry.rank %>
+                                                        </span>
+                                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <% if (entry.user.profileImage) { %>
+                                                <img src="<%= entry.user.profileImage %>" alt="<%= entry.user.name %>"
+                                                    class="rounded-circle"
+                                                    style="width: 36px; height: 36px; object-fit: cover;">
+                                                <% } else { %>
+                                                    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center"
+                                                        style="width: 36px; height: 36px; font-size: 0.875rem;">
+                                                        <%= entry.user.name.charAt(0).toUpperCase() %>
+                                                    </div>
+                                                    <% } %>
+                                                        <div>
+                                                            <div class="fw-semibold">
+                                                                <%= entry.user.name %>
+                                                            </div>
+                                                            <% if (entry.user.location) { %>
+                                                                <small class="text-muted"><i
+                                                                        class="fas fa-location-dot me-1"></i>
+                                                                    <%= entry.user.location %>
+                                                                </small>
+                                                                <% } %>
+                                                        </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success-subtle text-success">
+                                            <%= entry.teachPoints %>
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info-subtle text-info">
+                                            <%= entry.learnPoints %>
+                                        </span>
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <span class="fw-bold text-primary fs-5">
+                                            <%= entry.totalPoints %>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+                <% } %>
+    </div>
+</div>
+
+<div class="mt-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <h3 class="h6 mb-3"><i class="fas fa-info-circle text-info me-2"></i>How Points Work</h3>
+            <ul class="mb-0 small text-muted">
+                <li>Earn <strong>10 points per hour</strong> for each completed session (teaching or learning)</li>
+                <li>Get <strong>bonus points</strong> based on your session ratings</li>
+                <li>Points are awarded to both teacher and learner when a session completes</li>
+            </ul>
+        </div>
+    </div>
+</div>

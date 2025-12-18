@@ -62,7 +62,7 @@
                       </div>
                       <div class="mt-2 text-end">
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
-                          id="generateTeachSuggestions" onclick="triggerAiSuggestions('teach')" data-bs-toggle="tooltip"
+                          id="generateTeachSuggestions" data-suggestion-type="teach" data-bs-toggle="tooltip"
                           title="Select a skill first to get AI suggestions">
                           <i class="fas fa-magic me-1"></i>AI Suggestions
                         </button>
@@ -89,7 +89,7 @@
                       </div>
                       <div class="mt-2 text-end">
                         <button type="button" class="btn btn-sm btn-link text-decoration-none p-0"
-                          id="generateLearnSuggestions" onclick="triggerAiSuggestions('learn')" data-bs-toggle="tooltip"
+                          id="generateLearnSuggestions" data-suggestion-type="learn" data-bs-toggle="tooltip"
                           title="Select a skill first to get AI suggestions">
                           <i class="fas fa-magic me-1"></i>AI Suggestions
                         </button>
@@ -226,13 +226,10 @@
       </div>
       <div class="modal-body">
         <div class="d-flex gap-2 mb-4 overflow-auto pb-2">
-          <button class="btn btn-sm btn-outline-primary active rounded-pill px-3"
-            onclick="loadSuggestions('all')">All</button>
-          <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-            onclick="loadSuggestions('teach')">Teaching</button>
-          <button class="btn btn-sm btn-outline-primary rounded-pill px-3"
-            onclick="loadSuggestions('learn')">Learning</button>
-          <button class="btn btn-sm btn-outline-warning rounded-pill px-3" onclick="loadSuggestions('favorites')">
+          <button class="btn btn-sm btn-outline-primary active rounded-pill px-3" data-filter-type="all">All</button>
+          <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-filter-type="teach">Teaching</button>
+          <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-filter-type="learn">Learning</button>
+          <button class="btn btn-sm btn-outline-warning rounded-pill px-3" data-filter-type="favorites">
             <i class="fas fa-star me-1"></i>Favorites
           </button>
         </div>
@@ -249,18 +246,15 @@
 </div>
 
 <% if (typeof moderationFlagged !=='undefined' && moderationFlagged) { %>
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div class="toast show align-items-center text-white bg-warning border-0" role="alert" aria-live="assertive"
-      aria-atomic="true">
-      <div class="d-flex">
-        <div class="toast-body">
-          <%= moderationFlagged.message %>
-        </div>
-        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-          aria-label="Close"></button>
-      </div>
-    </div>
-  </div>
+  <script>
+    Swal.fire({
+      icon: 'error',
+      title: 'Changes Not Saved',
+      text: '<%= moderationFlagged.message %>',
+      confirmButtonColor: '#0d6efd',
+      confirmButtonText: 'Edit Listing'
+    });
+  </script>
   <% } %>
 
     <script>
