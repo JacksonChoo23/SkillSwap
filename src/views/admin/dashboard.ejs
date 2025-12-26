@@ -185,16 +185,16 @@
 
   <!-- Recent Activity Feed -->
   <div class="col-lg-8">
-    <div class="card border-0 shadow-sm h-100">
+    <div class="card border-0 shadow-sm h-100 d-flex flex-column">
       <div class="card-header bg-white border-0 py-3">
         <h6 class="m-0 fw-bold">Recent Activity</h6>
       </div>
-      <div class="card-body p-0" style="max-height: 300px; overflow-y: auto;">
+      <div class="card-body p-0 flex-grow-1" style="overflow-y: auto;">
         <ul class="list-group list-group-flush">
           <% if (activityFeed && activityFeed.length> 0) { %>
             <% activityFeed.forEach(item=> { %>
               <li class="list-group-item">
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center w-100">
                   <% if (item.type==='user' ) { %>
                     <span class="badge bg-primary me-2"><i class="bi bi-person-plus"></i></span>
                     <span>New user <strong>

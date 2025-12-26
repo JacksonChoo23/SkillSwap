@@ -20,6 +20,12 @@ const User = sequelize.define('User', {
     field: 'email'
   },
 
+  stripeCustomerId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'stripe_customer_id'
+  },
+
   // DB: password_hash
   passwordHash: {
     type: DataTypes.STRING(255),

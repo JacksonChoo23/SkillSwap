@@ -2,140 +2,319 @@
   avails=Array.isArray(u.availabilities) ? u.availabilities : []; const
   DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; %>
 
-  <div class="container-fluid py-4">
-    <!-- Header Section -->
-    <div class="row mb-4">
-      <div class="col-12">
-        <div class="card border-0 shadow-sm overflow-hidden">
-          <div class="card-body p-0">
-            <div class="bg-primary h-100px"></div>
-            <div class="px-4 pb-4">
-              <div class="d-flex align-items-end mt-n5 mb-3">
-                <div class="position-relative">
-                  <% if (u.profileImage) { %>
-                    <img src="<%= u.profileImage %>" alt="<%= u.name %>"
-                      class="rounded-circle border border-4 border-white shadow-sm"
-                      style="width: 120px; height: 120px; object-fit: cover;">
-                    <% } else { %>
-                      <div
-                        class="rounded-circle border border-4 border-white shadow-sm bg-light d-flex align-items-center justify-content-center text-secondary"
-                        style="width: 120px; height: 120px; font-size: 3rem;">
-                        <i class="fas fa-user"></i>
-                      </div>
-                      <% } %>
-                </div>
-                <div class="ms-3 mb-2">
-                  <h1 class="h3 mb-0">
-                    <%= u.name || 'User' %>
-                  </h1>
-                  <div class="text-muted small">
-                    <%= u.email %>
-                  </div>
-                </div>
-                <div class="ms-auto mb-2 d-none d-md-block">
-                  <a class="btn btn-outline-primary" href="/profile/progress/export">
-                    <i class="fas fa-download me-1"></i> Export Progress
-                  </a>
-                </div>
-              </div>
-
-              <div class="d-flex flex-wrap gap-3 align-items-center">
-                <% if (u.location) { %>
-                  <div class="text-muted"><i class="fas fa-map-marker-alt me-1"></i>
-                    <%= u.location %>
+  <div class="container-fluid py-3">
+    <!-- Clean Header -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body py-3">
+        <div class="row align-items-center">
+          <!-- Left: Profile -->
+          <div class="col-lg-6">
+            <div class="d-flex align-items-center">
+              <% if (u.profileImage) { %>
+                <img src="<%= u.profileImage %>" alt="<%= u.name %>" class="rounded-circle shadow-sm"
+                  style="width: 60px; height: 60px; object-fit: cover;">
+                <% } else { %>
+                  <div
+                    class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow-sm"
+                    style="width: 60px; height: 60px; font-size: 1.5rem;">
+                    <i class="fas fa-user"></i>
                   </div>
                   <% } %>
-                    <div class="text-muted"><i class="fas fa-id-badge me-1"></i>ID: <%= u.id %>
+                    <div class="ms-3">
+                      <h5 class="mb-1">
+                        <%= u.name || 'User' %>
+                      </h5>
+                      <div class="d-flex flex-wrap align-items-center gap-2">
+                        <span class="text-muted small">
+                          <%= u.email %>
+                        </span>
+                        <% if (u.location) { %>
+                          <span class="text-muted small">• <%= u.location %></span>
+                          <% } %>
+                            <span class="badge <%= u.isPublic ? 'bg-success' : 'bg-secondary' %> rounded-pill">
+                              <%= u.isPublic ? 'Public' : 'Private' %>
+                            </span>
+                      </div>
+                      <% if (progressSummary && progressSummary.badges && progressSummary.badges.length> 0) { %>
+                        <div class="mt-1">
+                          <% progressSummary.badges.forEach(b=> { %>
+                            <span class="badge <%= b.class %> rounded-pill me-1">
+                              <%= b.label %>
+                            </span>
+                            <% }) %>
+                        </div>
+                        <% } %>
                     </div>
-                    <span
-                      class="badge <%= u.isPublic ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary' %> border <%= u.isPublic ? 'border-success-subtle' : 'border-secondary-subtle' %>">
-                      <%= u.isPublic ? 'Public Profile' : 'Private Profile' %>
-                    </span>
-              </div>
+            </div>
+          </div>
+
+          <!-- Right: Stats -->
+          <div class="col-lg-6 mt-3 mt-lg-0">
+            <div class="d-flex justify-content-lg-end justify-content-center gap-4">
+              <% if (progressSummary) { %>
+                <div class="text-center">
+                  <div class="h3 mb-0 text-primary fw-bold">
+                    <%= progressSummary.totalPoints %>
+                  </div>
+                  <div class="text-muted small text-uppercase">Points</div>
+                </div>
+                <div class="text-center">
+                  <div class="h4 mb-0 text-success fw-bold">
+                    <%= progressSummary.teachPoints %>
+                  </div>
+                  <div class="text-muted small text-uppercase">Teach</div>
+                </div>
+                <div class="text-center">
+                  <div class="h4 mb-0 text-info fw-bold">
+                    <%= progressSummary.learnPoints %>
+                  </div>
+                  <div class="text-muted small text-uppercase">Learn</div>
+                </div>
+                <% } %>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="row g-4">
-      <!-- Left Column: Stats & Skills -->
-      <div class="col-12 col-lg-4">
-        <!-- Progress Stats -->
-        <% if (progressSummary) { %>
-          <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-white border-0 py-3">
-              <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2 text-primary"></i>Progress</h5>
-            </div>
-            <div class="card-body">
-              <div class="text-center mb-4">
-                <div class="display-4 fw-bold text-primary">
-                  <%= progressSummary.totalPoints %>
-                </div>
-                <div class="text-muted small text-uppercase tracking-wide">Total Points</div>
+    <!-- Tab Navigation -->
+    <ul class="nav nav-pills nav-fill bg-white rounded shadow-sm p-1 mb-3" role="tablist" id="profileTabs">
+      <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#profile-tab" type="button">
+          <i class="fas fa-user me-1 d-none d-sm-inline"></i>Profile
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#skills-tab" type="button">
+          <i class="fas fa-tools me-1 d-none d-sm-inline"></i>Skills
+          <span class="badge bg-primary rounded-pill ms-1">
+            <%= userSkills.length %>
+          </span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#wallet-tab" type="button">
+          <i class="fas fa-wallet me-1 d-none d-sm-inline"></i>Wallet
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link position-relative" data-bs-toggle="pill" data-bs-target="#notifications-tab"
+          type="button">
+          <i class="fas fa-bell me-1 d-none d-sm-inline"></i>Alerts
+          <span class="badge bg-danger rounded-pill ms-1 d-none" id="notificationCount"></span>
+        </button>
+      </li>
+      <li class="nav-item">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#settings-tab" type="button">
+          <i class="fas fa-cog me-1 d-none d-sm-inline"></i>Settings
+        </button>
+      </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+      <!-- Profile Tab -->
+      <div class="tab-pane fade show active" id="profile-tab">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-user-edit me-2 text-primary"></i>Edit Profile</h6>
               </div>
-              <div class="row text-center g-2 mb-3">
-                <div class="col-6">
-                  <div class="p-2 bg-light rounded">
-                    <div class="h5 mb-0 text-success">
-                      <%= progressSummary.teachPoints %>
+              <div class="card-body">
+                <form method="POST" action="/profile/update?_csrf=<%= csrfToken %>" enctype="multipart/form-data">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <div class="row g-2">
+                    <div class="col-12">
+                      <label class="form-label small">Display Name</label>
+                      <input class="form-control form-control-sm" name="name" required maxlength="100"
+                        value="<%= u.name || '' %>">
                     </div>
-                    <div class="small text-muted">Teaching</div>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="p-2 bg-light rounded">
-                    <div class="h5 mb-0 text-info">
-                      <%= progressSummary.learnPoints %>
+                    <div class="col-12">
+                      <label class="form-label small">Bio</label>
+                      <textarea class="form-control form-control-sm" name="bio" rows="2"
+                        maxlength="1000"><%= u.bio || '' %></textarea>
                     </div>
-                    <div class="small text-muted">Learning</div>
+                    <div class="col-6">
+                      <label class="form-label small">Location</label>
+                      <input class="form-control form-control-sm" name="location" maxlength="255"
+                        value="<%= u.location || '' %>" placeholder="City, Country">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small">WhatsApp</label>
+                      <input class="form-control form-control-sm" name="whatsappNumber" placeholder="+60..."
+                        value="<%= u.whatsappNumber || '' %>">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small">Profile Picture</label>
+                      <input class="form-control form-control-sm" type="file" name="profileImage" accept="image/*">
+                    </div>
+                    <div class="col-6">
+                      <label class="form-label small">Visibility</label>
+                      <select class="form-select form-select-sm" name="isPublic">
+                        <option value="true" <%=u.isPublic ? 'selected' : '' %>>Public</option>
+                        <option value="false" <%=!u.isPublic ? 'selected' : '' %>>Private</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
+                  <div class="mt-3 text-end">
+                    <button class="btn btn-primary btn-sm px-4">Save Changes</button>
+                  </div>
+                </form>
               </div>
-              <% if (Array.isArray(progressSummary.badges) && progressSummary.badges.length) { %>
-                <div class="d-flex flex-wrap gap-1 justify-content-center">
-                  <% progressSummary.badges.forEach(b=> { %>
-                    <span class="badge <%= b.class %> rounded-pill">
-                      <%= b.label %>
-                    </span>
-                    <% }) %>
-                </div>
-                <% } %>
             </div>
           </div>
-          <% } %>
 
-            <!-- Skills List -->
-            <div class="card border-0 shadow-sm mb-4">
-              <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0"><i class="fas fa-tools me-2 text-primary"></i>Skills</h5>
+          <div class="col-lg-6">
+            <!-- Quick Actions & Availability Combined -->
+            <div class="card border-0 shadow-sm mb-3">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Quick Actions</h6>
+              </div>
+              <div class="card-body py-2">
+                <div class="d-flex flex-wrap gap-2">
+                  <a class="btn btn-sm btn-outline-secondary" href="/sessions"><i
+                      class="fas fa-calendar-alt me-1"></i>Sessions</a>
+                  <a class="btn btn-sm btn-outline-secondary" href="/history/messages"><i
+                      class="fas fa-comments me-1"></i>Messages</a>
+                  <a class="btn btn-sm btn-outline-success" href="/payment/checkout"><i
+                      class="fas fa-credit-card me-1"></i>Payment</a>
+                  <a class="btn btn-sm btn-outline-info" href="/tips"><i class="fas fa-gift me-1"></i>Tips</a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Availability -->
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="far fa-clock me-2 text-primary"></i>Availability</h6>
+                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="collapse"
+                  data-bs-target="#addAvailability">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div class="collapse" id="addAvailability">
+                <div class="card-body border-bottom bg-light">
+                  <form method="POST" action="/profile/availability" class="row g-2 align-items-end">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <div class="col-4">
+                      <select class="form-select form-select-sm" name="dayOfWeek" required>
+                        <% DAYS.forEach((d, idx)=> { %>
+                          <option value="<%= idx %>">
+                            <%= d %>
+                          </option>
+                          <% }) %>
+                      </select>
+                    </div>
+                    <div class="col-3"><input type="time" class="form-control form-control-sm" name="startTime"
+                        required></div>
+                    <div class="col-3"><input type="time" class="form-control form-control-sm" name="endTime" required>
+                    </div>
+                    <div class="col-2"><button class="btn btn-primary btn-sm w-100">Add</button></div>
+                  </form>
+                </div>
+              </div>
+              <div class="card-body p-0" style="max-height: 200px; overflow-y: auto;">
+                <% if (avails.length===0) { %>
+                  <div class="p-3 text-center text-muted small">No availability set.</div>
+                  <% } else { %>
+                    <table class="table table-sm mb-0">
+                      <tbody>
+                        <% avails.forEach(a=> { %>
+                          <tr>
+                            <td class="ps-3"><span class="badge bg-primary">
+                                <%= DAYS[a.dayOfWeek ?? a.day_of_week ?? 0].substring(0, 3) %>
+                              </span></td>
+                            <td>
+                              <%= (a.startTime || a.start_time || '' ).toString().slice(0,5) %> - <%= (a.endTime ||
+                                  a.end_time || '' ).toString().slice(0,5) %>
+                            </td>
+                            <td class="text-end pe-3">
+                              <button class="btn btn-link btn-sm text-danger p-0 js-delete-availability"
+                                data-id="<%= a.id %>"><i class="fas fa-times"></i></button>
+                            </td>
+                          </tr>
+                          <% }) %>
+                      </tbody>
+                    </table>
+                    <% } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skills Tab -->
+      <div class="tab-pane fade" id="skills-tab">
+        <div class="row g-3">
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Add Skill</h6>
+              </div>
+              <div class="card-body">
+                <form method="POST" action="/profile/skills">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <div class="mb-2">
+                    <select class="form-select form-select-sm" name="skillId" required>
+                      <option value="">Select skill...</option>
+                      <% (skills || []).forEach(s=> { %>
+                        <option value="<%= s.id %>">
+                          <%= s.name %>
+                            <%= s.Category ? '(' + s.Category.name + ')' : '' %>
+                        </option>
+                        <% }) %>
+                    </select>
+                  </div>
+                  <div class="row g-2 mb-2">
+                    <div class="col-6">
+                      <select class="form-select form-select-sm" name="type" required>
+                        <option value="teach">Teach</option>
+                        <option value="learn">Learn</option>
+                      </select>
+                    </div>
+                    <div class="col-6">
+                      <select class="form-select form-select-sm" name="level" required>
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate">Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary btn-sm w-100">Add Skill</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-tools me-2 text-primary"></i>My Skills (<%= userSkills.length %>)</h6>
               </div>
               <div class="card-body p-0">
                 <% if (userSkills.length===0) { %>
-                  <div class="p-3 text-center text-muted">No skills added yet.</div>
+                  <div class="p-4 text-center text-muted">
+                    <i class="fas fa-tools fa-2x mb-2 opacity-50"></i>
+                    <p class="mb-0">No skills added yet. Add your first skill!</p>
+                  </div>
                   <% } else { %>
-                    <div class="list-group list-group-flush">
+                    <div class="row g-2 p-3">
                       <% userSkills.forEach(s=> { %>
-                        <div class="list-group-item px-3 py-3">
-                          <div class="d-flex justify-content-between align-items-start">
+                        <div class="col-md-6">
+                          <div class="border rounded p-2 d-flex align-items-center justify-content-between bg-light">
                             <div>
-                              <div class="fw-bold mb-1">
+                              <div class="fw-semibold small">
                                 <%= s.Skill?.name || '-' %>
                               </div>
-                              <div class="small text-muted mb-2">
-                                <%= s.Skill?.Category?.name || '' %>
-                              </div>
-                              <div>
-                                <span class="badge <%= s.type === 'teach' ? 'bg-primary' : 'bg-info' %> me-1">
-                                  <%= s.type %>
-                                </span>
-                                <span class="badge bg-light text-dark border">
-                                  <%= s.level || '-' %>
-                                </span>
-                              </div>
+                              <span class="badge <%= s.type === 'teach' ? 'bg-primary' : 'bg-info' %> me-1">
+                                <%= s.type %>
+                              </span>
+                              <span class="badge bg-secondary">
+                                <%= s.level || '-' %>
+                              </span>
                             </div>
-                            <button class="btn btn-outline-danger btn-sm js-delete-skill rounded-circle"
-                              data-id="<%= s.id %>" title="Delete Skill">
+                            <button class="btn btn-link btn-sm text-danger p-0 js-delete-skill" data-id="<%= s.id %>">
                               <i class="fas fa-trash-alt"></i>
                             </button>
                           </div>
@@ -145,201 +324,109 @@
                     <% } %>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Availability List -->
+      <!-- Wallet Tab -->
+      <div class="tab-pane fade" id="wallet-tab">
+        <div class="row g-3">
+          <div class="col-lg-4">
             <div class="card border-0 shadow-sm">
-              <div class="card-header bg-white border-0 py-3">
-                <h5 class="card-title mb-0"><i class="far fa-clock me-2 text-primary"></i>Availability</h5>
+              <div class="card-header bg-success text-white py-2">
+                <h6 class="mb-0"><i class="fas fa-wallet me-2"></i>Wallet Summary</h6>
               </div>
-              <div class="card-body p-0">
-                <% if (avails.length===0) { %>
-                  <div class="p-3 text-center text-muted">No availability set.</div>
+              <div class="card-body text-center">
+                <% if (wallet) { %>
+                  <div class="row g-2">
+                    <div class="col-6">
+                      <div class="p-2 bg-success bg-opacity-10 rounded">
+                        <div class="h3 mb-0 text-success fw-bold">
+                          <%= wallet.totalTipsReceived %>
+                        </div>
+                        <div class="small text-muted">Tips</div>
+                      </div>
+                    </div>
+                    <div class="col-6">
+                      <div class="p-2 bg-warning bg-opacity-10 rounded">
+                        <div class="h3 mb-0 text-warning fw-bold">
+                          <%= wallet.totalTipsAmount %>
+                        </div>
+                        <div class="small text-muted">Tokens</div>
+                      </div>
+                    </div>
+                  </div>
+                  <a href="/tips" class="btn btn-outline-success btn-sm mt-3 w-100">View All Tips</a>
                   <% } else { %>
-                    <ul class="list-group list-group-flush">
-                      <% avails.forEach(a=> { %>
-                        <li class="list-group-item px-3 py-3 d-flex justify-content-between align-items-center">
-                          <div class="d-flex align-items-center">
-                            <div class="bg-light rounded p-2 me-3 text-center" style="min-width: 50px;">
-                              <div class="fw-bold text-primary">
-                                <%= DAYS[a.dayOfWeek ?? a.day_of_week ?? 0].substring(0, 3) %>
-                              </div>
-                            </div>
-                            <div>
-                              <div>
-                                <%= (a.startTime || a.start_time || '' ).toString().slice(0,5) %> - <%= (a.endTime ||
-                                    a.end_time || '' ).toString().slice(0,5) %>
-                              </div>
-                            </div>
-                          </div>
-                          <button class="btn btn-outline-danger btn-sm js-delete-availability rounded-circle"
-                            data-id="<%= a.id %>" title="Delete">
-                            <i class="fas fa-trash-alt"></i>
-                          </button>
-                        </li>
-                        <% }) %>
-                    </ul>
+                    <div class="text-muted py-3"><i class="fas fa-wallet fa-2x mb-2 opacity-50"></i>
+                      <p class="mb-0 small">No wallet data</p>
+                    </div>
                     <% } %>
               </div>
             </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-history me-2 text-primary"></i>Recent Tips</h6>
+              </div>
+              <div class="card-body p-0" style="max-height: 250px; overflow-y: auto;">
+                <% if (wallet && wallet.tipsReceived && wallet.tipsReceived.length> 0) { %>
+                  <% wallet.tipsReceived.forEach(tip=> { %>
+                    <div class="d-flex align-items-center px-3 py-2 border-bottom">
+                      <% if (tip.fromUser && tip.fromUser.profileImage) { %>
+                        <img src="<%= tip.fromUser.profileImage %>" class="rounded-circle me-2"
+                          style="width: 32px; height: 32px; object-fit: cover;">
+                        <% } else { %>
+                          <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2"
+                            style="width: 32px; height: 32px;">
+                            <i class="fas fa-user text-secondary small"></i>
+                          </div>
+                          <% } %>
+                            <div class="flex-grow-1">
+                              <div class="small fw-semibold">
+                                <%= tip.fromUser ? tip.fromUser.name : 'Anonymous' %>
+                              </div>
+                              <div class="text-muted small">
+                                <%= new Date(tip.createdAt).toLocaleDateString() %>
+                              </div>
+                            </div>
+                            <span class="badge bg-success rounded-pill">+<%= tip.amount %></span>
+                    </div>
+                    <% }) %>
+                      <% } else { %>
+                        <div class="text-center text-muted py-4"><i class="fas fa-gift fa-2x mb-2 opacity-50"></i>
+                          <p class="mb-0 small">No tips yet</p>
+                        </div>
+                        <% } %>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0"><i class="fas fa-credit-card me-2 text-primary"></i>Payment Methods</h6>
+                <a href="/payment/methods" class="btn btn-sm btn-outline-primary">Manage</a>
+              </div>
+              <div class="card-body p-0" id="paymentMethodsList">
+                <div class="text-center text-muted p-4"><i class="fas fa-spinner fa-spin"></i> Loading...</div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Right Column: Edit & Actions -->
-      <div class="col-12 col-lg-8">
-        <!-- Edit Profile Form -->
-        <div class="card border-0 shadow-sm mb-4">
-          <div class="card-header bg-white border-0 py-3">
-            <h5 class="card-title mb-0"><i class="fas fa-user-edit me-2 text-primary"></i>Edit Profile</h5>
-          </div>
-          <div class="card-body">
-            <form method="POST" action="/profile/update?_csrf=<%= csrfToken %>" enctype="multipart/form-data">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Display Name</label>
-                  <input class="form-control" name="name" required maxlength="100" value="<%= u.name || '' %>">
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Profile Picture</label>
-                  <input class="form-control" type="file" name="profileImage" accept="image/*">
-                  <div class="form-text">Recommended: Square image, max 5MB.</div>
-                </div>
-
-                <div class="col-12">
-                  <label class="form-label">Bio</label>
-                  <textarea class="form-control" name="bio" rows="3" maxlength="1000"
-                    placeholder="Tell others about yourself..."><%= u.bio || '' %></textarea>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Location</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                    <input class="form-control" name="location" maxlength="255" value="<%= u.location || '' %>"
-                      placeholder="City, Country">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">WhatsApp (E.164)</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="fab fa-whatsapp"></i></span>
-                    <input class="form-control" name="whatsappNumber" placeholder="+60123456789"
-                      value="<%= u.whatsappNumber || '' %>">
-                  </div>
-                </div>
-
-                <div class="col-md-6">
-                  <label class="form-label">Profile Visibility</label>
-                  <select class="form-select" name="isPublic">
-                    <option value="true" <%=u.isPublic ? 'selected' : '' %>>Public (Visible to everyone)</option>
-                    <option value="false" <%=!u.isPublic ? 'selected' : '' %>>Private (Hidden from search)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="mt-4 text-end">
-                <button class="btn btn-primary px-4">Save Changes</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Add Skill & Availability Forms -->
-        <div class="row g-4 mb-4">
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-              <div class="card-header bg-white border-0 py-3">
-                <h5 class="card-title mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Add Skill</h5>
-              </div>
-              <div class="card-body">
-                <form method="POST" action="/profile/skills">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                  <div class="mb-3">
-                    <label class="form-label">Skill</label>
-                    <select class="form-select" name="skillId" required>
-                      <option value="">Select a skill...</option>
-                      <% (skills || []).forEach(s=> { %>
-                        <option value="<%= s.id %>">
-                          <%= s.name %>
-                            <%= s.Category ? '(' +s.Category.name+')' : '' %>
-                        </option>
-                        <% }) %>
-                    </select>
-                  </div>
-
-                  <div class="row g-2 mb-3">
-                    <div class="col-6">
-                      <label class="form-label">Type</label>
-                      <select class="form-select" name="type" required>
-                        <option value="teach">Teach</option>
-                        <option value="learn">Learn</option>
-                      </select>
-                    </div>
-                    <div class="col-6">
-                      <label class="form-label">Level</label>
-                      <select class="form-select" name="level" required>
-                        <option value="beginner">Beginner</option>
-                        <option value="intermediate">Intermediate</option>
-                        <option value="advanced">Advanced</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <button class="btn btn-outline-primary w-100">Add Skill</button>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-              <div class="card-header bg-white border-0 py-3">
-                <h5 class="card-title mb-0"><i class="fas fa-plus-circle me-2 text-primary"></i>Add Availability</h5>
-              </div>
-              <div class="card-body">
-                <form method="POST" action="/profile/availability">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-
-                  <div class="mb-3">
-                    <label class="form-label">Day of Week</label>
-                    <select class="form-select" name="dayOfWeek" required>
-                      <% DAYS.forEach((d, idx)=> { %>
-                        <option value="<%= idx %>">
-                          <%= d %>
-                        </option>
-                        <% }) %>
-                    </select>
-                  </div>
-
-                  <div class="row g-2 mb-3">
-                    <div class="col-6">
-                      <label class="form-label">Start Time</label>
-                      <input type="time" class="form-control" name="startTime" required>
-                    </div>
-                    <div class="col-6">
-                      <label class="form-label">End Time</label>
-                      <input type="time" class="form-control" name="endTime" required>
-                    </div>
-                  </div>
-
-                  <button class="btn btn-outline-primary w-100">Add Slot</button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notification Center -->
-        <div class="card border-0 shadow-sm mb-4">
-          <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0"><i class="fas fa-bell me-2 text-primary"></i>Notifications</h5>
-            <span class="badge bg-danger rounded-pill" id="notificationCount"></span>
+      <!-- Notifications Tab -->
+      <div class="tab-pane fade" id="notifications-tab">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white py-2">
+            <h6 class="mb-0"><i class="fas fa-bell me-2 text-primary"></i>Notifications</h6>
           </div>
           <div class="card-body p-0">
-            <div id="userNotificationList" class="list-group list-group-flush">
+            <div id="userNotificationList" class="list-group list-group-flush"
+              style="max-height: 400px; overflow-y: auto;">
               <div class="text-center text-muted p-4">
                 <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
                 <p class="mb-0">Loading notifications...</p>
@@ -347,25 +434,45 @@
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Quick Actions -->
-        <div class="card border-0 shadow-sm">
-          <div class="card-body">
-            <h5 class="card-title mb-3">Quick Actions</h5>
-            <div class="d-flex flex-wrap gap-2">
-              <a class="btn btn-primary" href="/listings/create">
-                <i class="fas fa-plus me-1"></i> Create Listing
-              </a>
-              <a class="btn btn-outline-secondary" href="/sessions">
-                <i class="fas fa-calendar-alt me-1"></i> My Sessions
-              </a>
-              <a class="btn btn-outline-secondary" href="/history/messages">
-                <i class="fas fa-comments me-1"></i> Message History
-              </a>
-              <form method="post" action="/history/wa/mark/<%= u.id %>" class="d-inline">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button class="btn btn-outline-secondary">Mark Contacted</button>
-              </form>
+      <!-- Settings Tab -->
+      <div class="tab-pane fade" id="settings-tab">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-shield-alt me-2 text-primary"></i>Privacy</h6>
+              </div>
+              <div class="card-body">
+                <form method="POST" action="/profile/update?_csrf=<%= csrfToken %>">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="name" value="<%= u.name %>">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <strong>Profile Visibility</strong>
+                      <p class="text-muted small mb-0">Make your profile visible to everyone</p>
+                    </div>
+                    <select class="form-select form-select-sm w-auto" name="isPublic" onchange="this.form.submit()">
+                      <option value="true" <%=u.isPublic ? 'selected' : '' %>>Public</option>
+                      <option value="false" <%=!u.isPublic ? 'selected' : '' %>>Private</option>
+                    </select>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+              <div class="card-header bg-white py-2">
+                <h6 class="mb-0"><i class="fas fa-download me-2 text-primary"></i>Data Export</h6>
+              </div>
+              <div class="card-body">
+                <p class="small text-muted mb-2">Download your progress data as CSV</p>
+                <a class="btn btn-outline-primary btn-sm" href="/profile/progress/export">
+                  <i class="fas fa-download me-1"></i>Export Progress
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -374,7 +481,6 @@
   </div>
 
   <script>
-    // Simple JS for DELETE actions with CSRF
     const csrfToken = '<%= csrfToken %>';
 
     document.addEventListener('click', async (e) => {
@@ -383,15 +489,10 @@
         const id = btnSkill.dataset.id;
         if (!confirm('Delete this skill?')) return;
         try {
-          const res = await fetch('/profile/skills/' + id, {
-            method: 'DELETE',
-            headers: { 'CSRF-Token': csrfToken }
-          });
+          const res = await fetch('/profile/skills/' + id, { method: 'DELETE', headers: { 'CSRF-Token': csrfToken } });
           if (!res.ok) throw new Error('Failed');
           location.reload();
-        } catch (err) {
-          alert('Error deleting skill.');
-        }
+        } catch (err) { alert('Error deleting skill.'); }
       }
 
       const btnAvail = e.target.closest('.js-delete-availability');
@@ -399,26 +500,17 @@
         const id = btnAvail.dataset.id;
         if (!confirm('Delete this availability?')) return;
         try {
-          const res = await fetch('/profile/availability/' + id, {
-            method: 'DELETE',
-            headers: { 'CSRF-Token': csrfToken }
-          });
+          const res = await fetch('/profile/availability/' + id, { method: 'DELETE', headers: { 'CSRF-Token': csrfToken } });
           if (!res.ok) throw new Error('Failed');
           location.reload();
-        } catch (err) {
-          alert('Error deleting availability.');
-        }
+        } catch (err) { alert('Error deleting availability.'); }
       }
     });
 
     async function loadUserNotifications() {
       try {
-        const response = await fetch('/listings/api/notifications', {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        });
+        const response = await fetch('/listings/api/notifications', { cache: 'no-store' });
         const data = await response.json();
-
         const list = document.getElementById('userNotificationList');
         const countBadge = document.getElementById('notificationCount');
         list.innerHTML = '';
@@ -428,51 +520,60 @@
           if (unreadCount > 0) {
             countBadge.textContent = unreadCount;
             countBadge.classList.remove('d-none');
-          } else {
-            countBadge.classList.add('d-none');
           }
 
           data.notifications.forEach(notification => {
             const item = document.createElement('a');
             item.href = '#';
-            item.className = `list-group-item list-group-item-action px-4 py-3 ${notification.status === 'unread' ? 'bg-light fw-bold' : ''}`;
+            item.className = `list-group-item list-group-item-action px-3 py-2 ${notification.status === 'unread' ? 'bg-light fw-bold' : ''}`;
             item.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-1">
-              <span class="text-primary small text-uppercase">${notification.title}</span>
+              <span class="text-primary small">${notification.title}</span>
               <small class="text-muted">${new Date(notification.created_at).toLocaleDateString()}</small>
             </div>
-            <p class="mb-0 text-dark">${notification.message}</p>
+            <p class="mb-0 small text-dark">${notification.message}</p>
           `;
             item.addEventListener('click', async (e) => {
               e.preventDefault();
-              await markUserNotificationAsRead(notification.id);
+              await fetch(`/listings/api/notifications/${notification.id}/read`, { method: 'POST' });
               item.classList.remove('bg-light', 'fw-bold');
-              // Optionally decrement badge
             });
             list.appendChild(item);
           });
         } else {
-          list.innerHTML = '<div class="text-center text-muted p-4"><i class="fas fa-inbox fa-2x mb-2"></i><p class="mb-0">No notifications found.</p></div>';
-          countBadge.classList.add('d-none');
+          list.innerHTML = '<div class="text-center text-muted p-4"><i class="fas fa-inbox fa-2x mb-2"></i><p class="mb-0">No notifications</p></div>';
+        }
+      } catch (error) { console.error('Error loading notifications:', error); }
+    }
+
+    async function loadPaymentMethods() {
+      try {
+        const response = await fetch('/payment/api/methods');
+        const data = await response.json();
+        const list = document.getElementById('paymentMethodsList');
+
+        if (data.paymentMethods && data.paymentMethods.length > 0) {
+          list.innerHTML = data.paymentMethods.map(pm => `
+          <div class="d-flex align-items-center px-3 py-2 border-bottom">
+            <i class="fab fa-cc-${pm.brand} fa-2x text-primary me-3"></i>
+            <div>
+              <div class="fw-semibold small text-uppercase">${pm.brand} •••• ${pm.last4}</div>
+              <div class="text-muted small">Expires ${pm.expMonth}/${pm.expYear}</div>
+            </div>
+          </div>
+        `).join('');
+        } else {
+          list.innerHTML = '<div class="text-center text-muted p-3"><i class="fas fa-credit-card fa-2x mb-2 opacity-50"></i><p class="mb-0 small">No saved cards</p><a href="/payment/methods" class="btn btn-sm btn-outline-primary mt-2">Add Card</a></div>';
         }
       } catch (error) {
-        console.error('Error loading notifications:', error);
+        document.getElementById('paymentMethodsList').innerHTML = '<div class="text-center text-muted p-3">Unable to load</div>';
       }
     }
 
-    async function markUserNotificationAsRead(id) {
-      try {
-        await fetch(`/listings/api/notifications/${id}/read`, {
-          method: 'POST',
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        });
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', loadUserNotifications);
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUserNotifications();
+      loadPaymentMethods();
+    });
 
     // Profile Image Validation
     const profileImageInput = document.querySelector('input[name="profileImage"]');
@@ -480,30 +581,14 @@
       profileImageInput.addEventListener('change', function () {
         const file = this.files[0];
         if (file) {
-          // Check file size (5MB = 5 * 1024 * 1024 bytes)
-          const maxSize = 5 * 1024 * 1024;
-          if (file.size > maxSize) {
-            Swal.fire({
-              icon: 'error',
-              title: 'File Too Large',
-              text: 'The image size should not exceed 5MB.',
-              position: 'center'
-            });
-            this.value = ''; // Clear the input
+          if (file.size > 5 * 1024 * 1024) {
+            Swal.fire({ icon: 'error', title: 'File Too Large', text: 'Max 5MB.' });
+            this.value = '';
             return;
           }
-
-          // Check file type
-          const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-          if (!validTypes.includes(file.type)) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Invalid File Type',
-              text: 'Please upload a valid image (JPEG, PNG, GIF, WEBP).',
-              position: 'center'
-            });
-            this.value = ''; // Clear the input
-            return;
+          if (!['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)) {
+            Swal.fire({ icon: 'error', title: 'Invalid File', text: 'Use JPEG, PNG, GIF, or WEBP.' });
+            this.value = '';
           }
         }
       });

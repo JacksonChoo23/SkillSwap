@@ -154,6 +154,10 @@ router.get('/:id/review', async (req, res) => {
 
     const penaltyDisplay = report.severity !== 'none' ? getPenaltyDisplay(report.severity) : null;
 
+    // Use admin layout for admin users
+    const isAdmin = req.user.role === 'admin';
+    res.locals.layout = isAdmin ? 'layouts/admin' : 'layouts/main';
+
     res.render('reports/review', {
       title: 'Report Review',
       report,

@@ -1,49 +1,41 @@
 <div class="modal fade" id="tipModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <form method="POST" action="/tips/send">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="toUserId" id="tipToUserId">
-        <div class="modal-header">
-          <h5 class="modal-title">Send Tip</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header border-0">
+        <h5 class="modal-title"><i class="fas fa-gift text-warning me-2"></i>Send Tip</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fas fa-coins fa-3x text-warning mb-3"></i>
         </div>
-        <div class="modal-body">
-          <div class="mb-2">Tipping <strong id="tipToUserName"></strong></div>
-          <div class="mb-3">
-            <label class="form-label">Amount (1–10)</label>
-            <input type="number" class="form-control" name="amount" min="1" max="10" value="1" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Note (optional)</label>
-            <textarea class="form-control" name="note" rows="2" maxlength="200"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button class="btn btn-primary" type="submit">Send</button>
-        </div>
-      </form>
+        <p class="mb-2">You're about to tip <strong id="tipToUserName">this user</strong></p>
+        <p class="text-muted small mb-0">You'll be redirected to a secure payment page.</p>
+      </div>
+      <div class="modal-footer border-0 justify-content-center">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <a href="#" id="tipPaymentLink" class="btn btn-success">
+          <i class="fas fa-credit-card me-2"></i>Continue to Payment
+        </a>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-  (function(){
+  (function () {
     const modalEl = document.getElementById('tipModal');
     let bsModal;
-    function ensure(){ if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
+    function ensure() { if (!bsModal) bsModal = new bootstrap.Modal(modalEl); }
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.js-tip');
       if (!btn) return;
       const uid = btn.getAttribute('data-user-id');
       const uname = btn.getAttribute('data-user-name') || 'User';
-      document.getElementById('tipToUserId').value = uid;
       document.getElementById('tipToUserName').textContent = uname;
+      document.getElementById('tipPaymentLink').href = '/tips/send/' + uid;
       ensure();
       bsModal.show();
     });
   })();
 </script>
-
-

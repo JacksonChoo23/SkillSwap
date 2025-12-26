@@ -1,5 +1,5 @@
 const express = require('express');
-const { User, UserSkill, Availability, Skill, Category, UserProgress } = require('../models');
+const { User, UserSkill, Availability, Skill, Category, UserProgress, TipToken } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const multer = require('multer');
 const path = require('path');
@@ -91,12 +91,23 @@ router.get('/', async (req, res) => {
     if (teachPoints >= 100) badges.push({ label: 'Mentor', class: 'bg-warning text-dark' });
     if (learnPoints >= 100) badges.push({ label: 'Dedicated Learner', class: 'bg-secondary' });
 
+    // Wallet data - tips received
+    const tipsReceived = await TipToken.findAll({
+      where: { toUserId: req.user.id },
+      include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'profileImage'] }],
+      order: [['createdAt', 'DESC']],
+      limit: 5
+    });
+    const totalTipsReceived = await TipToken.count({ where: { toUserId: req.user.id } });
+    const totalTipsAmount = await TipToken.sum('amount', { where: { toUserId: req.user.id } }) || 0;
+
     res.render('profile/index', {
       title: 'My Profile - SkillSwap MY',
       user,
       skills,
       categories,
-      progressSummary: { totalPoints, learnPoints, teachPoints, badges }
+      progressSummary: { totalPoints, learnPoints, teachPoints, badges },
+      wallet: { tipsReceived, totalTipsReceived, totalTipsAmount }
     });
   } catch (error) {
     console.error('Profile error:', error);

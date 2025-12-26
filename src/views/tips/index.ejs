@@ -1,64 +1,170 @@
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <h1 class="h4 mb-0">My Tips</h1>
-  <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
-</div>
+<% const urlParams=new URLSearchParams(typeof query==='string' ? query : '' ); const isSuccess=typeof locals.query
+  !=='undefined' ? locals.query.success==='1' : false; %>
 
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Received</h2>
-        <% if (!received || received.length===0) { %>
-          <div class="text-muted small">No tips received.</div>
-          <% } else { %>
-            <ul class="list-group list-group-flush">
-              <% received.forEach(t=> { %>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    From <strong>
-                      <%= t.fromUser?.name || 'User' %>
-                    </strong>
-                    <% if (t.note) { %>
-                      <div class="small text-muted">
-                        <%= t.note %>
-                      </div>
-                      <% } %>
-                  </div>
-                  <span class="badge bg-success">+<%= t.amount %></span>
-                </li>
-                <% }) %>
-            </ul>
-            <% } %>
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h4 mb-0"><i class="fas fa-gift text-warning me-2"></i>My Tips</h1>
+    <a class="btn btn-outline-secondary" href="/">
+      <i class="fas fa-home me-1"></i>Home
+    </a>
+  </div>
+
+  <!-- Success Alert (shown after payment) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('success') === '1') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Tip Sent! 🎉',
+          text: 'Your tip has been sent successfully. Thank you for your generosity!',
+          confirmButtonColor: '#198754',
+          timer: 5000,
+          timerProgressBar: true
+        });
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    });
+  </script>
+
+  <!-- Stats Summary -->
+  <div class="row g-2 mb-4">
+    <div class="col-3">
+      <div class="card bg-success bg-opacity-10 border-success border-opacity-25 h-100">
+        <div class="card-body text-center py-2 px-1">
+          <div class="h4 mb-0 text-success">
+            <%= received ? received.length : 0 %>
+          </div>
+          <small class="text-muted d-none d-sm-inline">Tips Received</small>
+          <small class="text-muted d-sm-none" style="font-size:0.65rem">Received</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card bg-info bg-opacity-10 border-info border-opacity-25 h-100">
+        <div class="card-body text-center py-2 px-1">
+          <div class="h4 mb-0 text-info">
+            <%= sent ? sent.length : 0 %>
+          </div>
+          <small class="text-muted d-none d-sm-inline">Tips Sent</small>
+          <small class="text-muted d-sm-none" style="font-size:0.65rem">Sent</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card bg-warning bg-opacity-10 border-warning border-opacity-25 h-100">
+        <div class="card-body text-center py-2 px-1">
+          <div class="h4 mb-0 text-warning">
+            +<%= received ? received.reduce((sum, t)=> sum + (t.amount || 0), 0) : 0 %>
+          </div>
+          <small class="text-muted d-none d-sm-inline">Total Received</small>
+          <small class="text-muted d-sm-none" style="font-size:0.65rem">+RM</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-3">
+      <div class="card bg-secondary bg-opacity-10 border-secondary border-opacity-25 h-100">
+        <div class="card-body text-center py-2 px-1">
+          <div class="h4 mb-0 text-secondary">
+            -<%= sent ? sent.reduce((sum, t)=> sum + (t.amount || 0), 0) : 0 %>
+          </div>
+          <small class="text-muted d-none d-sm-inline">Total Sent</small>
+          <small class="text-muted d-sm-none" style="font-size:0.65rem">-RM</small>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="card-body">
-        <h2 class="h6 text-muted mb-3">Sent</h2>
-        <% if (!sent || sent.length===0) { %>
-          <div class="text-muted small">No tips sent.</div>
-          <% } else { %>
-            <ul class="list-group list-group-flush">
-              <% sent.forEach(t=> { %>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <div>
-                    To <strong>
-                      <%= t.toUser?.name || 'User' %>
-                    </strong>
-                    <% if (t.note) { %>
-                      <div class="small text-muted">
-                        <%= t.note %>
+  <div class="row g-4">
+    <!-- Received Tips -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-success bg-opacity-10 border-0 py-3">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-arrow-down text-success me-2"></i>Received
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <% if (!received || received.length===0) { %>
+            <div class="text-center text-muted py-5">
+              <i class="fas fa-inbox fa-3x mb-3 opacity-50"></i>
+              <p class="mb-0">No tips received yet</p>
+              <small>Share your profile to start receiving tips!</small>
+            </div>
+            <% } else { %>
+              <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                <% received.forEach(t=> { %>
+                  <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-items-center mb-1">
+                        <i class="fas fa-user-circle text-muted me-2"></i>
+                        <strong>
+                          <%= t.fromUser?.name || 'User' %>
+                        </strong>
                       </div>
-                      <% } %>
+                      <% if (t.note) { %>
+                        <div class="small text-muted fst-italic">
+                          "<%= t.note %>"
+                        </div>
+                        <% } %>
+                          <small class="text-muted">
+                            <%= new Date(t.createdAt).toLocaleDateString('en-MY', { day: 'numeric' , month: 'short' ,
+                              year: 'numeric' }) %>
+                          </small>
+                    </div>
+                    <span class="badge bg-success fs-6">+RM <%= t.amount %></span>
                   </div>
-                  <span class="badge bg-secondary">-<%= t.amount %></span>
-                </li>
-                <% }) %>
-            </ul>
-            <% } %>
+                  <% }) %>
+              </div>
+              <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sent Tips -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-info bg-opacity-10 border-0 py-3">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-arrow-up text-info me-2"></i>Sent
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          <% if (!sent || sent.length===0) { %>
+            <div class="text-center text-muted py-5">
+              <i class="fas fa-paper-plane fa-3x mb-3 opacity-50"></i>
+              <p class="mb-0">No tips sent yet</p>
+              <a href="/browse" class="btn btn-sm btn-outline-primary mt-2">
+                <i class="fas fa-search me-1"></i>Find someone to tip
+              </a>
+            </div>
+            <% } else { %>
+              <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                <% sent.forEach(t=> { %>
+                  <div class="list-group-item d-flex justify-content-between align-items-start py-3">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-items-center mb-1">
+                        <i class="fas fa-user-circle text-muted me-2"></i>
+                        <strong>
+                          <%= t.toUser?.name || 'User' %>
+                        </strong>
+                      </div>
+                      <% if (t.note) { %>
+                        <div class="small text-muted fst-italic">
+                          "<%= t.note %>"
+                        </div>
+                        <% } %>
+                          <small class="text-muted">
+                            <%= new Date(t.createdAt).toLocaleDateString('en-MY', { day: 'numeric' , month: 'short' ,
+                              year: 'numeric' }) %>
+                          </small>
+                    </div>
+                    <span class="badge bg-secondary fs-6">-RM <%= t.amount %></span>
+                  </div>
+                  <% }) %>
+              </div>
+              <% } %>
+        </div>
       </div>
     </div>
   </div>
-</div>

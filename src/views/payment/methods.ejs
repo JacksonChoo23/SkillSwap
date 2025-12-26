@@ -1,0 +1,171 @@
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <h1 class="h4 mb-0">Payment Methods</h1>
+    <a class="btn btn-outline-secondary" href="/payment">Back to History</a>
+</div>
+
+<div class="row">
+    <!-- List of Saved Cards -->
+    <div class="col-md-8 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Saved Cards</h5>
+            </div>
+            <div class="card-body">
+                <% if (paymentMethods && paymentMethods.length> 0) { %>
+                    <div class="list-group list-group-flush">
+                        <% paymentMethods.forEach(method=> { %>
+                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3 fs-4">
+                                        <% if (method.card.brand==='visa' ) { %>
+                                            <i class="bi bi-credit-card-2-front text-primary"></i>
+                                            <% } else if (method.card.brand==='mastercard' ) { %>
+                                                <i class="bi bi-credit-card-2-front text-warning"></i>
+                                                <% } else { %>
+                                                    <i class="bi bi-credit-card text-secondary"></i>
+                                                    <% } %>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-uppercase">
+                                            <%= method.card.brand %> •••• <%= method.card.last4 %>
+                                        </div>
+                                        <div class="small text-muted">Expires <%= method.card.exp_month %>/<%=
+                                                    method.card.exp_year %>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger delete-card-btn"
+                                    data-id="<%= method.id %>">
+                                    <i class="bi bi-trash"></i> Remove
+                                </button>
+                            </div>
+                            <% }); %>
+                    </div>
+                    <% } else { %>
+                        <p class="text-muted mb-0">No saved payment methods.</p>
+                        <% } %>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add New Card -->
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Add New Card</h5>
+            </div>
+            <div class="card-body">
+                <form id="setup-form">
+                    <div id="setup-element" class="mb-3">
+                        <!-- Stripe Element -->
+                    </div>
+                    <div id="error-message" class="text-danger small mb-2 d-none"></div>
+                    <button id="submit-btn" class="btn btn-primary w-100">
+                        <span id="button-text">Save Card</span>
+                        <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', async function () {
+        const stripe = Stripe('<%= stripePublishableKey %>');
+        const setupForm = document.getElementById('setup-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const errorMessage = document.getElementById('error-message');
+
+        let elements;
+
+        // Fetch SetupIntent Client Secret
+        async function initialize() {
+            const response = await fetch('/payment/create-setup-intent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'CSRF-Token': '<%= csrfToken %>' // Using EJS variable directly if layout allows, else input hidden
+                },
+                body: JSON.stringify({ _csrf: '<%= csrfToken %>' }) // sending csrf in body as fallback
+            });
+            const { clientSecret } = await response.json();
+
+            // Using CSRF token from meta tag if available is better practice, but here assuming EJS renders it
+
+            const appearance = { theme: 'stripe' };
+            elements = stripe.elements({ clientSecret, appearance });
+
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#setup-element');
+        }
+
+        initialize();
+
+        setupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading(true);
+
+            const { error } = await stripe.confirmSetup({
+                elements,
+                confirmParams: {
+                    return_url: window.location.href, // Redirect back to this page
+                },
+            });
+
+            if (error) {
+                showError(error.message);
+                setLoading(false);
+            }
+        });
+
+        // Handle Delete
+        document.querySelectorAll('.delete-card-btn').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Are you sure you want to remove this card?')) return;
+
+                const paymentMethodId = this.dataset.id;
+                try {
+                    const res = await fetch('/payment/delete-method', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'CSRF-Token': '<%= csrfToken %>'
+                        },
+                        body: JSON.stringify({
+                            paymentMethodId,
+                            _csrf: '<%= csrfToken %>'
+                        })
+                    });
+
+                    if (res.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to delete card');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('Error deleting card');
+                }
+            });
+        });
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('d-none');
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                document.querySelector("#spinner").classList.remove("d-none");
+                document.querySelector("#button-text").classList.add("d-none");
+            } else {
+                submitBtn.disabled = false;
+                document.querySelector("#spinner").classList.add("d-none");
+                document.querySelector("#button-text").classList.remove("d-none");
+            }
+        }
+    });
+</script>

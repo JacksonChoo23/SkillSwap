@@ -57,11 +57,12 @@ app.use(
       useDefaults: true,
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://js.stripe.com"],
         styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com", "https://*.fontawesome.com"],
         fontSrc: ["'self'", "data:", "https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com", "https://*.fontawesome.com"],
         imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", ...(isDev ? ["https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"] : [])],
+        connectSrc: ["'self'", "https://api.stripe.com", ...(isDev ? ["https://cdn.jsdelivr.net", "https://cdnjs.cloudflare.com"] : [])],
+        frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
@@ -82,6 +83,10 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use(limiter);
+
+// Webhook - Must be before body parser and CSRF
+const webhookRoutes = require('./src/routes/webhook');
+app.use('/webhook', webhookRoutes);
 
 // Parsers with size limits to prevent DoS attacks
 app.use(express.json({ limit: '1mb' }));
