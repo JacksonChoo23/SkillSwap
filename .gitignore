@@ -123,4 +123,7 @@ ssl/
 mysql_data/
 
 # PM2 files
-.pm2/ 
+.pm2/
+
+# executables
+stripe.exe

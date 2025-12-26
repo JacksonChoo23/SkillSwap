@@ -20,16 +20,16 @@ module.exports = {
     define: { timestamps: true, underscored: true }
   },
   production: {
-  username: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'skillswap_my',
-  dialect: 'mysql',
-  dialectModule: mysql2,
-  dialectOptions: {
-    socketPath: process.env.DB_SOCKET || '/cloudsql/skillswapfyp:asia-southeast1:skillswap-db'
-  },
-  logging: false,
-  pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
-  define: { timestamps: true, underscored: true }
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_NAME || 'skillswap_my',
+    dialect: 'mysql',
+    dialectModule: mysql2,
+    dialectOptions: process.env.DB_SOCKET ? {
+      socketPath: process.env.DB_SOCKET
+    } : {},
+    logging: false,
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+    define: { timestamps: true, underscored: true }
   }
 };
