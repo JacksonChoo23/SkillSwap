@@ -1,79 +1,95 @@
 <!-- src/views/reports/create.ejs -->
-<div class="container py-5">
-    <div class="row justify-content-center">
+<div class="container py-4">
+    <div class="row">
+        <!-- Left Sidebar: Context & Information -->
+        <div class="col-lg-4 mb-4 mb-lg-0">
+            <!-- Target User Card -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-danger text-white py-2">
+                    <h6 class="mb-0"><i class="bi bi-person-exclamation me-2"></i>Reporting</h6>
+                </div>
+                <div class="card-body p-3">
+                    <% if (targetUser) { %>
+                        <input type="hidden" name="targetUserId" value="<%= targetUser.id %>" form="reportForm">
+                        <div class="text-center">
+                            <img src="<%= targetUser.profileImage || '/images/default-avatar.png' %>"
+                                alt="<%= targetUser.name %>" class="rounded-circle mb-2"
+                                style="width: 80px; height: 80px; object-fit: cover;">
+                            <h6 class="mb-0">
+                                <%= targetUser.name %>
+                            </h6>
+                            <small class="text-muted">User ID: <%= targetUser.id %></small>
+                        </div>
+                        <% } else { %>
+                            <label class="form-label small">User ID</label>
+                            <input type="number" name="targetUserId" class="form-control form-control-sm"
+                                placeholder="Enter User ID" required form="reportForm">
+                            <% } %>
+                </div>
+            </div>
+
+            <!-- Review Time Comparison -->
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body p-3">
+                    <h6 class="fw-semibold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i>Review Time</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="text-center flex-fill">
+                            <i class="bi bi-lightning-charge text-success fs-4"></i>
+                            <div class="small fw-semibold">AI Review</div>
+                            <span class="badge bg-success">
+                                < 1 min</span>
+                        </div>
+                        <div class="text-muted">vs</div>
+                        <div class="text-center flex-fill">
+                            <i class="bi bi-person-gear text-secondary fs-4"></i>
+                            <div class="small fw-semibold">Manual</div>
+                            <span class="badge bg-secondary">24-48h</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Policy Reminder -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-3">
+                    <h6 class="fw-semibold mb-2"><i class="bi bi-info-circle me-2 text-primary"></i>What Happens Next?
+                    </h6>
+                    <ol class="mb-0 small text-muted ps-3">
+                        <li>AI analyzes your report instantly</li>
+                        <li>Review AI's assessment & action</li>
+                        <li>Accept to apply action automatically</li>
+                        <li>Disagree? Escalate to human review</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Main Form -->
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-danger text-white py-3">
-                    <h4 class="mb-0"><i class="bi bi-flag me-2"></i>Report User</h4>
+                    <h5 class="mb-0"><i class="bi bi-flag me-2"></i>Submit Report</h5>
                 </div>
                 <div class="card-body p-4">
-
                     <!-- AI Review Notice -->
-                    <div class="alert alert-info d-flex align-items-start mb-4">
-                        <i class="bi bi-robot fs-4 me-3"></i>
-                        <div>
-                            <strong>AI-Powered Review</strong>
-                            <p class="mb-0 small">Your report will be analyzed by our AI moderation system for faster
-                                processing. You'll receive results within seconds. If you disagree with the AI's
-                                assessment, you can escalate to human review.</p>
+                    <div class="alert alert-info d-flex align-items-start mb-3">
+                        <i class="bi bi-robot fs-5 me-2"></i>
+                        <div class="small">
+                            <strong>AI-Powered Review:</strong> Your report will be analyzed instantly. You can escalate
+                            to human review if needed.
                         </div>
                     </div>
 
-                    <!-- Review Time Comparison -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card bg-success bg-opacity-10 border-success">
-                                <div class="card-body text-center py-3">
-                                    <i class="bi bi-lightning-charge text-success fs-3"></i>
-                                    <h6 class="mt-2 mb-1">AI Review</h6>
-                                    <span class="badge bg-success">
-                                        < 1 minute</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card bg-secondary bg-opacity-10 border-secondary">
-                                <div class="card-body text-center py-3">
-                                    <i class="bi bi-person-gear text-secondary fs-3"></i>
-                                    <h6 class="mt-2 mb-1">Manual Review</h6>
-                                    <span class="badge bg-secondary">24-48 hours</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <form action="/reports?_csrf=<%= csrfToken %>" method="POST" enctype="multipart/form-data">
+                    <form id="reportForm" action="/reports?_csrf=<%= csrfToken %>" method="POST"
+                        enctype="multipart/form-data">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-                        <!-- Target User -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">Reporting User</label>
-                            <% if (targetUser) { %>
-                                <input type="hidden" name="targetUserId" value="<%= targetUser.id %>">
-                                <div class="d-flex align-items-center p-3 bg-light rounded">
-                                    <img src="<%= targetUser.profileImage || '/images/default-avatar.png' %>"
-                                        alt="<%= targetUser.name %>" class="rounded-circle me-3"
-                                        style="width: 50px; height: 50px; object-fit: cover;">
-                                    <div>
-                                        <h6 class="mb-0">
-                                            <%= targetUser.name %>
-                                        </h6>
-                                        <small class="text-muted">User ID: <%= targetUser.id %></small>
-                                    </div>
-                                </div>
-                                <% } else { %>
-                                    <input type="number" name="targetUserId" class="form-control"
-                                        placeholder="Enter User ID" required>
-                                    <small class="text-muted">Enter the ID of the user you want to report.</small>
-                                    <% } %>
-                        </div>
-
                         <!-- Reason -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label class="form-label fw-semibold">Reason for Report <span
                                     class="text-danger">*</span></label>
-                            <textarea name="reason" class="form-control" rows="5"
-                                placeholder="Please describe the issue in detail. Include specific examples, dates, and any context that would help us understand the situation..."
+                            <textarea name="reason" class="form-control" rows="6"
+                                placeholder="Describe the issue in detail. Include specific examples, dates, and context..."
                                 minlength="10" maxlength="2000" required></textarea>
                             <small class="text-muted">Minimum 10 characters. Be specific and factual.</small>
                         </div>
@@ -81,18 +97,19 @@
                         <!-- Evidence Upload -->
                         <div class="mb-4">
                             <label class="form-label fw-semibold">Evidence (Optional)</label>
-                            <div class="border rounded p-4 text-center bg-light" id="dropzone">
-                                <i class="bi bi-cloud-upload fs-1 text-muted"></i>
-                                <p class="mb-2">Upload screenshots or images as evidence</p>
-                                <input type="file" name="evidence" id="evidenceInput" class="form-control" multiple
+                            <div class="border rounded p-3 text-center bg-light">
+                                <i class="bi bi-cloud-upload fs-2 text-muted"></i>
+                                <p class="mb-2 small">Upload screenshots or images</p>
+                                <input type="file" name="evidence" id="evidenceInput"
+                                    class="form-control form-control-sm" multiple
                                     accept="image/jpeg,image/png,image/gif,image/webp">
-                                <small class="text-muted d-block mt-2">Max 5 files, 5MB each. JPEG, PNG, GIF, WebP
+                                <small class="text-muted d-block mt-1">Max 5 files, 5MB each. JPEG, PNG, GIF, WebP
                                     only.</small>
                             </div>
-                            <div id="preview" class="row mt-3"></div>
+                            <div id="preview" class="row mt-2 g-2"></div>
                         </div>
 
-                        <!-- Submit -->
+                        <!-- Submit Buttons -->
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-danger btn-lg">
                                 <i class="bi bi-send me-2"></i>Submit for AI Review
@@ -100,20 +117,6 @@
                             <a href="javascript:history.back()" class="btn btn-outline-secondary">Cancel</a>
                         </div>
                     </form>
-                </div>
-            </div>
-
-            <!-- Policy Reminder -->
-            <div class="card mt-4 border-0 shadow-sm">
-                <div class="card-body">
-                    <h6 class="fw-semibold"><i class="bi bi-info-circle me-2 text-primary"></i>What happens after you
-                        submit?</h6>
-                    <ol class="mb-0 small text-muted">
-                        <li>Your report is immediately analyzed by our AI moderation system</li>
-                        <li>You'll see the AI's assessment and recommended action</li>
-                        <li>If you agree, the action is applied automatically</li>
-                        <li>If you disagree, you can escalate to our human moderation team</li>
-                    </ol>
                 </div>
             </div>
         </div>
@@ -135,11 +138,11 @@
             const reader = new FileReader();
             reader.onload = function (e) {
                 const col = document.createElement('div');
-                col.className = 'col-4 col-md-3 mb-2';
+                col.className = 'col-4 col-md-3';
                 col.innerHTML = `
           <div class="position-relative">
             <img src="${e.target.result}" class="img-thumbnail" style="width:100%;height:80px;object-fit:cover;">
-            <small class="d-block text-truncate">${file.name}</small>
+            <small class="d-block text-truncate mt-1">${file.name}</small>
           </div>
         `;
                 preview.appendChild(col);

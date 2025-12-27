@@ -10,6 +10,19 @@
         <p class="mb-0">No reports found.</p>
       </div>
       <% } else { %>
+        <!-- Legend -->
+        <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center flex-wrap gap-3 small text-muted">
+          <span><strong>Actions:</strong></span>
+          <span class="d-flex align-items-center"><i class="bi bi-exclamation-triangle text-warning me-1"></i>
+            Warning</span>
+          <span class="d-flex align-items-center"><i class="bi bi-clock-history text-info me-1"></i> 3-Day
+            Suspend</span>
+          <span class="d-flex align-items-center"><i class="bi bi-calendar-range text-orange me-1"></i> 7-Day
+            Suspend</span>
+          <span class="d-flex align-items-center"><i class="bi bi-slash-circle text-danger me-1"></i> Ban</span>
+          <span class="d-flex align-items-center"><i class="bi bi-check-circle text-success me-1"></i> Resolve (No
+            Penalty)</span>
+        </div>
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
@@ -21,7 +34,7 @@
                 <th>Context</th>
                 <th>Status</th>
                 <th>Created</th>
-                <th class="text-end pe-4">Actions</th>
+                <th class="text-center">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -51,24 +64,69 @@
                                       <% if (!r.listingId && !r.sessionId && !r.messageThreadId) { %>-<% } %>
                   </td>
                   <td>
-                    <span class="badge rounded-pill <%= r.status === 'open' ? 'bg-danger' : 'bg-success' %>">
-                      <%= r.status.toUpperCase() %>
-                    </span>
+                    <% if (r.status==='escalated' ) { %>
+                      <span class="badge rounded-pill bg-warning text-dark">ESCALATED</span>
+                      <% } else if (r.status==='ai_reviewed' ) { %>
+                        <span class="badge rounded-pill bg-info">AI REVIEWED</span>
+                        <% } else if (r.status==='pending_ai' ) { %>
+                          <span class="badge rounded-pill bg-secondary">PENDING AI</span>
+                          <% } else if (r.status==='resolved' || r.status==='auto_penalized' ) { %>
+                            <span class="badge rounded-pill bg-success">RESOLVED</span>
+                            <% } else { %>
+                              <span class="badge rounded-pill bg-secondary">
+                                <%= r.status.toUpperCase() %>
+                              </span>
+                              <% } %>
                   </td>
                   <td>
                     <%= new Date(r.createdAt).toLocaleDateString() %>
                   </td>
-                  <td class="text-end pe-4">
-                    <% if (r.status==='open' ) { %>
-                      <form method="POST" action="/admin/reports/<%= r.id %>/close" class="d-inline">
-                        <a href="/reports/<%= r.id %>/review" class="btn btn-sm btn-outline-primary me-1">View</a>
-                        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                        <button class="btn btn-sm btn-outline-success">Mark Resolved</button>
-                      </form>
-                      <% } else { %>
-                        <a href="/reports/<%= r.id %>/review" class="btn btn-sm btn-outline-primary me-1">View</a>
-                        <span class="text-muted small">Resolved</span>
-                        <% } %>
+                  <td class="text-center" style="min-width: 280px;">
+                    <% if (r.status==='escalated' || r.status==='ai_reviewed' || r.status==='pending_ai' ) { %>
+                      <div class="btn-group btn-group-sm" role="group">
+                        <a href="/reports/<%= r.id %>/review" class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                          title="View Details">
+                          <i class="bi bi-eye"></i>
+                        </a>
+
+                        <button type="button" class="btn btn-outline-warning report-action" data-report-id="<%= r.id %>"
+                          data-action="warning" data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip"
+                          title="Apply Warning">
+                          <i class="bi bi-exclamation-triangle"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-info report-action" data-report-id="<%= r.id %>"
+                          data-action="suspend_3" data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip"
+                          title="Suspend 3 Days">
+                          3D
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary report-action"
+                          style="color: #fd7e14; border-color: #fd7e14;" data-report-id="<%= r.id %>"
+                          data-action="suspend_7" data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip"
+                          title="Suspend 7 Days">
+                          7D
+                        </button>
+
+                        <button type="button" class="btn btn-outline-danger report-action" data-report-id="<%= r.id %>"
+                          data-action="ban" data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip" title="Permanent Ban">
+                          <i class="bi bi-slash-circle"></i>
+                        </button>
+
+                        <button type="button" class="btn btn-outline-success report-action" data-report-id="<%= r.id %>"
+                          data-action="dismiss" data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip"
+                          title="Resolve (No Penalty)">
+                          <i class="bi bi-check-lg"></i>
+                        </button>
+                      </div>
+                      <% } else if (r.status==='resolved' || r.status==='auto_penalized' ) { %>
+                        <a href="/reports/<%= r.id %>/review" class="btn btn-sm btn-outline-primary">View</a>
+                        <% } else { %>
+                          <a href="/reports/<%= r.id %>/review" class="btn btn-sm btn-outline-primary me-1">View</a>
+                          <span class="text-muted small">
+                            <%= r.status %>
+                          </span>
+                          <% } %>
                   </td>
                 </tr>
                 <% }) %>
@@ -81,3 +139,112 @@
         <% } %>
   </div>
 </div>
+
+<script>
+  // SweetAlert confirmation for report actions
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+
+    const actionButtons = document.querySelectorAll('.report-action');
+
+    const actionConfig = {
+      warning: {
+        title: 'Apply Warning?',
+        text: 'This will issue a warning to the reported user.',
+        icon: 'warning',
+        confirmButtonColor: '#ffc107',
+        confirmButtonText: 'Yes, warn user'
+      },
+      suspend_3: {
+        title: '3-Day Suspension?',
+        text: 'This will suspend the user for 3 days.',
+        icon: 'warning',
+        confirmButtonColor: '#0dcaf0',
+        confirmButtonText: 'Yes, suspend for 3 days'
+      },
+      suspend_7: {
+        title: '7-Day Suspension?',
+        text: 'This will suspend the user for 7 days.',
+        icon: 'warning',
+        confirmButtonColor: '#fd7e14',
+        confirmButtonText: 'Yes, suspend for 7 days'
+      },
+      ban: {
+        title: 'Permanent Ban?',
+        text: 'This will PERMANENTLY ban the user. This action is severe!',
+        icon: 'error',
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, ban permanently',
+        showCancelButton: true,
+        cancelButtonText: 'Cancel'
+      },
+      dismiss: {
+        title: 'Dismiss Report?',
+        text: 'This will mark the report as resolved without applying any penalty.',
+        icon: 'question',
+        confirmButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, dismiss it'
+      }
+    };
+
+    actionButtons.forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const reportId = this.dataset.reportId;
+        const action = this.dataset.action;
+        const csrfToken = this.dataset.csrf;
+        const config = actionConfig[action];
+
+        Swal.fire({
+          title: config.title,
+          text: config.text,
+          icon: config.icon,
+          showCancelButton: true,
+          confirmButtonColor: config.confirmButtonColor,
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: config.confirmButtonText,
+          cancelButtonText: 'Cancel',
+          input: 'textarea',
+          inputPlaceholder: 'Optional: Add admin notes...',
+          inputAttributes: {
+            'aria-label': 'Admin notes'
+          }
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const adminNotes = result.value || '';
+
+            // Create and submit form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/reports/${reportId}/action`;
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = csrfToken;
+
+            const actionInput = document.createElement('input');
+            actionInput.type = 'hidden';
+            actionInput.name = 'actionType';
+            actionInput.value = action;
+
+            const notesInput = document.createElement('input');
+            notesInput.type = 'hidden';
+            notesInput.name = 'adminNotes';
+            notesInput.value = adminNotes;
+
+            form.appendChild(csrfInput);
+            form.appendChild(actionInput);
+            form.appendChild(notesInput);
+            document.body.appendChild(form);
+            form.submit();
+          }
+        });
+      });
+    });
+  });
+</script>

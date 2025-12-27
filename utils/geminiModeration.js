@@ -742,7 +742,9 @@ async function analyzeReportEvidence(reportText, filePaths = []) {
     // Use Gemini 2.0 Flash for multimodal analysis (verified working)
     const reportModel = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
-      systemInstruction: `You are a content moderation AI for a skill exchange platform. Analyze user reports for policy violations.
+      systemInstruction: `You are a content moderation AI for a skill exchange platform. You are analyzing a report submitted by a "Reporter" against a "Target User". 
+
+YOUR JOB: Determine if the **Target User** has violated any policies based on the Report Text and Evidence provided.
 
 Output ONLY valid JSON. No fences. No prose.
 Schema:
@@ -757,14 +759,23 @@ Schema:
   "recommendedPenalty": string
 }
 
-Severity Guidelines:
-- none: No violation detected
+CRITICAL RULES FOR ANALYSIS:
+1. **Focus on the Target User:** "isViolation" must be TRUE ONLY if the **Target User** committed a violation. 
+2. **Retaliatory/Invalid Reports:** If the Reporter says "They reported me so I am reporting them", or "I hate them", or provides no evidence of the Target User's wrongdoing, this is a **FALSE/RETALIATORY REPORT**.
+   - Verdict: "harmless"
+   - Severity: "none"
+   - Summary: "Retaliatory or baseless report"
+   - Reasoning: "The report appears to be retaliatory or contains no evidence of violation by the target user."
+3. **Evidence Mismatch:** If the uploaded evidence (images) does not support the claim, downgrade confidence or mark as uncertain.
+
+Severity Guidelines (for Target User's actions):
+- none: No violation by Target User (including invalid/retaliatory reports)
 - low: Minor issues (spam, irrelevant content) -> Warning
 - medium: Harassment, inappropriate language -> 3-day suspension
 - high: Hate speech, scam attempts -> 7-day suspension
 - critical: Threats, illegal content, child safety -> Permanent ban
 
-Categories: spam, harassment, hate_speech, scam_attempt, threats, inappropriate_content, fake_profile, illegal_content, child_safety, other
+Categories: spam, harassment, hate_speech, scam_attempt, threats, inappropriate_content, fake_profile, illegal_content, child_safety, other, false_report
 
 Be thorough but fair. Consider context. If uncertain, set confidence < 0.7.`
     });
@@ -774,13 +785,15 @@ Be thorough but fair. Consider context. If uncertain, set confidence < 0.7.`
 
     // Add text prompt
     parts.push({
-      text: `Analyze this user report for policy violations:
-
-Report Text:
-"""
-${(reportText || '').slice(0, 5000)}
-"""
-
+      text: `Analyze this user report.
+      
+      REPORT DETAILS:
+      - Reporter's Claim: """${(reportText || '').slice(0, 5000)}"""
+      
+      TASK:
+      Does the Report Text (and any evidence) prove that the TARGET USER violated a policy?
+      If the Reporter is just venting, retaliating, or providing no actual details of valid misconduct, mark as "harmless" (severity: none).
+      
 ${filePaths.length > 0 ? `Evidence files attached: ${filePaths.length} image(s)` : 'No evidence files attached.'}
 
 Provide your analysis in the required JSON schema.`

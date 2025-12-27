@@ -17,99 +17,169 @@
     <div class="row g-4 align-items-stretch">
         <!-- Left Column: AI Analysis -->
         <div class="col-lg-7 d-flex">
-            <!-- AI Analysis Card -->
-            <div class="card border-0 shadow-sm flex-fill">
-                <div
-                    class="card-header bg-<%= aiAnalysis.verdict === 'violation' ? 'danger' : aiAnalysis.verdict === 'harmless' ? 'success' : 'warning' %> text-white py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-robot me-2"></i>AI Analysis Result
-                        </h5>
-                        <span class="badge bg-white text-dark">
-                            Confidence: <%= Math.round((aiAnalysis.confidence || 0) * 100) %>%
-                        </span>
+            <% if (report.status==='resolved' || report.status==='auto_penalized' ) { %>
+                <!-- Admin Action Details (Replaces AI Result) -->
+                <div class="card border-0 shadow-sm flex-fill border-primary">
+                    <div class="card-header bg-primary text-white py-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="bi bi-shield-check me-2"></i>Admin Action Details
+                            </h5>
+                            <span class="badge bg-white text-primary">
+                                Status: <%= report.status.replace('_', ' ' ).toUpperCase() %>
+                            </span>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body p-4">
-                    <!-- Verdict -->
-                    <div class="text-center mb-3">
-                        <% if (aiAnalysis.verdict==='violation' ) { %>
-                            <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
-                            <h4 class="text-danger mt-2 mb-0">Policy Violation Detected</h4>
-                            <% } else if (aiAnalysis.verdict==='harmless' ) { %>
-                                <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-                                <h4 class="text-success mt-2 mb-0">No Violation Found</h4>
+                    <div class="card-body p-4">
+                        <!-- Verdict -->
+                        <div class="text-center mb-4">
+                            <% if (report.penaltyApplied) { %>
+                                <i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 3rem;"></i>
+                                <h4 class="text-danger mt-2 mb-0">Penalty Applied</h4>
+                                <p class="text-muted mt-2">The user has been penalized based on admin review.</p>
                                 <% } else { %>
-                                    <i class="bi bi-question-circle-fill text-warning" style="font-size: 3rem;"></i>
-                                    <h4 class="text-warning mt-2 mb-0">Uncertain - Requires Review</h4>
+                                    <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                    <h4 class="text-success mt-2 mb-0">Report Resolved</h4>
+                                    <p class="text-muted mt-2">The report was resolved without penalty
+                                        (Dismissed/Warning).</p>
                                     <% } %>
-                    </div>
+                        </div>
 
-                    <!-- Summary -->
-                    <div class="bg-light rounded p-3 mb-3">
-                        <h6 class="fw-semibold mb-1"><i class="bi bi-chat-left-text me-2"></i>Summary</h6>
-                        <p class="mb-0 small">
-                            <%= aiAnalysis.summary || 'No summary available' %>
-                        </p>
-                    </div>
+                        <!-- Admin Notes -->
+                        <div class="bg-light rounded p-3 mb-4">
+                            <h6 class="fw-semibold mb-2"><i class="bi bi-pencil-square me-2"></i>Admin Notes</h6>
+                            <p class="mb-0 text-dark">
+                                <%= report.adminNotes || 'No notes provided by admin.' %>
+                            </p>
+                        </div>
 
-                    <!-- Details Grid -->
-                    <div class="row g-2 mb-3">
-                        <div class="col-4">
-                            <div class="border rounded p-2 text-center h-100">
-                                <small class="text-muted d-block">Category</small>
-                                <strong class="text-capitalize small">
-                                    <%= aiAnalysis.category || 'N/A' %>
-                                </strong>
+                        <!-- Details Grid -->
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 text-center">
+                                    <small class="text-muted d-block mb-1">Action Taken</small>
+                                    <% if (report.penaltyApplied) { %>
+                                        <strong class="text-danger fs-5">
+                                            <%= report.penaltyApplied %>
+                                        </strong>
+                                        <% } else { %>
+                                            <strong class="text-success fs-5">Resolved / Dismissed</strong>
+                                            <% } %>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border rounded p-3 h-100 text-center">
+                                    <small class="text-muted d-block mb-1">Severity Level</small>
+                                    <span class="badge bg-<%= 
+                                    report.severity === 'critical' ? 'danger' : 
+                                    report.severity === 'high' ? 'warning' : 
+                                    report.severity === 'medium' ? 'warning' : 
+                                    report.severity === 'low' ? 'info' : 'secondary' 
+                                %> text-uppercase fs-6 mt-1">
+                                        <%= report.severity || 'NONE' %>
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2 text-center h-100">
-                                <small class="text-muted d-block">Severity</small>
-                                <span class="badge bg-<%= 
+                    </div>
+                </div>
+                <% } else { %>
+                    <!-- AI Analysis Card (Original) -->
+                    <div class="card border-0 shadow-sm flex-fill">
+                        <div
+                            class="card-header bg-<%= aiAnalysis.verdict === 'violation' ? 'danger' : aiAnalysis.verdict === 'harmless' ? 'success' : 'warning' %> text-white py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-robot me-2"></i>AI Analysis Result
+                                </h5>
+                                <span class="badge bg-white text-dark">
+                                    Confidence: <%= Math.round((aiAnalysis.confidence || 0) * 100) %>%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Verdict -->
+                            <div class="text-center mb-3">
+                                <% if (aiAnalysis.verdict==='violation' ) { %>
+                                    <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
+                                    <h4 class="text-danger mt-2 mb-0">Policy Violation Detected</h4>
+                                    <% } else if (aiAnalysis.verdict==='harmless' ) { %>
+                                        <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                                        <h4 class="text-success mt-2 mb-0">No Violation Found</h4>
+                                        <% } else { %>
+                                            <i class="bi bi-question-circle-fill text-warning"
+                                                style="font-size: 3rem;"></i>
+                                            <h4 class="text-warning mt-2 mb-0">Uncertain - Requires Review</h4>
+                                            <% } %>
+                            </div>
+
+                            <!-- Summary -->
+                            <div class="bg-light rounded p-3 mb-3">
+                                <h6 class="fw-semibold mb-1"><i class="bi bi-chat-left-text me-2"></i>Summary</h6>
+                                <p class="mb-0 small">
+                                    <%= aiAnalysis.summary || 'No summary available' %>
+                                </p>
+                            </div>
+
+                            <!-- Details Grid -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <div class="border rounded p-2 text-center h-100">
+                                        <small class="text-muted d-block">Category</small>
+                                        <strong class="text-capitalize small">
+                                            <%= aiAnalysis.category || 'N/A' %>
+                                        </strong>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2 text-center h-100">
+                                        <small class="text-muted d-block">Severity</small>
+                                        <span class="badge bg-<%= 
                                     report.severity === 'critical' ? 'danger' : 
                                     report.severity === 'high' ? 'warning' : 
                                     report.severity === 'medium' ? 'warning' : 
                                     report.severity === 'low' ? 'info' : 'secondary' 
                                 %> text-uppercase">
-                                    <%= report.severity %>
-                                </span>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <div class="border rounded p-2 text-center h-100">
-                                <small class="text-muted d-block">Action</small>
-                                <strong class="text-capitalize small">
-                                    <%= aiAnalysis.recommendedPenalty?.replace('_', ' ' ) || 'N/A' %>
-                                </strong>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Reasoning -->
-                    <% if (aiAnalysis.reasoning) { %>
-                        <div class="border-start border-3 border-primary ps-3 mb-3">
-                            <h6 class="fw-semibold mb-1"><i class="bi bi-lightbulb me-2"></i>AI Reasoning</h6>
-                            <p class="text-muted mb-0 small">
-                                <%= aiAnalysis.reasoning %>
-                            </p>
-                        </div>
-                        <% } %>
-
-                            <!-- Penalty Info (if violation) -->
-                            <% if (penaltyDisplay) { %>
-                                <div class="alert alert-<%= penaltyDisplay.color %> d-flex align-items-start mb-0 py-2">
-                                    <i class="bi bi-<%= penaltyDisplay.icon %> fs-5 me-2"></i>
-                                    <div>
-                                        <strong class="small">Recommended Penalty:</strong>
-                                        <span class="small">
-                                            <%= penaltyDisplay.description %>
+                                            <%= report.severity %>
                                         </span>
                                     </div>
                                 </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2 text-center h-100">
+                                        <small class="text-muted d-block">Action</small>
+                                        <strong class="text-capitalize small">
+                                            <%= aiAnalysis.recommendedPenalty?.replace('_', ' ' ) || 'N/A' %>
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Reasoning -->
+                            <% if (aiAnalysis.reasoning) { %>
+                                <div class="border-start border-3 border-primary ps-3 mb-3">
+                                    <h6 class="fw-semibold mb-1"><i class="bi bi-lightbulb me-2"></i>AI Reasoning</h6>
+                                    <p class="text-muted mb-0 small">
+                                        <%= aiAnalysis.reasoning %>
+                                    </p>
+                                </div>
                                 <% } %>
-                </div>
-            </div>
+
+                                    <!-- Penalty Info (if violation) -->
+                                    <% if (penaltyDisplay) { %>
+                                        <div
+                                            class="alert alert-<%= penaltyDisplay.color %> d-flex align-items-start mb-0 py-2">
+                                            <i class="bi bi-<%= penaltyDisplay.icon %> fs-5 me-2"></i>
+                                            <div>
+                                                <strong class="small">Recommended Penalty:</strong>
+                                                <span class="small">
+                                                    <%= penaltyDisplay.description %>
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <% } %>
+                        </div>
+                    </div>
+                    <% } %>
         </div>
 
         <!-- Right Column: Report Details & Actions -->

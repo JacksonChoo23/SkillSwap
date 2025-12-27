@@ -338,7 +338,7 @@ router.get('/reports', async (req, res) => {
   }
 });
 
-// Close report
+// Resolve report
 router.post('/reports/:id/close', async (req, res) => {
   try {
     const { id } = req.params;
@@ -349,13 +349,85 @@ router.post('/reports/:id/close', async (req, res) => {
       return res.redirect('/admin/reports');
     }
 
-    await report.update({ status: 'closed' });
+    await report.update({ status: 'resolved' });
 
-    req.session.success = 'Report closed successfully.';
+    req.session.success = 'Report marked as resolved.';
     res.redirect('/admin/reports');
   } catch (error) {
-    console.error('Close report error:', error);
-    req.session.error = 'Error closing report.';
+    console.error('Resolve report error:', error);
+    req.session.error = 'Error resolving report.';
+    res.redirect('/admin/reports');
+  }
+});
+
+// Admin action on report (warning, suspend, ban, dismiss)
+router.post('/reports/:id/action', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { actionType, adminNotes } = req.body;
+
+    const report = await Report.findByPk(id, {
+      include: [{ model: User, as: 'targetUser' }]
+    });
+
+    if (!report) {
+      req.session.error = 'Report not found.';
+      return res.redirect('/admin/reports');
+    }
+
+    const validActions = ['warning', 'suspend_3', 'suspend_7', 'ban', 'dismiss'];
+    if (!validActions.includes(actionType)) {
+      req.session.error = 'Invalid action type.';
+      return res.redirect('/admin/reports');
+    }
+
+    // Import PenaltyService
+    const { applyPenalty } = require('../services/PenaltyService');
+
+    let actionMessage = '';
+    let penaltyResult = null;
+
+    if (actionType === 'dismiss') {
+      // Dismiss: mark as resolved without penalty
+      await report.update({
+        status: 'resolved',
+        adminNotes: adminNotes || 'Report dismissed by admin - no violation found.'
+      });
+      actionMessage = 'Report dismissed successfully.';
+    } else {
+      // Apply penalty based on action type
+      const severityMap = {
+        'warning': 'low',
+        'suspend_3': 'medium',
+        'suspend_7': 'high',
+        'ban': 'critical'
+      };
+
+      const severity = severityMap[actionType];
+      const reason = adminNotes || report.reason || 'Admin action on report';
+
+      penaltyResult = await applyPenalty(
+        report.targetUserId,
+        severity,
+        reason,
+        report.id
+      );
+
+      await report.update({
+        status: 'auto_penalized',
+        severity: severity,
+        penaltyApplied: penaltyResult.description || severity,
+        adminNotes: `Admin action: ${actionType}. ${adminNotes || ''}`
+      });
+
+      actionMessage = penaltyResult.message || 'Penalty applied successfully.';
+    }
+
+    req.session.success = actionMessage;
+    res.redirect('/admin/reports');
+  } catch (error) {
+    console.error('Admin report action error:', error);
+    req.session.error = 'Error applying action to report.';
     res.redirect('/admin/reports');
   }
 });
