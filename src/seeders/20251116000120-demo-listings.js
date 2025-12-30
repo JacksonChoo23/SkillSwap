@@ -226,7 +226,269 @@ module.exports = {
         visibility: 'public',
         status: 'active',
         location: 'Petaling Jaya'
-      }
+      },
+
+      // NEW USERS LISTINGS
+
+      // Zulkifli - Photographer
+      {
+        email: 'zulkifli@example.com',
+        skill: 'Photography',
+        learnSkill: 'Marketing',
+        title: 'Master Portrait Photography',
+        description: 'Learn to capture stunning portraits with proper lighting, composition, and posing techniques. Suitable for beginners with any camera type. Weekend outdoor sessions in Ipoh.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Ipoh'
+      },
+      {
+        email: 'zulkifli@example.com',
+        skill: 'Video Editing',
+        learnSkill: 'React',
+        title: 'Video Editing with Adobe Premiere Pro',
+        description: 'Transform raw footage into professional videos. Learn cutting, transitions, color grading, and audio mixing. Perfect for content creators and aspiring filmmakers.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Ipoh'
+      },
+
+      // Michelle - Data scientist
+      {
+        email: 'michelle@example.com',
+        skill: 'Python',
+        learnSkill: 'Public Speaking',
+        title: 'Python Programming for Data Analysis',
+        description: 'Learn Python from scratch with focus on data analysis. Pandas, NumPy, and visualization libraries covered. Hands-on projects with real datasets.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+      {
+        email: 'michelle@example.com',
+        skill: 'Data Science',
+        learnSkill: 'Yoga',
+        title: 'Introduction to Machine Learning',
+        description: 'Understand ML fundamentals including supervised and unsupervised learning. Build your first predictive models using scikit-learn.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+
+      // Amir - Mobile developer
+      {
+        email: 'amir@example.com',
+        skill: 'Mobile Development',
+        learnSkill: 'UI/UX Design',
+        title: 'Build Mobile Apps with Flutter',
+        description: 'Create beautiful cross-platform mobile apps using Flutter and Dart. From beginner to publishing your first app on Play Store and App Store.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Cyberjaya'
+      },
+
+      // Jenny - Baker
+      {
+        email: 'jenny@example.com',
+        skill: 'Baking',
+        learnSkill: 'Photography',
+        title: 'Weekend Cake Decorating Workshop',
+        description: 'Learn professional cake decorating techniques including fondant work, piping, and sugar flowers. Small classes, maximum 4 participants.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Penang'
+      },
+      {
+        email: 'jenny@example.com',
+        skill: 'Chinese Cuisine',
+        learnSkill: 'Marketing',
+        title: 'Authentic Hokkien Home Cooking',
+        description: 'Learn traditional Penang Hokkien dishes from a local chef. Char kway teow, hokkien mee, and more. Taste history in every dish!',
+        visibility: 'public',
+        status: 'active',
+        location: 'Penang'
+      },
+
+      // Ravi - Tamil teacher
+      {
+        email: 'ravi@example.com',
+        skill: 'Tamil',
+        learnSkill: 'English',
+        title: 'Learn Tamil Language - All Levels',
+        description: 'Comprehensive Tamil lessons for beginners to advanced learners. Focus on reading, writing, and conversational skills. Cultural context included.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Klang'
+      },
+      {
+        email: 'ravi@example.com',
+        skill: 'Singing',
+        learnSkill: 'Guitar',
+        title: 'Indian Classical Carnatic Music Basics',
+        description: 'Introduction to Carnatic music, ragas, and proper vocal techniques. Learn traditional devotional and classical songs.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Klang'
+      },
+
+      // Siti - Accountant
+      {
+        email: 'siti@example.com',
+        skill: 'Accounting',
+        learnSkill: 'Graphic Design',
+        title: 'Bookkeeping Basics for Small Business Owners',
+        description: 'Learn essential bookkeeping skills including invoicing, expense tracking, and financial statements. No accounting background required.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Shah Alam'
+      },
+      {
+        email: 'siti@example.com',
+        skill: 'Excel',
+        learnSkill: 'Photography',
+        title: 'Advanced Excel for Business Professionals',
+        description: 'Master pivot tables, VLOOKUP, macros, and data visualization. Transform raw data into actionable business insights.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Shah Alam'
+      },
+
+      // Jason - Gamer  
+      {
+        email: 'jason@example.com',
+        skill: 'Gaming',
+        learnSkill: 'Japanese',
+        title: 'Esports Coaching: Rank Up in Valorant',
+        description: 'Improve your competitive gaming skills with personalized coaching. Aim training, game sense, and team coordination strategies.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Selangor'
+      },
+
+      // Haziq - Mechanic
+      {
+        email: 'haziq@example.com',
+        skill: 'Car Maintenance',
+        learnSkill: 'Marketing',
+        title: 'Basic Car Maintenance Workshop',
+        description: 'Learn essential car maintenance: oil changes, tire care, battery checks, and troubleshooting common issues. Save money and extend your car life!',
+        visibility: 'public',
+        status: 'active',
+        location: 'Johor Bahru'
+      },
+
+      // Mei Ling - Calligrapher
+      {
+        email: 'meiling@example.com',
+        skill: 'Calligraphy',
+        learnSkill: 'Digital Art',
+        title: 'Chinese Brush Calligraphy for Beginners',
+        description: 'Learn the art of Chinese calligraphy using traditional brush and ink. Develop patience and mindfulness while creating beautiful characters.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+      {
+        email: 'meiling@example.com',
+        skill: 'Mandarin',
+        learnSkill: 'English',
+        title: 'Conversational Mandarin for Adults',
+        description: 'Practical Mandarin for everyday situations. Focus on speaking and listening with native speaker. Flexible scheduling available.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+
+      // Kelvin - Swimming
+      {
+        email: 'kelvin@example.com',
+        skill: 'Swimming',
+        learnSkill: 'Guitar',
+        title: 'Learn to Swim - Adults & Children',
+        description: 'Overcome your fear of water or perfect your strokes. Certified instructor with 10 years experience. Pool sessions in Subang area.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Subang Jaya'
+      },
+
+      // Anisah - Makeup
+      {
+        email: 'anisah@example.com',
+        skill: 'Makeup',
+        learnSkill: 'Baking',
+        title: 'Professional Makeup Techniques',
+        description: 'Learn makeup application for everyday, events, and bridal. Includes skin prep, contouring, and product selection. All skill levels welcome.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+      {
+        email: 'anisah@example.com',
+        skill: 'Fashion Styling',
+        learnSkill: 'UI/UX Design',
+        title: 'Personal Styling and Wardrobe Consultation',
+        description: 'Discover your style, build a capsule wardrobe, and learn to dress for your body type. Virtual or in-person consultations available.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+
+      // Daniel - Spanish
+      {
+        email: 'daniel@example.com',
+        skill: 'Spanish',
+        learnSkill: 'Malay',
+        title: 'Learn Spanish with a Native Speaker',
+        description: 'Conversational Spanish from a Madrid native. Perfect for travel, work, or just for fun! All levels from absolute beginner to advanced.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+      {
+        email: 'daniel@example.com',
+        skill: 'Guitar',
+        learnSkill: 'Malaysian Cuisine',
+        title: 'Spanish Flamenco Guitar Introduction',
+        description: 'Learn the passionate art of flamenco guitar. Basic techniques, rhythms, and simple pieces. Bring your own guitar.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kuala Lumpur'
+      },
+
+      // Farah - Interior designer
+      {
+        email: 'farah@example.com',
+        skill: 'Interior Design',
+        learnSkill: 'Photography',
+        title: 'Home Decoration and Space Planning',
+        description: 'Transform your living space with professional interior design tips. Learn about color schemes, furniture arrangement, and budget-friendly decor.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Petaling Jaya'
+      },
+
+      // Vincent - Drone pilot
+      {
+        email: 'vincent@example.com',
+        skill: 'Drone Flying',
+        learnSkill: 'Swimming',
+        title: 'Drone Photography & Videography Course',
+        description: 'Get certified to fly drones in Malaysia. Learn regulations, flight techniques, and aerial photography. Equipment provided for training.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kota Kinabalu'
+      },
+      {
+        email: 'vincent@example.com',
+        skill: 'Photography',
+        learnSkill: 'Mandarin',
+        title: 'Landscape Photography in Sabah',
+        description: 'Capture stunning landscapes of Borneo. Join weekend photography trips to scenic locations. All skill levels welcome.',
+        visibility: 'public',
+        status: 'active',
+        location: 'Kota Kinabalu'
+      },
+
+      // Aisyah - Quran teacher (private profile, no public listings)
     ];
 
     const rows = planned

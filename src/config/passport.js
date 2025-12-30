@@ -45,6 +45,17 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findByPk(id);
+
+    // If user is banned, don't restore the session
+    if (user && user.isBanned) {
+      return done(null, false);
+    }
+
+    // If user is suspended and suspension is still active, don't restore session
+    if (user && user.isSuspended && user.suspensionEndDate && new Date() < new Date(user.suspensionEndDate)) {
+      return done(null, false);
+    }
+
     done(null, user);
   } catch (error) {
     done(error);

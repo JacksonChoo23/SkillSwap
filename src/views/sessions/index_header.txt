@@ -1,0 +1,32 @@
+﻿<%
+const teaching = Array.isArray(teachingSessions) ? teachingSessions : [];
+const learning = Array.isArray(learningSessions) ? learningSessions : [];
+const fmt = d => d ? new Date(d).toLocaleString() : '';
+
+const badge = (status) => {
+  if (status === 'requested') return 'bg-warning text-dark';
+  if (status === 'confirmed') return 'bg-primary';
+  if (status === 'in_progress') return 'bg-info text-dark';
+  if (status === 'completed') return 'bg-success';
+  if (status === 'cancelled') return 'bg-secondary';
+  if (status === 'expired') return 'bg-danger';
+  return 'bg-light text-dark';
+};
+
+const badgeLabel = (session) => {
+  if (!session || !session.status) return 'UNKNOWN';
+  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'EXPIRED';
+  if (session.status === 'completed') return 'COMPLETED';
+  if (session.status === 'in_progress') return 'IN PROGRESS';
+  if (session.status === 'confirmed') return 'CONFIRMED';
+  if (session.status === 'requested') return 'PENDING';
+  if (session.status === 'cancelled') return 'CANCELLED';
+  return session.status.toUpperCase().replace('_', ' ');
+};
+
+const badgeClass = (session) => {
+  if (!session || !session.status) return 'bg-light text-dark';
+  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'bg-danger';
+  return badge(session.status);
+};
+%>

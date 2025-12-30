@@ -138,15 +138,15 @@
 
         <!-- Flash Messages -->
         <% (Array.isArray(success) ? success : []).forEach(function(msg){ %>
-            <script>Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', timer: 3000, showConfirmButton: false, position: 'center' });</script>
+            <script>Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
             <% }); %>
 
                 <% (Array.isArray(error) ? error : []).forEach(function(msg){ %>
-                    <script>Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', timer: 3000, showConfirmButton: false, position: 'center' });</script>
+                    <script>Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
                     <% }); %>
 
                         <% (Array.isArray(info) ? info : []).forEach(function(msg){ %>
-                            <script>Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', timer: 3000, showConfirmButton: false, position: 'center' });</script>
+                            <script>Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
                             <% }); %>
 
                                 <!-- Main Content -->

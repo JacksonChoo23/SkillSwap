@@ -452,11 +452,23 @@
                       href="https://wa.me/<%= partner.whatsapp_number %>">
                       <i class="fab fa-whatsapp me-1"></i>WhatsApp
                     </a>
-                    <% } else { %>
-                      <button class="btn btn-outline-secondary btn-sm" disabled>
-                        <i class="fab fa-whatsapp me-1"></i>No WhatsApp
-                      </button>
-                      <% } %>
+                    <% } else if (partner?.email) { %>
+                      <% const skillName=s.Skill?.name || 'our session' ; const
+                        sessionEmailSubject=encodeURIComponent(`SkillSwap MY - About our ${skillName} session`); const
+                        sessionEmailBody=encodeURIComponent( `Hi ${partner.name},\n\n` + `I'm reaching out regarding our
+                        ${skillName} session on SkillSwap MY.\n\n` + `Session Details:\n` + `- Skill: ${skillName}\n` +
+                        `- Scheduled: ${new Date(s.startAt).toLocaleString('en-MY', { dateStyle: 'medium' ,
+                        timeStyle: 'short' })}\n\n` + `Please let me know if you have any questions or need to discuss
+                        anything.\n\n` + `Best regards,\n${user.name || 'Your SkillSwap partner' }` ); %>
+                        <a class="btn btn-primary btn-sm"
+                          href="mailto:<%= partner.email %>?subject=<%= sessionEmailSubject %>&body=<%= sessionEmailBody %>">
+                          <i class="fas fa-envelope me-1"></i>Email
+                        </a>
+                        <% } else { %>
+                          <button class="btn btn-outline-secondary btn-sm" disabled>
+                            <i class="fas fa-user-slash me-1"></i>No contact info
+                          </button>
+                          <% } %>
                 </div>
                 <% } else { %>
                   <p class="text-muted small mb-0">Contact info visible to participants only.</p>

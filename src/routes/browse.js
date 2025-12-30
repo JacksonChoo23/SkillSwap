@@ -109,6 +109,11 @@ router.get('/', async (req, res) => {
       filteredUsers = filteredUsers.filter(user => user.id !== req.user.id);
     }
 
+    // Filter out users with empty profiles (no bio AND no skills)
+    filteredUsers = filteredUsers.filter(user =>
+      user.bio || (Array.isArray(user.userSkills) && user.userSkills.length > 0)
+    );
+
     // Cache categories and skills for 5 minutes
     const categories = await cacheService.getOrFetch('browse_categories', async () => {
       const cats = await Category.findAll({

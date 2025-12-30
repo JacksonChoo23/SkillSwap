@@ -1,85 +1,285 @@
 <% const l=listing; %>
 
-  <div class="d-flex justify-content-between align-items-start mb-2">
-    <h1 class="h4 m-0">
-      <%= l.title %>
-    </h1>
-    <% if (l.status) { %>
-      <span
-        class="badge <%= l.status === 'active' ? 'bg-success' : (l.status === 'paused' ? 'bg-warning text-dark' : 'bg-danger') %>">
-        <%= l.status %>
-      </span>
-      <% } %>
-  </div>
+  <!-- Back Navigation -->
+  <nav class="mb-4">
+    <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+      <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+  </nav>
 
-  <div class="text-muted mb-2 small">
-    <% if (l.Skill) { %>
-      <span class="badge bg-success me-2">Teaching</span>
-      <span class="badge bg-secondary me-2">
-        <%= l.Skill.name %>
-      </span>
-      <% } %>
-        <% if (l.LearnSkill) { %>
-          <span class="badge bg-info text-dark me-2">Learn</span>
-          <span class="badge bg-secondary">
-            <%= l.LearnSkill.name %>
-          </span>
-          <% } %>
-  </div>
-
-  <% if (l.User) { %>
-    <div class="text-muted mb-3 small">
-      by <%= l.User.name %>
-        <% if (l.User.location) { %> · <%= l.User.location %>
-            <% } %>
-    </div>
-    <% } %>
-
-      <% if (l.description) { %>
-        <p class="mb-4">
-          <%= l.description %>
-        </p>
-        <% } %>
-
-          <div class="d-flex gap-2 flex-wrap">
-            <a class="btn btn-outline-secondary" href="javascript:history.back()">Back</a>
-
-            <% if (isAuthenticated) { %>
-              <a class="btn btn-primary" href="/history/messages">Message History</a>
-              <% if (l.User && (l.User.whatsappNumber)) { %>
-                <a class="btn btn-success" rel="noopener"
-                  href="/go/wa/<%= l.userId %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>"
-                  target="_blank">WhatsApp</a>
-                <% } %>
-                  <% } else { %>
-                    <a class="btn btn-primary" href="/auth/login">Login to message</a>
-                    <% } %>
-
-                      <% if (isAuthenticated && user && user.id===l.userId) { %>
-                        <a class="btn btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
-                        <button id="deleteBtn" class="btn btn-outline-danger">Delete</button>
-                        <% } %>
+  <div class="row g-4">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <!-- Header -->
+          <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="w-100">
+              <h1 class="h2 mb-3 fw-bold text-dark">
+                <%= l.title %>
+              </h1>
+              <div class="d-flex flex-wrap gap-3 align-items-center">
+                <% if (l.status) { %>
+                  <span
+                    class="badge rounded-pill px-3 py-2 <%= l.status === 'active' ? 'bg-success' : (l.status === 'paused' ? 'bg-warning text-dark' : 'bg-danger') %>">
+                    <i class="fas fa-circle me-2 opacity-50 small"></i>
+                    <%= l.status.charAt(0).toUpperCase() + l.status.slice(1) %>
+                  </span>
+                  <% } %>
+                    <% if (l.createdAt) { %>
+                      <span class="text-muted small">
+                        <i class="far fa-calendar-alt me-2"></i>Posted <%= new
+                          Date(l.createdAt).toLocaleDateString('en-MY', { day: 'numeric' , month: 'short' ,
+                          year: 'numeric' }) %>
+                      </span>
+                      <% } %>
+              </div>
+            </div>
+            <% if (isAuthenticated && user && user.id===l.userId) { %>
+              <div class="dropdown">
+                <button
+                  class="btn btn-light btn-sm rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                  style="width: 36px; height: 36px;" data-bs-toggle="dropdown">
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg p-2 rounded-3">
+                  <li><a class="dropdown-item rounded-2 py-2" href="/listings/<%= l.id %>/edit"><i
+                        class="fas fa-edit me-2 text-primary"></i>Edit Listing</a></li>
+                  <li>
+                    <hr class="dropdown-divider opacity-50">
+                  </li>
+                  <li><button class="dropdown-item rounded-2 py-2 text-danger" id="deleteBtn"><i
+                        class="fas fa-trash me-2"></i>Delete Listing</button></li>
+                </ul>
+              </div>
+              <% } %>
           </div>
 
-          <script>
-            const delBtn = document.getElementById('deleteBtn');
-            if (delBtn) {
-              delBtn.addEventListener('click', async () => {
-                if (!confirm('Delete this listing?')) return;
-                try {
-                  const res = await fetch('/listings/<%= l.id %>', {
-                    method: 'DELETE',
-                    headers: { 'CSRF-Token': '<%= csrfToken %>' }
-                  });
-                  const data = await res.json();
-                  if (res.ok && data && data.success) {
-                    location.href = '/listings';
-                  } else {
-                    alert(data && data.error ? data.error : 'Delete failed.');
-                  }
-                } catch (e) {
-                  alert('Delete failed.');
-                }
-              });
-            }
-          </script>
+          <!-- Skills Section -->
+          <div class="mb-4">
+            <h6 class="text-muted text-uppercase fw-bold small mb-4">
+              <span class="d-inline-block bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">
+                <i class="fas fa-exchange-alt me-2"></i>Skills Exchange
+              </span>
+            </h6>
+            <div class="row g-3">
+              <% if (l.Skill) { %>
+                <div class="col-md-6">
+                  <div
+                    class="p-4 bg-success bg-opacity-10 rounded-4 border border-success border-opacity-10 h-100 shadow-sm">
+                    <div class="d-flex align-items-start">
+                      <div class="rounded-4 bg-success d-flex align-items-center justify-content-center me-3 shadow-sm"
+                        style="width: 48px; height: 48px; min-width: 48px;">
+                        <i class="fas fa-chalkboard-teacher text-white"></i>
+                      </div>
+                      <div>
+                        <div class="text-success small fw-bold text-uppercase mb-1" style="letter-spacing: 0.05rem;">I
+                          Can Teach</div>
+                        <div class="h5 mb-0 fw-bold">
+                          <%= l.Skill.name %>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <% } %>
+                  <% if (l.LearnSkill) { %>
+                    <div class="col-md-6">
+                      <div
+                        class="p-4 bg-info bg-opacity-10 rounded-4 border border-info border-opacity-10 h-100 shadow-sm">
+                        <div class="d-flex align-items-start">
+                          <div class="rounded-4 bg-info d-flex align-items-center justify-content-center me-3 shadow-sm"
+                            style="width: 48px; height: 48px; min-width: 48px;">
+                            <i class="fas fa-graduation-cap text-white"></i>
+                          </div>
+                          <div>
+                            <div class="text-info small fw-bold text-uppercase mb-1" style="letter-spacing: 0.05rem;">I
+                              Want to Learn</div>
+                            <div class="h5 mb-0 fw-bold">
+                              <%= l.LearnSkill.name %>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <% } %>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <% if (l.description) { %>
+            <div class="mb-4">
+              <h6 class="text-muted text-uppercase fw-bold small mb-2">
+                <i class="fas fa-align-left me-2"></i>Description
+              </h6>
+              <div class="p-3 bg-light rounded-3">
+                <p class="mb-0 text-dark opacity-75" style="white-space: pre-wrap; line-height: 1.6;">
+                  <%= l.description %>
+                </p>
+              </div>
+            </div>
+            <% } %>
+
+              <!-- Actions for non-owner -->
+              <% if (!isAuthenticated || (user && user.id !==l.userId)) { %>
+                <div class="d-flex flex-wrap gap-3 pt-3 border-top mt-4">
+                  <% if (isAuthenticated) { %>
+                    <% if (l.User && l.User.whatsappNumber) { %>
+                      <a class="btn btn-success px-4 py-2 rounded-pill shadow-sm d-flex align-items-center"
+                        rel="noopener" href="/go/wa/<%= l.userId %>" target="_blank">
+                        <i class="fab fa-whatsapp me-2 fs-5"></i>WhatsApp
+                      </a>
+                      <% } else if (l.User && l.User.email) { %>
+                        <a class="btn btn-primary px-4 py-2 rounded-pill shadow-sm d-flex align-items-center"
+                          href="mailto:<%= l.User.email %>?subject=Interested%20in%20listing:%20<%= encodeURIComponent(l.title) %>">
+                          <i class="fas fa-envelope me-2"></i>Contact Teacher
+                        </a>
+                        <% } %>
+                          <button
+                            class="btn btn-outline-primary px-4 py-2 rounded-pill d-flex align-items-center js-request-session"
+                            data-teacher-id="<%= l.userId %>" data-skill-id="<%= l.skillId || '' %>"
+                            data-teacher-name="<%= l.User ? l.User.name : '' %>">
+                            <i class="fas fa-calendar-plus me-2"></i>Request Session
+                          </button>
+                          <% } else { %>
+                            <a class="btn btn-primary px-5 py-3 rounded-pill shadow d-flex align-items-center mx-auto mx-md-0"
+                              href="/auth/login">
+                              <i class="fas fa-sign-in-alt me-2"></i>Login to Connect
+                            </a>
+                            <% } %>
+                </div>
+                <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar - User Info -->
+    <div class="col-lg-4">
+      <% if (l.User) { %>
+        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+          <div class="bg-primary bg-opacity-10 p-4 text-center">
+            <% if (l.User.profileImage) { %>
+              <img src="<%= l.User.profileImage %>" alt="<%= l.User.name %>"
+                class="rounded-circle border border-4 border-white shadow mb-3"
+                style="width: 100px; height: 100px; object-fit: cover;">
+              <% } else { %>
+                <div
+                  class="rounded-circle bg-white shadow d-flex align-items-center justify-content-center mx-auto mb-3"
+                  style="width: 100px; height: 100px;">
+                  <i class="fas fa-user fa-3x text-primary opacity-25"></i>
+                </div>
+                <% } %>
+                  <h5 class="mb-1 fw-bold">
+                    <%= l.User.name %>
+                  </h5>
+                  <% if (l.User.location) { %>
+                    <div class="text-muted small mb-3">
+                      <i class="fas fa-map-marker-alt me-1 text-primary"></i>
+                      <%= l.User.location %>
+                    </div>
+                    <% } %>
+                      <a href="/browse/user/<%= l.userId %>"
+                        class="btn btn-primary btn-sm w-100 rounded-pill shadow-sm py-2 px-3 fw-semibold">
+                        <i class="fas fa-user-circle me-2"></i>View Profile
+                      </a>
+          </div>
+          <div class="card-body p-4 bg-white">
+            <div class="d-flex justify-content-around text-center border-bottom pb-4 mb-4">
+              <div>
+                <div class="h5 fw-bold mb-0">--</div>
+                <div class="small text-muted">Sessions</div>
+              </div>
+              <div class="border-start opacity-25"></div>
+              <div>
+                <div class="h5 fw-bold mb-0">--</div>
+                <div class="small text-muted">Rating</div>
+              </div>
+            </div>
+            <div class="d-grid gap-2">
+              <a href="/listings" class="btn btn-light btn-sm rounded-pill text-muted fw-bold py-2">
+                <i class="fas fa-th-list me-2"></i>Browse More
+              </a>
+            </div>
+          </div>
+        </div>
+        <% } %>
+
+          <!-- Tip Card -->
+          <div class="card border-0 shadow-sm rounded-4 bg-primary bg-gradient text-white">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="bg-white bg-opacity-25 rounded-circle p-2 me-3">
+                  <i class="fas fa-lightbulb"></i>
+                </div>
+                <h6 class="mb-0 fw-bold">SkillSwap Tip</h6>
+              </div>
+              <p class="small mb-0 opacity-75">
+                Connecting with local skills helps build community while learning something new. Use WhatsApp for quick
+                coordination!
+              </p>
+            </div>
+          </div>
+    </div>
+  </div>
+
+  <script>
+    // Delete functionality with SweetAlert
+    const delBtn = document.getElementById('deleteBtn');
+    if (delBtn) {
+      delBtn.addEventListener('click', async () => {
+        const result = await Swal.fire({
+          title: 'Delete Listing?',
+          text: 'This action cannot be undone and will remove your listing from the marketplace.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Yes, delete it',
+          customClass: {
+            confirmButton: 'rounded-pill px-4',
+            cancelButton: 'rounded-pill px-4'
+          }
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+          const res = await fetch('/listings/<%= l.id %>', {
+            method: 'DELETE',
+            headers: { 'CSRF-Token': '<%= csrfToken %>' }
+          });
+          const data = await res.json();
+          if (res.ok && data && data.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: 'Listing successfully removed.',
+              timer: 1500,
+              showConfirmButton: false
+            }).then(() => {
+              location.href = '/listings';
+            });
+          } else {
+            Swal.fire('Error', data && data.error ? data.error : 'Delete failed.', 'error');
+          }
+        } catch (e) {
+          Swal.fire('Error', 'Something went wrong.', 'error');
+        }
+      });
+    }
+
+    // Request session button listener
+    document.querySelectorAll('.js-request-session').forEach(btn => {
+      btn.addEventListener('click', function () {
+        const teacherId = this.dataset.teacherId;
+        const skillId = this.dataset.skillId;
+        const teacherName = this.dataset.teacherName;
+
+        if (typeof openRequestSessionModal === 'function') {
+          openRequestSessionModal(teacherId, skillId, teacherName);
+        } else {
+          window.location.href = '/sessions?teacherId=' + teacherId + '&skillId=' + skillId;
+        }
+      });
+    });
+  </script>

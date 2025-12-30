@@ -1,6 +1,6 @@
 // SkillSwap MY - Main JavaScript File
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Initialize tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -13,14 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Popover(popoverTriggerEl);
     });
 
-    // Auto-hide alerts after 5 seconds
-    setTimeout(function() {
-        var alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            var bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        });
-    }, 5000);
+    // Alerts will stay visible until manually dismissed (removed auto-hide)
 
     // Set active navigation link based on current page
     setActiveNavLink();
@@ -48,13 +41,13 @@ document.addEventListener('DOMContentLoaded', function() {
 function setActiveNavLink() {
     const currentPath = window.location.pathname;
     const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-    
+
     navLinks.forEach(link => {
         const href = link.getAttribute('href');
-        
+
         // Remove any existing active class
         link.classList.remove('active');
-        
+
         // Check if current path matches the link href
         if (href && currentPath === href) {
             link.classList.add('active');
@@ -71,28 +64,28 @@ function setActiveNavLink() {
 // Setup navigation loader for page transitions
 function setupNavigationLoader() {
     // Use event delegation on document to catch all link clicks
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
         // Find the clicked link (or parent link)
         const link = e.target.closest('a[href^="/"]');
-        
+
         if (!link) return;
-        
+
         const href = link.getAttribute('href');
-        
+
         // Don't show loader for anchors, logout, dropdown toggles, or external links
-        if (!href || 
-            href === '#' || 
-            href.includes('logout') || 
+        if (!href ||
+            href === '#' ||
+            href.includes('logout') ||
             link.target === '_blank' ||
             link.getAttribute('data-bs-toggle')) {
             return;
         }
-        
+
         // Show loader immediately for all internal navigation
-        const shouldShowLoader = 
-            href.includes('/listings/create') || 
+        const shouldShowLoader =
+            href.includes('/listings/create') ||
             href.includes('/create') ||
-            href.includes('/match') || 
+            href.includes('/match') ||
             href.includes('/browse') ||
             href.includes('/admin') ||
             href.includes('/listings') ||
@@ -100,7 +93,7 @@ function setupNavigationLoader() {
             href.includes('/notifications') ||
             href.includes('/profile') ||
             href.includes('/calculator');
-        
+
         if (shouldShowLoader) {
             // Determine custom text
             let customText = 'Loading...';
@@ -111,7 +104,7 @@ function setupNavigationLoader() {
             } else if (href.includes('/browse')) {
                 customText = 'Loading Users...';
             }
-            
+
             showNavigationLoader(customText);
         }
     }, true); // Use capture phase to ensure we catch it early
@@ -127,9 +120,9 @@ function showNavigationLoader(customText) {
 // Form validation
 function setupFormValidation() {
     const forms = document.querySelectorAll('.needs-validation');
-    
+
     forms.forEach(form => {
-        form.addEventListener('submit', function(event) {
+        form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -144,11 +137,11 @@ function setupSkillManagement() {
     // Add skill form
     const addSkillForm = document.getElementById('addSkillForm');
     if (addSkillForm) {
-        addSkillForm.addEventListener('submit', function(e) {
+        addSkillForm.addEventListener('submit', function (e) {
             const skillSelect = document.getElementById('skillId');
             const typeSelect = document.getElementById('skillType');
             const levelSelect = document.getElementById('skillLevel');
-            
+
             if (!skillSelect.value || !typeSelect.value || !levelSelect.value) {
                 e.preventDefault();
                 alert('Please fill in all skill fields.');
@@ -159,7 +152,7 @@ function setupSkillManagement() {
     // Remove skill buttons
     const removeSkillButtons = document.querySelectorAll('.remove-skill');
     removeSkillButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             if (!confirm('Are you sure you want to remove this skill?')) {
                 e.preventDefault();
             }
@@ -172,17 +165,17 @@ function setupAvailabilityManagement() {
     // Add availability form
     const addAvailabilityForm = document.getElementById('addAvailabilityForm');
     if (addAvailabilityForm) {
-        addAvailabilityForm.addEventListener('submit', function(e) {
+        addAvailabilityForm.addEventListener('submit', function (e) {
             const daySelect = document.getElementById('dayOfWeek');
             const startTime = document.getElementById('startTime');
             const endTime = document.getElementById('endTime');
-            
+
             if (!daySelect.value || !startTime.value || !endTime.value) {
                 e.preventDefault();
                 alert('Please fill in all availability fields.');
                 return;
             }
-            
+
             if (startTime.value >= endTime.value) {
                 e.preventDefault();
                 alert('End time must be after start time.');
@@ -193,7 +186,7 @@ function setupAvailabilityManagement() {
     // Remove availability buttons
     const removeAvailabilityButtons = document.querySelectorAll('.remove-availability');
     removeAvailabilityButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             if (!confirm('Are you sure you want to remove this availability slot?')) {
                 e.preventDefault();
             }
@@ -204,16 +197,16 @@ function setupAvailabilityManagement() {
 // Rating system
 function setupRatingSystem() {
     const ratingForms = document.querySelectorAll('.rating-form');
-    
+
     ratingForms.forEach(form => {
         const stars = form.querySelectorAll('.rating-star');
         const hiddenInput = form.querySelector('input[name="rating"]');
-        
+
         stars.forEach((star, index) => {
-            star.addEventListener('click', function() {
+            star.addEventListener('click', function () {
                 const rating = index + 1;
                 hiddenInput.value = rating;
-                
+
                 // Update star display
                 stars.forEach((s, i) => {
                     if (i < rating) {
@@ -232,12 +225,12 @@ function setupRatingSystem() {
 // WhatsApp integration
 function setupWhatsAppIntegration() {
     const whatsappButtons = document.querySelectorAll('.btn-whatsapp');
-    
+
     whatsappButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
+        button.addEventListener('click', function (e) {
             const phone = this.dataset.phone;
             const message = this.dataset.message || 'Hello! I saw your skill listing on SkillSwap MY.';
-            
+
             if (phone) {
                 const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
@@ -286,9 +279,9 @@ function makeRequest(url, options = {}) {
             'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
         }
     };
-    
+
     const finalOptions = { ...defaultOptions, ...options };
-    
+
     return fetch(url, finalOptions)
         .then(response => {
             if (!response.ok) {
@@ -313,13 +306,13 @@ function hideLoading(element, originalText) {
 // Show toast notification
 function showToast(message, type = 'info') {
     const toastContainer = document.getElementById('toastContainer') || createToastContainer();
-    
+
     const toast = document.createElement('div');
     toast.className = `toast align-items-center text-white bg-${type} border-0`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
-    
+
     toast.innerHTML = `
         <div class="d-flex">
             <div class="toast-body">
@@ -328,14 +321,14 @@ function showToast(message, type = 'info') {
             <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
     `;
-    
+
     toastContainer.appendChild(toast);
-    
+
     const bsToast = new bootstrap.Toast(toast);
     bsToast.show();
-    
+
     // Remove toast element after it's hidden
-    toast.addEventListener('hidden.bs.toast', function() {
+    toast.addEventListener('hidden.bs.toast', function () {
         toast.remove();
     });
 }

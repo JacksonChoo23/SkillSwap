@@ -7,10 +7,10 @@ const _result = (typeof result !== 'undefined' && result) ? result : null;
 const prev = (_result && _result.input) ? _result.input : {};
 const valSkillAId = prev.skillAId != null ? String(prev.skillAId) : '';
 const valSkillBId = prev.skillBId != null ? String(prev.skillBId) : '';
-const valLevelA  = prev.levelA  || 'beginner';
-const valLevelB  = prev.levelB  || 'beginner';
-const valHoursA  = prev.hoursA  != null ? prev.hoursA  : 1;
-const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
+const valLevelA = prev.levelA || 'beginner';
+const valLevelB = prev.levelB || 'beginner';
+const valHoursA = prev.hoursA != null ? prev.hoursA : 1;
+const valHoursB = prev.hoursB != null ? prev.hoursB : 1;
 %>
 
 <div class="bg-primary text-white p-4 p-md-5 rounded-4 shadow-sm mb-4">
@@ -55,7 +55,7 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
                   <select class="form-select" name="skillAId" required>
                     <option value="">Select a skill</option>
                     <% _skills.forEach(s => { %>
-                      <option value="<%= s.id %>" <%= (valSkillAId===String(s.id) ? 'selected' : '') %>>
+                      <option value="<%= s.id %>" <%= valSkillAId === String(s.id) ? 'selected' : '' %>>
                         <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
                       </option>
                     <% }) %>
@@ -64,9 +64,9 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
                 <div class="col-md-3">
                   <label class="form-label">Level</label>
                   <select class="form-select" name="levelA" required>
-                    <option value="beginner"     <%= (valLevelA==='beginner'     ? 'selected' : '') %>>Beginner</option>
-                    <option value="intermediate" <%= (valLevelA==='intermediate' ? 'selected' : '') %>>Intermediate</option>
-                    <option value="advanced"     <%= (valLevelA==='advanced'     ? 'selected' : '') %>>Advanced</option>
+                    <option value="beginner" <%= valLevelA === 'beginner' ? 'selected' : '' %>>Beginner</option>
+                    <option value="intermediate" <%= valLevelA === 'intermediate' ? 'selected' : '' %>>Intermediate</option>
+                    <option value="advanced" <%= valLevelA === 'advanced' ? 'selected' : '' %>>Advanced</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -89,7 +89,7 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
                   <select class="form-select" name="skillBId" required>
                     <option value="">Select a skill</option>
                     <% _skills.forEach(s => { %>
-                      <option value="<%= s.id %>" <%= (valSkillBId===String(s.id) ? 'selected' : '') %>>
+                      <option value="<%= s.id %>" <%= valSkillBId === String(s.id) ? 'selected' : '' %>>
                         <%= s.name %><% if (s.Category && s.Category.name) { %> (<%= s.Category.name %>)<% } %>
                       </option>
                     <% }) %>
@@ -98,9 +98,9 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
                 <div class="col-md-3">
                   <label class="form-label">Level</label>
                   <select class="form-select" name="levelB" required>
-                    <option value="beginner"     <%= (valLevelB==='beginner'     ? 'selected' : '') %>>Beginner</option>
-                    <option value="intermediate" <%= (valLevelB==='intermediate' ? 'selected' : '') %>>Intermediate</option>
-                    <option value="advanced"     <%= (valLevelB==='advanced'     ? 'selected' : '') %>>Advanced</option>
+                    <option value="beginner" <%= valLevelB === 'beginner' ? 'selected' : '' %>>Beginner</option>
+                    <option value="intermediate" <%= valLevelB === 'intermediate' ? 'selected' : '' %>>Intermediate</option>
+                    <option value="advanced" <%= valLevelB === 'advanced' ? 'selected' : '' %>>Advanced</option>
                   </select>
                 </div>
                 <div class="col-md-3">
@@ -115,9 +115,9 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
             <button class="btn btn-primary flex-fill" type="submit">
               <i class="fas fa-calculator me-1"></i> Calculate Fair Exchange
             </button>
-            <a href="/browse" class="btn btn-outline-secondary">
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#exploreSkillsModal">
               <i class="fas fa-compass me-1"></i> Explore Skills
-            </a>
+            </button>
           </div>
         </form>
       </div>
@@ -125,10 +125,7 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
   </div>
 
   <div class="col-lg-4">
-    <%
-      const fx = (_result && (_result.fair || _result.exchange)) || null;
-      const msg = _result ? (_result.message || null) : null;
-    %>
+    <% const fx = (_result && (_result.fair || _result.exchange)) || null; const msg = _result ? (_result.message || null) : null; %>
 
     <% if (_result) { %>
       <div class="card shadow-sm border-0 mb-4">
@@ -158,7 +155,7 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
                 </div>
               </div>
             </div>
-            <div class="text-center text-muted small">Rate (A → B): <strong><%= fx.rate != null ? fx.rate : '-' %></strong></div>
+            <div class="text-center text-muted small">Rate (A to B): <strong><%= fx.rate != null ? fx.rate : '-' %></strong></div>
           <% } else { %>
             <p class="text-muted mb-0">Run a calculation to see a suggested split.</p>
           <% } %>
@@ -201,5 +198,45 @@ const valHoursB  = prev.hoursB  != null ? prev.hoursB  : 1;
         </div>
       </div>
     <% } %>
+  </div>
+</div>
+
+<!-- Explore Skills Modal -->
+<div class="modal fade" id="exploreSkillsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Explore Skills by Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <% if (_categories.length) { %>
+          <div class="vstack gap-4">
+            <% _categories.forEach(cat => { %>
+              <div>
+                <h6 class="fw-bold text-primary mb-2 border-bottom pb-2"><%= cat.name %></h6>
+                <div class="d-flex flex-wrap gap-2">
+                  <% const catSkills = _skills.filter(s => s.Category && s.Category.id === cat.id);
+                     if (catSkills.length > 0) {
+                       catSkills.forEach(skill => { %>
+                      <span class="badge bg-light text-dark border p-2"><%= skill.name %></span>
+                  <%   }); 
+                     } else { %>
+                      <small class="text-muted fst-italic">No skills available in this category.</small>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="text-center py-5 text-muted">
+            <p>No categories available.</p>
+          </div>
+        <% } %>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+         <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
   </div>
 </div>

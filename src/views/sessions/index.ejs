@@ -1,18 +1,35 @@
-<% const teaching=Array.isArray(teachingSessions) ? teachingSessions : []; const
+﻿<% const teaching=Array.isArray(teachingSessions) ? teachingSessions : []; const
   learning=Array.isArray(learningSessions) ? learningSessions : []; const fmt=d=> d ? new Date(d).toLocaleString() : '';
-  const badge = s => (
-  s === 'requested' ? 'bg-warning text-dark' :
-  s === 'confirmed' ? 'bg-primary' :
-  s === 'in_progress'? 'bg-info text-dark' :
-  s === 'completed' ? 'bg-success' :
-  s === 'cancelled' ? 'bg-secondary' :
-  s === 'expired' ? 'bg-danger' : 'bg-light text-dark'
-  );
-  // Show 'EXPIRED' for cancelled sessions that are past their start time
+
+  const badge = (status) => {
+  if (status === 'requested') return 'bg-warning text-dark';
+  if (status === 'confirmed') return 'bg-primary text-white';
+  if (status === 'in_progress') return 'bg-info text-dark';
+  if (status === 'completed') return 'bg-success text-white';
+  if (status === 'cancelled') return 'bg-secondary text-white';
+  if (status === 'expired') return 'bg-danger text-white';
+  return 'bg-light text-dark';
+  };
+
+  const badgeStyle = (status) => {
+  if (status === 'requested') return 'background-color: #ffc107 !important; color: #212529 !important;';
+  if (status === 'confirmed') return 'background-color: #0d6efd !important; color: #fff !important;';
+  if (status === 'in_progress') return 'background-color: #0dcaf0 !important; color: #212529 !important;';
+  if (status === 'completed') return 'background-color: #198754 !important; color: #fff !important;';
+  if (status === 'cancelled') return 'background-color: #6c757d !important; color: #fff !important;';
+  if (status === 'expired') return 'background-color: #dc3545 !important; color: #fff !important;';
+  return 'background-color: #f8f9fa !important; color: #212529 !important;';
+  };
+
   const badgeLabel = (session) => {
-  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) { return 'EXPIRED' ; } return
-    session.status.toUpperCase().replace('_', ' ' ); }; const badgeClass=(session)=> {
-    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) { return 'bg-danger' ; } return
+  if (!session || !session.status) return 'UNKNOWN';
+  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'EXPIRED' ; if
+    (session.status==='completed' ) return 'COMPLETED' ; if (session.status==='in_progress' ) return 'IN PROGRESS' ; if
+    (session.status==='confirmed' ) return 'CONFIRMED' ; if (session.status==='requested' ) return 'PENDING' ; if
+    (session.status==='cancelled' ) return 'CANCELLED' ; return session.status.toUpperCase().replace('_', ' ' ); };
+    const badgeClass=(session)=> {
+    if (!session || !session.status) return 'bg-light text-dark';
+    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'bg-danger' ; return
       badge(session.status); }; %>
 
       <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
@@ -67,7 +84,7 @@
                         <div class="d-flex justify-content-between">
                           <div class="me-3">
                             <div class="d-flex align-items-center">
-                              <span class="badge <%= badgeClass(s) %> me-2">
+                              <span class="badge <%= badgeClass(s) %> me-2" style="<%= badgeStyle(s.status) %>">
                                 <%= badgeLabel(s) %>
                               </span>
                               <strong>
@@ -78,7 +95,7 @@
                               With learner: <%= s.student?.name || 'User' %>
                             </div>
                             <div class="small text-muted">
-                              <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
+                              <%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
                             </div>
                           </div>
                           <div class="text-end">
@@ -134,7 +151,7 @@
                         <div class="d-flex justify-content-between">
                           <div class="me-3">
                             <div class="d-flex align-items-center">
-                              <span class="badge <%= badgeClass(s) %> me-2">
+                              <span class="badge <%= badgeClass(s) %> me-2" style="<%= badgeStyle(s.status) %>">
                                 <%= badgeLabel(s) %>
                               </span>
                               <strong>
@@ -145,7 +162,7 @@
                               With teacher: <%= s.teacher?.name || 'User' %>
                             </div>
                             <div class="small text-muted">
-                              <%= fmt(s.startAt) %> – <%= fmt(s.endAt) %>
+                              <%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
                             </div>
                           </div>
                           <div class="text-end">

@@ -635,8 +635,8 @@ router.get('/:id', async (req, res) => {
 
     const session = await LearningSession.findByPk(id, {
       include: [
-        { model: User, as: 'teacher', attributes: ['id', 'name', 'whatsapp_number'] },
-        { model: User, as: 'student', attributes: ['id', 'name', 'whatsapp_number'] },
+        { model: User, as: 'teacher', attributes: ['id', 'name', 'email', 'whatsapp_number'] },
+        { model: User, as: 'student', attributes: ['id', 'name', 'email', 'whatsapp_number'] },
         { model: Skill, attributes: ['id', 'name'] },
         {
           model: Rating,

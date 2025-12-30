@@ -30,20 +30,138 @@ const upload = multer({
 });
 
 const router = express.Router();
-// Export progress CSV
+
+// Export comprehensive resume-friendly CSV
 router.get('/progress/export', async (req, res) => {
   try {
-    const rows = await UserProgress.findAll({ where: { userId: req.user.id }, order: [['createdAt', 'DESC']] });
+    const userId = req.user.id;
+    const user = await User.findByPk(userId);
+
+    // Get user's skills
+    const userSkills = await UserSkill.findAll({
+      where: { userId },
+      include: [{ model: Skill, include: [Category] }]
+    });
+
+    // Get completed sessions (both as teacher and student)
+    const { LearningSession, Rating } = require('../models');
+    const { Op } = require('sequelize');
+
+    const sessions = await LearningSession.findAll({
+      where: {
+        [Op.or]: [{ teacherId: userId }, { studentId: userId }],
+        status: 'completed'
+      },
+      include: [
+        { model: User, as: 'teacher', attributes: ['id', 'name'] },
+        { model: User, as: 'student', attributes: ['id', 'name'] },
+        { model: Skill, attributes: ['id', 'name'] }
+      ],
+      order: [['actualEndAt', 'DESC']]
+    });
+
+    // Get ratings received
+    const ratings = await Rating.findAll({
+      where: { rateeId: userId },
+      include: [
+        { model: User, as: 'rater', attributes: ['name'] },
+        { model: LearningSession, include: [{ model: Skill, attributes: ['name'] }] }
+      ]
+    });
+
+    // Calculate statistics
+    const progress = await UserProgress.findAll({ where: { userId } });
+    const totalPoints = progress.reduce((sum, p) => sum + (p.points || 0), 0);
+    const learnPoints = progress.filter(p => p.type === 'learn').reduce((s, p) => s + p.points, 0);
+    const teachPoints = progress.filter(p => p.type === 'teach').reduce((s, p) => s + p.points, 0);
+
+    // Calculate total hours from sessions
+    let totalTeachHours = 0;
+    let totalLearnHours = 0;
+    sessions.forEach(s => {
+      const hours = (s.actualEndAt && s.actualStartAt)
+        ? (new Date(s.actualEndAt) - new Date(s.actualStartAt)) / (1000 * 60 * 60)
+        : 0;
+      if (s.teacherId === userId) totalTeachHours += hours;
+      else totalLearnHours += hours;
+    });
+
+    // Calculate average rating
+    const avgRating = ratings.length > 0
+      ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
+      : 'N/A';
+
+    // Determine achievements
+    const achievements = [];
+    if (totalPoints >= 50) achievements.push('Rising Star');
+    if (totalPoints >= 150) achievements.push('Skilled');
+    if (totalPoints >= 300) achievements.push('Expert');
+    if (teachPoints >= 100) achievements.push('Mentor');
+    if (learnPoints >= 100) achievements.push('Dedicated Learner');
+    if (sessions.length >= 10) achievements.push('Active Participant');
+    if (ratings.length >= 5 && parseFloat(avgRating) >= 4.5) achievements.push('Highly Rated');
+
+    // Build CSV content
+    let csv = '';
+
+    // Section 1: Profile Summary
+    csv += '=== SKILLSWAP MY - SKILL EXCHANGE PORTFOLIO ===\n';
+    csv += `Generated on,${new Date().toLocaleDateString()}\n`;
+    csv += `Name,${user.name}\n`;
+    csv += `Location,${user.location || 'Not specified'}\n\n`;
+
+    // Section 2: Statistics Summary
+    csv += '=== SUMMARY STATISTICS ===\n';
+    csv += `Total Points Earned,${totalPoints}\n`;
+    csv += `Teaching Points,${teachPoints}\n`;
+    csv += `Learning Points,${learnPoints}\n`;
+    csv += `Total Teaching Hours,${totalTeachHours.toFixed(1)}\n`;
+    csv += `Total Learning Hours,${totalLearnHours.toFixed(1)}\n`;
+    csv += `Completed Sessions,${sessions.length}\n`;
+    csv += `Average Rating Received,${avgRating}\n`;
+    csv += `Achievements,${achievements.length > 0 ? achievements.join('; ') : 'None yet'}\n\n`;
+
+    // Section 3: Skills
+    csv += '=== SKILLS ===\n';
+    csv += 'Skill Name,Category,Type,Proficiency Level\n';
+    userSkills.forEach(us => {
+      const skillName = us.Skill?.name || 'Unknown';
+      const category = us.Skill?.Category?.name || 'General';
+      const type = us.type === 'teach' ? 'Can Teach' : 'Learning';
+      const level = us.level ? us.level.charAt(0).toUpperCase() + us.level.slice(1) : 'Not specified';
+      csv += `${skillName},${category},${type},${level}\n`;
+    });
+    csv += '\n';
+
+    // Section 4: Session History
+    csv += '=== COMPLETED SESSIONS ===\n';
+    csv += 'Date,Skill,Role,Partner,Duration (hours)\n';
+    sessions.forEach(s => {
+      const date = s.actualEndAt ? new Date(s.actualEndAt).toLocaleDateString() : 'N/A';
+      const skill = s.Skill?.name || 'Unknown';
+      const role = s.teacherId === userId ? 'Teacher' : 'Student';
+      const partner = s.teacherId === userId ? s.student?.name : s.teacher?.name;
+      const hours = (s.actualEndAt && s.actualStartAt)
+        ? ((new Date(s.actualEndAt) - new Date(s.actualStartAt)) / (1000 * 60 * 60)).toFixed(1)
+        : 'N/A';
+      csv += `${date},${skill},${role},${partner || 'Unknown'},${hours}\n`;
+    });
+    csv += '\n';
+
+    // Section 5: Ratings Received
+    csv += '=== RATINGS & FEEDBACK ===\n';
+    csv += 'Date,Skill,Rating (out of 5),From\n';
+    ratings.forEach(r => {
+      const date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : 'N/A';
+      const skill = r.LearningSession?.Skill?.name || 'General';
+      const rating = r.rating;
+      const from = r.rater?.name || 'Anonymous';
+      csv += `${date},${skill},${rating},${from}\n`;
+    });
+
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="progress.csv"');
-    const header = 'date,type,sessionId,points\n';
-    const lines = rows.map(r => [
-      new Date(r.createdAt).toISOString(),
-      r.type,
-      r.sessionId,
-      r.points
-    ].join(','));
-    res.send(header + lines.join('\n'));
+    res.setHeader('Content-Disposition', `attachment; filename="SkillSwap_Portfolio_${user.name.replace(/\s+/g, '_')}.csv"`);
+    res.send(csv);
   } catch (error) {
     console.error('Progress export error:', error);
     req.session.error = 'Error exporting progress.';
@@ -120,13 +238,30 @@ router.get('/', async (req, res) => {
 router.post('/update', upload.single('profileImage'), async (req, res) => {
   try {
     const { name, bio, location, isPublic, whatsappNumber } = req.body;
+    const wantsPublic = isPublic === 'true';
+
+    // If user wants to make profile public, check if profile is complete
+    if (wantsPublic) {
+      const userSkills = await UserSkill.findAll({ where: { userId: req.user.id } });
+      const hasBio = bio && bio.trim().length > 0;
+      const hasSkills = userSkills && userSkills.length > 0;
+
+      if (!hasBio || !hasSkills) {
+        const missing = [];
+        if (!hasBio) missing.push('a bio');
+        if (!hasSkills) missing.push('at least one skill');
+
+        req.flash('error', `Please complete your profile before making it public. You need to add ${missing.join(' and ')}.`);
+        return res.redirect('/profile');
+      }
+    }
 
     const updateData = {
       name,
       bio: bio || '',
       location: location || '',
       whatsappNumber: whatsappNumber || null,
-      isPublic: isPublic === 'true'
+      isPublic: wantsPublic
     };
 
     if (req.file) {
@@ -135,11 +270,11 @@ router.post('/update', upload.single('profileImage'), async (req, res) => {
 
     await req.user.update(updateData);
 
-    req.session.success = 'Profile updated successfully.';
+    req.flash('success', 'Profile updated successfully.');
     res.redirect('/profile');
   } catch (error) {
     console.error('Profile update error:', error);
-    req.session.error = 'Error updating profile.';
+    req.flash('error', 'Error updating profile.');
     res.redirect('/profile');
   }
 });
@@ -262,15 +397,31 @@ router.delete('/availability/:id', async (req, res) => {
 // Toggle privacy
 router.post('/privacy', async (req, res) => {
   try {
-    await req.user.update({
-      isPublic: !req.user.isPublic
-    });
+    const wantsPublic = !req.user.isPublic;
 
-    req.session.success = `Profile is now ${req.user.isPublic ? 'public' : 'private'}.`;
+    // If user wants to make profile public, check if profile is complete
+    if (wantsPublic) {
+      const userSkills = await UserSkill.findAll({ where: { userId: req.user.id } });
+      const hasBio = req.user.bio && req.user.bio.trim().length > 0;
+      const hasSkills = userSkills && userSkills.length > 0;
+
+      if (!hasBio || !hasSkills) {
+        const missing = [];
+        if (!hasBio) missing.push('a bio');
+        if (!hasSkills) missing.push('at least one skill');
+
+        req.flash('error', `Please complete your profile before making it public. You need to add ${missing.join(' and ')}.`);
+        return res.redirect('/profile');
+      }
+    }
+
+    await req.user.update({ isPublic: wantsPublic });
+
+    req.flash('success', `Profile is now ${wantsPublic ? 'public' : 'private'}.`);
     res.redirect('/profile');
   } catch (error) {
     console.error('Privacy toggle error:', error);
-    req.session.error = 'Error updating privacy settings.';
+    req.flash('error', 'Error updating privacy settings.');
     res.redirect('/profile');
   }
 });

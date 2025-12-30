@@ -7,8 +7,13 @@ const router = express.Router();
 // Leaderboard page
 router.get('/', async (req, res) => {
     try {
-        // Aggregate points by user
+        const currentUserId = req.user ? req.user.id : null;
+
+        // Aggregate points by user (excluding current user)
+        const whereClause = currentUserId ? { userId: { [require('sequelize').Op.ne]: currentUserId } } : {};
+
         const leaderboardData = await UserProgress.findAll({
+            where: whereClause,
             attributes: [
                 'userId',
                 [sequelize.fn('SUM', sequelize.col('points')), 'totalPoints'],

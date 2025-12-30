@@ -1,107 +1,203 @@
-<% const _list=Array.isArray(listings) ? listings : []; %>
+<% const _list=Array.isArray(listings) ? listings : []; // Helper function to calculate time ago const
+  getTimeAgo=(date)=> {
+  const now = new Date();
+  const diffMs = now - new Date(date);
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return '1 day ago';
+  if (diffDays < 7) return diffDays + ' days ago' ; if (diffDays < 30) return Math.floor(diffDays / 7) + ' week' +
+    (diffDays>= 14 ? 's' : '') + ' ago';
+    if (diffDays < 365) return Math.floor(diffDays / 30) + ' month' + (diffDays>= 60 ? 's' : '') + ' ago';
+      return Math.floor(diffDays / 365) + ' year' + (diffDays >= 730 ? 's' : '') + ' ago';
+      };
+      %>
 
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h4 m-0"><i class="fas fa-list-alt me-2 text-primary"></i>Skill Listings</h1>
-    <% if (isAuthenticated) { %>
-      <a class="btn btn-primary" href="/listings/create"><i class="fas fa-plus me-1"></i>Create Listing</a>
-      <% } %>
-  </div>
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h4 m-0"><i class="fas fa-list-alt me-2 text-primary"></i>Skill Listings</h1>
+        <% if (isAuthenticated) { %>
+          <a class="btn btn-primary shadow-sm" href="/listings/create"><i class="fas fa-plus me-1"></i>Create
+            Listing</a>
+          <% } %>
+      </div>
 
-  <!-- Search Bar -->
-  <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-2">
-      <form action="/listings" method="GET">
-        <div class="input-group">
-          <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
-          <input type="text" name="search" class="form-control border-start-0"
-            placeholder="Search by title, description, or skill..."
-            value="<%= typeof search !== 'undefined' ? search : '' %>">
-          <button type="submit" class="btn btn-primary">Search</button>
-          <% if (typeof search !=='undefined' && search) { %>
-            <a href="/listings" class="btn btn-outline-secondary">Clear</a>
-            <% } %>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <% if (_list.length) { %>
-    <div class="row row-cols-1 row-cols-md-2 g-3">
-      <% _list.forEach(l=> { %>
-        <div class="col">
-          <div class="card h-100">
-            <div class="card-body">
-              <h2 class="h5 m-0"><a href="/listings/<%= l.id %>">
-                  <%= l.title %>
-                </a></h2>
-              <div class="small text-muted mt-1">
-                <% if (l.Skill) { %>
-                  <span class="badge bg-success">Teaching</span>
-                  <span class="badge bg-secondary">
-                    <%= l.Skill.name %>
-                  </span>
-                  <% } %>
-                    <% if (l.LearnSkill) { %>
-                      <span class="badge bg-info text-dark">Learn</span>
-                      <span class="badge bg-secondary">
-                        <%= l.LearnSkill.name %>
-                      </span>
-                      <% } %>
-              </div>
-              <% if (l.description) { %>
-                <p class="text-muted mt-2 mb-0">
-                  <%= l.description %>
-                </p>
+      <!-- Search Bar -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-2">
+          <form action="/listings" method="GET">
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+              <input type="text" name="search" class="form-control border-start-0 shadow-none"
+                placeholder="Search by title, description, or skill..."
+                value="<%= typeof search !== 'undefined' ? search : '' %>">
+              <button type="submit" class="btn btn-primary">Search</button>
+              <% if (typeof search !=='undefined' && search) { %>
+                <a href="/listings" class="btn btn-outline-secondary">Clear</a>
                 <% } %>
             </div>
-            <div class="card-footer d-flex justify-content-between align-items-center">
-              <div class="small text-muted">
-                <% if (l.User) { %>
-                  by <%= l.User.name %>
-                    <% if (l.User.location) { %> · <%= l.User.location %>
+          </form>
+        </div>
+      </div>
+
+      <% if (_list.length) { %>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+          <% _list.forEach(l=> { %>
+            <div class="col">
+              <div class="card h-100 border-0 shadow-sm transition-all text-decoration-none text-dark">
+                <div class="card-body p-4">
+                  <!-- Header with user avatar and listing title -->
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <% if (l.User && l.User.profileImage) { %>
+                      <img src="<%= l.User.profileImage %>" alt="<%= l.User.name %>"
+                        class="rounded-circle border border-2 border-white shadow-sm"
+                        style="width: 48px; height: 48px; object-fit: cover;">
+                      <% } else { %>
+                        <div
+                          class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center border border-2 border-white shadow-sm"
+                          style="width: 48px; height: 48px; min-width: 48px;">
+                          <i class="fas fa-user text-primary"></i>
+                        </div>
                         <% } %>
+                          <div class="flex-grow-1" style="min-width: 0; overflow: hidden;">
+                            <h5 class="card-title h6 mb-1 fw-bold text-truncate" style="max-width: 100%;">
+                              <a href="/listings/<%= l.id %>" class="text-dark text-decoration-none">
+                                <%= l.title %>
+                              </a>
+                            </h5>
+                            <div class="small text-muted text-truncate">
+                              <% if (l.User) { %>
+                                <span class="fw-medium">
+                                  <%= l.User.name %>
+                                </span>
+                                <% if (l.User.location) { %> · <i class="fas fa-map-marker-alt opacity-50"></i>
+                                  <%= l.User.location %>
+                                    <% } %>
+                                      <% } %>
+                            </div>
+                          </div>
+                  </div>
+
+                  <!-- Skills badges -->
+                  <div class="d-flex flex-wrap gap-2 mb-3">
+                    <% if (l.Skill) { %>
+                      <span class="badge bg-success-subtle text-success border border-success border-opacity-10 py-2">
+                        <i class="fas fa-chalkboard-teacher me-1"></i>Teach: <%= l.Skill.name %>
+                      </span>
+                      <% } %>
+                        <% if (l.LearnSkill) { %>
+                          <span class="badge bg-info-subtle text-info border border-info border-opacity-10 py-2">
+                            <i class="fas fa-graduation-cap me-1"></i>Learn: <%= l.LearnSkill.name %>
+                          </span>
                           <% } %>
-              </div>
-              <div class="d-flex gap-2">
-                <a class="btn btn-sm btn-outline-primary" href="/listings/<%= l.id %>">View</a>
-                <% if (isAuthenticated && user && user.id===l.userId) { %>
-                  <a class="btn btn-sm btn-outline-secondary" href="/listings/<%= l.id %>/edit">Edit</a>
-                  <button class="btn btn-sm btn-outline-danger" data-del="<%= l.id %>">Delete</button>
-                  <% } %>
+                  </div>
+
+                  <!-- Description (using Bootstrap's text-truncate if possible, or just limit height) -->
+                  <% if (l.description) { %>
+                    <p class="text-muted small mb-0 opacity-75 overflow-hidden"
+                      style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                      <%= l.description %>
+                    </p>
+                    <% } %>
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer bg-light bg-opacity-50 border-0 p-3 mt-auto">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="small text-muted fw-light">
+                      <% if (l.createdAt) { %>
+                        <i class="far fa-clock me-1"></i>
+                        <%= getTimeAgo(l.createdAt) %>
+                          <% } %>
+                    </div>
+                    <div class="d-flex gap-2">
+                      <a class="btn btn-sm btn-primary px-3 rounded-pill shadow-sm" href="/listings/<%= l.id %>">
+                        <i class="fas fa-eye me-1"></i>View
+                      </a>
+                      <% if (isAuthenticated && user && user.id===l.userId) { %>
+                        <a class="btn btn-sm btn-outline-secondary rounded-circle"
+                          style="width: 32px; height: 32px; padding: 0; line-height: 32px; text-align: center;"
+                          href="/listings/<%= l.id %>/edit">
+                          <i class="fas fa-edit small"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger rounded-circle"
+                          style="width: 32px; height: 32px; padding: 0; line-height: 32px; text-align: center;"
+                          data-del="<%= l.id %>">
+                          <i class="fas fa-trash small"></i>
+                        </button>
+                        <% } %>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+            <% }) %>
         </div>
-        <% }) %>
-    </div>
 
-    <%# Pagination %>
-      <% if (typeof pagination !=='undefined' && pagination) { %>
-        <%- include('../partials/pagination', pagination) %>
-          <% } %>
-            <% } else { %>
-              <div class="alert alert-info">No listings.</div>
-              <% } %>
+        <%# Pagination %>
+          <% if (typeof pagination !=='undefined' && pagination) { %>
+            <div class="mt-5">
+              <%- include('../partials/pagination', pagination) %>
+            </div>
+            <% } %>
+              <% } else { %>
+                <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed">
+                  <div class="mb-4">
+                    <div
+                      class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
+                      style="width: 100px; height: 100px;">
+                      <i class="fas fa-clipboard-list fa-3x text-muted opacity-25"></i>
+                    </div>
+                  </div>
+                  <h5 class="text-dark fw-bold">No Listings Yet</h5>
+                  <p class="text-muted mb-4">Be the first to create a skill exchange listing!</p>
+                  <% if (isAuthenticated) { %>
+                    <a href="/listings/create" class="btn btn-primary px-4 rounded-pill shadow-sm">
+                      <i class="fas fa-plus me-1"></i>Create Listing
+                    </a>
+                    <% } %>
+                </div>
+                <% } %>
 
-                <script>
-                  document.addEventListener('click', async (e) => {
-                    const btn = e.target.closest('button[data-del]');
-                    if (!btn) return;
-                    const id = btn.getAttribute('data-del');
-                    if (!confirm('Delete this listing?')) return;
-                    try {
-                      const res = await fetch(`/listings/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'CSRF-Token': '<%= csrfToken %>' }
+                  <script>
+                    document.addEventListener('click', async (e) => {
+                      const btn = e.target.closest('button[data-del]');
+                      if (!btn) return;
+                      const id = btn.getAttribute('data-del');
+
+                      const result = await Swal.fire({
+                        title: 'Delete Listing?',
+                        text: 'This action cannot be undone and will remove your listing from the marketplace.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Yes, delete it',
+                        customClass: {
+                          confirmButton: 'rounded-pill px-4',
+                          cancelButton: 'rounded-pill px-4'
+                        }
                       });
-                      const data = await res.json();
-                      if (res.ok && data && data.success) {
-                        location.reload();
-                      } else {
-                        alert(data && data.error ? data.error : 'Delete failed.');
+
+                      if (!result.isConfirmed) return;
+
+                      try {
+                        const res = await fetch(`/listings/${id}`, {
+                          method: 'DELETE',
+                          headers: { 'CSRF-Token': '<%= csrfToken %>' }
+                        });
+                        const data = await res.json();
+                        if (res.ok && data && data.success) {
+                          Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'Your listing has been removed.',
+                            timer: 1500,
+                            showConfirmButton: false
+                          }).then(() => location.reload());
+                        } else {
+                          Swal.fire('Error', data && data.error ? data.error : 'Delete failed.', 'error');
+                        }
+                      } catch (err) {
+                        Swal.fire('Error', 'Something went wrong. Please try again.', 'error');
                       }
-                    } catch (err) {
-                      alert('Delete failed.');
-                    }
-                  });
-                </script>
+                    });
+                  </script>

@@ -120,6 +120,8 @@ LearningSession.hasMany(Rating, { foreignKey: 'sessionId', as: 'ratings' });
 Rating.belongsTo(LearningSession, { foreignKey: 'sessionId' });
 Rating.belongsTo(User, { foreignKey: 'raterId', as: 'rater' });
 Rating.belongsTo(User, { foreignKey: 'rateeId', as: 'ratee' });
+// User <-> Rating (for matching algorithm to calculate avg rating)
+User.hasMany(Rating, { foreignKey: 'rateeId', as: 'receivedRatings' });
 
 // Report
 User.hasMany(Report, { foreignKey: 'reporterId', as: 'reportedIssues' });
