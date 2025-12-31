@@ -2,6 +2,7 @@ const express = require('express');
 const { TipToken, User, Notification, Transaction, Invoice, sequelize } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const stripe = require('../config/stripe');
+const { createNotification } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -112,11 +113,10 @@ router.post('/send', validate(schemas.tip), async (req, res) => {
     });
 
     // Notify recipient
-    await Notification.create({
-      user_id: toId,
+    await createNotification({
+      userId: toId,
       title: 'Tip Received!',
-      message: `You received a tip of ${amt} tokens from ${req.user.name || 'a user'}! ${note ? `Note: ${note}` : ''}`,
-      status: 'unread'
+      message: `You received a tip of ${amt} tokens from ${req.user.name || 'a user'}! ${note ? `Note: ${note}` : ''}`
     });
 
     req.flash('success', 'Tip sent successfully!');
@@ -283,11 +283,10 @@ router.post('/quick-pay', async (req, res) => {
       });
 
       // Notify recipient
-      await Notification.create({
-        user_id: toId,
+      await createNotification({
+        userId: toId,
         title: 'Tip Received!',
-        message: `You received a tip of RM${amt} from ${req.user.name || 'a user'}! ${note ? `Note: ${note}` : ''}`,
-        status: 'unread'
+        message: `You received a tip of RM${amt} from ${req.user.name || 'a user'}! ${note ? `Note: ${note}` : ''}`
       });
 
       res.json({ success: true, message: 'Tip sent successfully!' });

@@ -2,65 +2,194 @@
   <h1 class="h3 mb-0 text-gray-800">Manage Users</h1>
 </div>
 
+<!-- Search and Filter -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <form method="GET" action="/admin/users" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small text-muted">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Search by name or email..."
+          value="<%= search %>">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Status</label>
+        <select name="status" class="form-select">
+          <option value="">All Users</option>
+          <option value="active" <%=status==='active' ? 'selected' : '' %>>Active</option>
+          <option value="suspended" <%=status==='suspended' ? 'selected' : '' %>>Suspended</option>
+          <option value="banned" <%=status==='banned' ? 'selected' : '' %>>Banned</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search me-1"></i> Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="/admin/users" class="btn btn-outline-secondary w-100">
+          <i class="fas fa-times me-1"></i> Clear
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="card shadow-sm border-0">
   <div class="card-body p-0">
     <% if (!users || users.length===0) { %>
       <div class="p-4 text-center text-muted">
         <i class="fas fa-users fa-3x mb-3 text-secondary"></i>
-        <p class="mb-0">No users found in the system.</p>
+        <p class="mb-0">No users found.</p>
       </div>
       <% } else { %>
+        <!-- Action Legend -->
+        <div class="px-4 py-2 bg-light border-bottom d-flex align-items-center flex-wrap gap-3 small text-muted">
+          <span><strong>Actions:</strong></span>
+          <span class="d-flex align-items-center"><i class="bi bi-eye text-primary me-1"></i> View Details</span>
+          <span class="d-flex align-items-center"><i class="bi bi-exclamation-triangle text-warning me-1"></i>
+            Warning</span>
+          <span class="d-flex align-items-center"><i class="bi bi-clock-history text-info me-1"></i> Suspend (3/7/30
+            Days)</span>
+          <span class="d-flex align-items-center"><i class="bi bi-arrow-counterclockwise text-success me-1"></i>
+            Unsuspend</span>
+          <span class="d-flex align-items-center"><i class="bi bi-slash-circle text-danger me-1"></i> Ban</span>
+          <span class="d-flex align-items-center"><i class="bi bi-check-circle text-success me-1"></i> Unban</span>
+        </div>
+
         <div class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th class="ps-4">Name</th>
-                <th>Email</th>
-                <th>Role</th>
+                <th class="ps-4">User</th>
                 <th>Status</th>
-                <th>Location</th>
+                <th class="text-center">Sessions</th>
+                <th class="text-center">Listings</th>
+                <th class="text-center">Warnings</th>
                 <th>Created</th>
-                <th class="text-end pe-4">Actions</th>
+                <th class="text-center" style="min-width: 320px;">Actions</th>
               </tr>
             </thead>
             <tbody>
               <% users.forEach(u=> { %>
                 <tr>
                   <td class="ps-4">
-                    <div class="fw-bold">
-                      <%= u.name %>
+                    <div class="d-flex align-items-center">
+                      <div class="avatar-sm me-3">
+                        <% if (u.profileImage) { %>
+                          <img src="<%= u.profileImage %>" alt="" class="rounded-circle"
+                            style="width: 40px; height: 40px; object-fit: cover;">
+                          <% } else { %>
+                            <div
+                              class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
+                              style="width: 40px; height: 40px;">
+                              <%= u.name.charAt(0).toUpperCase() %>
+                            </div>
+                            <% } %>
+                      </div>
+                      <div>
+                        <div class="fw-bold">
+                          <%= u.name %>
+                        </div>
+                        <small class="text-muted">
+                          <%= u.email %>
+                        </small>
+                      </div>
                     </div>
                   </td>
                   <td>
-                    <%= u.email %>
+                    <% if (u.isBanned) { %>
+                      <span class="badge rounded-pill bg-danger">Banned</span>
+                      <% } else if (u.isSuspended) { %>
+                        <span class="badge rounded-pill bg-warning text-dark">Suspended</span>
+                        <% } else { %>
+                          <span class="badge rounded-pill bg-success">Active</span>
+                          <% } %>
                   </td>
-                  <td>
-                    <span class="badge rounded-pill <%= u.role === 'admin' ? 'bg-dark' : 'bg-primary' %>">
-                      <%= u.role.toUpperCase() %>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark">
+                      <%= u.sessionCount || 0 %>
                     </span>
                   </td>
-                  <td>
-                    <% if (u.isPublic) { %>
-                      <span class="badge rounded-pill bg-success">Active</span>
+                  <td class="text-center">
+                    <span class="badge bg-light text-dark">
+                      <%= u.listingCount || 0 %>
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <% if (u.warningCount> 0) { %>
+                      <span class="badge bg-warning text-dark">
+                        <%= u.warningCount %>
+                      </span>
                       <% } else { %>
-                        <span class="badge rounded-pill bg-danger">Suspended</span>
+                        <span class="badge bg-light text-dark">0</span>
                         <% } %>
                   </td>
                   <td>
-                    <%= u.location || '-' %>
+                    <small>
+                      <%= new Date(u.createdAt).toLocaleDateString() %>
+                    </small>
                   </td>
-                  <td>
-                    <%= new Date(u.createdAt).toLocaleDateString() %>
-                  </td>
-                  <td class="text-end pe-4">
-                    <form method="POST" action="/admin/users/<%= u.id %>/toggle-suspend" class="d-inline-block">
-                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                      <button type="submit"
-                        class="btn btn-sm w-100 <%= u.isPublic ? 'btn-outline-warning' : 'btn-outline-success' %>"
-                        <%=u.role==='admin' ? 'disabled' : '' %>>
-                        <%= u.isPublic ? 'Suspend' : 'Activate' %>
+                  <td class="text-center">
+                    <div class="btn-group btn-group-sm" role="group">
+                      <!-- View Details -->
+                      <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                        title="View Details" onclick="viewUserDetails(<%= u.id %>)">
+                        <i class="bi bi-eye"></i>
                       </button>
-                    </form>
+
+                      <!-- Warning -->
+                      <button type="button" class="btn btn-outline-warning user-action" data-user-id="<%= u.id %>"
+                        data-user-name="<%= u.name %>" data-action="warn" data-csrf="<%= csrfToken %>"
+                        data-bs-toggle="tooltip" title="Send Warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                      </button>
+
+                      <% if (!u.isBanned) { %>
+                        <% if (!u.isSuspended) { %>
+                          <!-- Suspend Options -->
+                          <button type="button" class="btn btn-outline-info user-action" data-user-id="<%= u.id %>"
+                            data-user-name="<%= u.name %>" data-action="suspend_3" data-csrf="<%= csrfToken %>"
+                            data-bs-toggle="tooltip" title="Suspend 3 Days">
+                            3D
+                          </button>
+
+                          <button type="button" class="btn btn-outline-secondary user-action"
+                            style="color: #fd7e14; border-color: #fd7e14;" data-user-id="<%= u.id %>"
+                            data-user-name="<%= u.name %>" data-action="suspend_7" data-csrf="<%= csrfToken %>"
+                            data-bs-toggle="tooltip" title="Suspend 7 Days">
+                            7D
+                          </button>
+
+                          <button type="button" class="btn btn-outline-dark user-action" data-user-id="<%= u.id %>"
+                            data-user-name="<%= u.name %>" data-action="suspend_30" data-csrf="<%= csrfToken %>"
+                            data-bs-toggle="tooltip" title="Suspend 30 Days">
+                            30D
+                          </button>
+                          <% } else { %>
+                            <!-- Unsuspend -->
+                            <button type="button" class="btn btn-outline-success user-action" data-user-id="<%= u.id %>"
+                              data-user-name="<%= u.name %>" data-action="unsuspend" data-csrf="<%= csrfToken %>"
+                              data-bs-toggle="tooltip" title="Unsuspend User">
+                              <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                            <% } %>
+                              <% } %>
+
+                                <!-- Ban/Unban -->
+                                <% if (u.isBanned) { %>
+                                  <button type="button" class="btn btn-outline-success user-action"
+                                    data-user-id="<%= u.id %>" data-user-name="<%= u.name %>" data-action="unban"
+                                    data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip" title="Unban User">
+                                    <i class="bi bi-check-circle"></i>
+                                  </button>
+                                  <% } else { %>
+                                    <button type="button" class="btn btn-outline-danger user-action"
+                                      data-user-id="<%= u.id %>" data-user-name="<%= u.name %>" data-action="ban"
+                                      data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip" title="Ban Permanently">
+                                      <i class="bi bi-slash-circle"></i>
+                                    </button>
+                                    <% } %>
+                    </div>
                   </td>
                 </tr>
                 <% }) %>
@@ -73,3 +202,238 @@
         <% } %>
   </div>
 </div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">User Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="userDetailsContent">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Initialize Tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Action configurations
+    const actionConfig = {
+      warn: {
+        title: 'Send Warning?',
+        text: 'This will send an official warning to the user and increment their warning count.',
+        icon: 'warning',
+        confirmButtonColor: '#ffc107',
+        confirmButtonText: 'Yes, send warning',
+        showInput: true,
+        inputPlaceholder: 'Enter warning message...'
+      },
+      suspend_3: {
+        title: 'Suspend for 3 Days?',
+        text: 'This will suspend the user account for 3 days.',
+        icon: 'warning',
+        confirmButtonColor: '#0dcaf0',
+        confirmButtonText: 'Yes, suspend for 3 days',
+        days: 3
+      },
+      suspend_7: {
+        title: 'Suspend for 7 Days?',
+        text: 'This will suspend the user account for 7 days.',
+        icon: 'warning',
+        confirmButtonColor: '#fd7e14',
+        confirmButtonText: 'Yes, suspend for 7 days',
+        days: 7
+      },
+      suspend_30: {
+        title: 'Suspend for 30 Days?',
+        text: 'This will suspend the user account for 30 days.',
+        icon: 'warning',
+        confirmButtonColor: '#343a40',
+        confirmButtonText: 'Yes, suspend for 30 days',
+        days: 30
+      },
+      unsuspend: {
+        title: 'Unsuspend User?',
+        text: 'This will lift the suspension and restore the user\'s access.',
+        icon: 'question',
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Yes, unsuspend'
+      },
+      ban: {
+        title: 'PERMANENTLY Ban User?',
+        text: 'This will PERMANENTLY ban the user from the platform. This action is severe!',
+        icon: 'error',
+        confirmButtonColor: '#dc3545',
+        confirmButtonText: 'Yes, ban permanently'
+      },
+      unban: {
+        title: 'Unban User?',
+        text: 'This will remove the permanent ban and restore the user\'s access.',
+        icon: 'question',
+        confirmButtonColor: '#198754',
+        confirmButtonText: 'Yes, unban user'
+      }
+    };
+
+    // Attach event listeners to action buttons
+    document.querySelectorAll('.user-action').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const userId = this.dataset.userId;
+        const userName = this.dataset.userName;
+        const action = this.dataset.action;
+        const csrfToken = this.dataset.csrf;
+        const config = actionConfig[action];
+
+        const swalOptions = {
+          title: config.title,
+          html: `<p>${config.text}</p><p class="text-muted small">User: <strong>${userName}</strong></p>`,
+          icon: config.icon,
+          showCancelButton: true,
+          confirmButtonColor: config.confirmButtonColor,
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: config.confirmButtonText,
+          cancelButtonText: 'Cancel'
+        };
+
+        if (config.showInput) {
+          swalOptions.input = 'textarea';
+          swalOptions.inputPlaceholder = config.inputPlaceholder;
+          swalOptions.inputValue = 'You have received an official warning for violating community guidelines. Further violations may result in account suspension.';
+        }
+
+        Swal.fire(swalOptions).then((result) => {
+          if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.style.display = 'none';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+
+            if (action === 'warn') {
+              form.action = `/admin/users/${userId}/warn`;
+              const msgInput = document.createElement('input');
+              msgInput.type = 'hidden';
+              msgInput.name = 'message';
+              msgInput.value = result.value || '';
+              form.appendChild(msgInput);
+            } else if (action.startsWith('suspend_')) {
+              form.action = `/admin/users/${userId}/suspend`;
+              const daysInput = document.createElement('input');
+              daysInput.type = 'hidden';
+              daysInput.name = 'days';
+              daysInput.value = config.days;
+              form.appendChild(daysInput);
+            } else if (action === 'unsuspend') {
+              form.action = `/admin/users/${userId}/unsuspend`;
+            } else if (action === 'ban' || action === 'unban') {
+              form.action = `/admin/users/${userId}/toggle-ban`;
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+          }
+        });
+      });
+    });
+  });
+
+  async function viewUserDetails(userId) {
+    const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+    const content = document.getElementById('userDetailsContent');
+
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+    modal.show();
+
+    try {
+      const response = await fetch(`/admin/users/${userId}/details`);
+      const user = await response.json();
+
+      if (user.error) {
+        content.innerHTML = '<div class="alert alert-danger">Error loading user details.</div>';
+        return;
+      }
+
+      const statusBadge = user.isBanned
+        ? '<span class="badge bg-danger">Banned</span>'
+        : user.isSuspended
+          ? '<span class="badge bg-warning text-dark">Suspended</span>'
+          : '<span class="badge bg-success">Active</span>';
+
+      content.innerHTML = `
+      <div class="row">
+        <div class="col-md-4 text-center mb-4">
+          ${user.profileImage
+          ? `<img src="${user.profileImage}" alt="" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">`
+          : `<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 120px; height: 120px; font-size: 3rem;">${user.name.charAt(0).toUpperCase()}</div>`
+        }
+          <h5 class="mb-1">${user.name}</h5>
+          <p class="text-muted mb-2">${user.email}</p>
+          ${statusBadge}
+        </div>
+        <div class="col-md-8">
+          <h6 class="text-muted mb-3">User Information</h6>
+          <table class="table table-sm">
+            <tr><th width="35%">Location</th><td>${user.location || '-'}</td></tr>
+            <tr><th>WhatsApp</th><td>${user.whatsappNumber || '-'}</td></tr>
+            <tr><th>Profile Visibility</th><td>${user.isPublic ? 'Public' : 'Private'}</td></tr>
+            <tr><th>Email Verified</th><td>${user.isVerified ? '<span class="text-success">Yes</span>' : '<span class="text-danger">No</span>'}</td></tr>
+            <tr><th>Warning Count</th><td><span class="badge ${user.warningCount > 0 ? 'bg-warning text-dark' : 'bg-light text-dark'}">${user.warningCount || 0}</span></td></tr>
+            <tr><th>Joined</th><td>${new Date(user.createdAt).toLocaleDateString()}</td></tr>
+          </table>
+          
+          <h6 class="text-muted mb-3 mt-4">Statistics</h6>
+          <div class="row text-center">
+            <div class="col-4">
+              <div class="border rounded p-3">
+                <h4 class="mb-0">${user.stats.sessionCount}</h4>
+                <small class="text-muted">Sessions</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="border rounded p-3">
+                <h4 class="mb-0">${user.stats.completedSessions}</h4>
+                <small class="text-muted">Completed</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="border rounded p-3">
+                <h4 class="mb-0">${user.stats.listingCount}</h4>
+                <small class="text-muted">Listings</small>
+              </div>
+            </div>
+          </div>
+          
+          ${user.bio ? `<h6 class="text-muted mb-2 mt-4">Bio</h6><p class="mb-0">${user.bio}</p>` : ''}
+          
+          ${user.isSuspended ? `
+            <div class="alert alert-warning mt-4 mb-0">
+              <strong>Suspended until:</strong> ${new Date(user.suspensionEndDate).toLocaleString()}<br>
+              <strong>Reason:</strong> ${user.suspensionReason || 'No reason provided'}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    } catch (error) {
+      content.innerHTML = '<div class="alert alert-danger">Error loading user details.</div>';
+    }
+  }
+</script>

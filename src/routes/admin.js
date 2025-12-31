@@ -3,6 +3,9 @@ const { User, Listing, Report, Category, Skill, CalculatorWeight, Notification, 
 const { Op, fn, col, literal } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { checkGeminiHealth } = require('../../utils/geminiModeration');
+const { sendNotificationEmail } = require('../../utils/mailer');
+const { createNotification } = require('../services/notificationService');
+
 
 const router = express.Router();
 
@@ -192,22 +195,69 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Users management
+// Users management - Enhanced with search, filter, and stats
 router.get('/users', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, status } = req.query;
+
+    // Build where clause for search and filter
+    const whereClause = { role: { [Op.ne]: 'admin' } }; // Exclude admins from list by default
+
+    if (search) {
+      whereClause[Op.or] = [
+        { name: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } }
+      ];
+    }
+
+    if (status === 'active') {
+      whereClause.isBanned = false;
+      whereClause.isSuspended = false;
+    } else if (status === 'suspended') {
+      whereClause.isSuspended = true;
+      whereClause.isBanned = false;
+    } else if (status === 'banned') {
+      whereClause.isBanned = true;
+    }
 
     const { count, rows: users } = await User.findAndCountAll({
+      where: whereClause,
       order: [['createdAt', 'DESC']],
       limit,
       offset
     });
 
+    // Fetch stats for each user
+    const usersWithStats = await Promise.all(users.map(async (user) => {
+      const [sessionCount, listingCount] = await Promise.all([
+        LearningSession.count({
+          where: {
+            [Op.or]: [{ teacherId: user.id }, { studentId: user.id }]
+          }
+        }),
+        Listing.count({ where: { userId: user.id } })
+      ]);
+
+      return {
+        ...user.toJSON(),
+        sessionCount,
+        listingCount
+      };
+    }));
+
+    // Build base URL with current filters for pagination
+    let baseUrl = '/admin/users?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (status) baseUrl += `status=${status}&`;
+
     res.render('admin/users', {
       layout: 'layouts/admin',
       title: 'Manage Users',
-      users,
-      ...buildPaginationData(count, page, limit, '/admin/users')
+      users: usersWithStats,
+      search: search || '',
+      status: status || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
     });
   } catch (error) {
     console.error('Users management error:', error);
@@ -216,10 +266,44 @@ router.get('/users', async (req, res) => {
   }
 });
 
-// Suspend/unsuspend user
-router.post('/users/:id/toggle-suspend', async (req, res) => {
+
+// Ban/unban user (permanent - use for manage users page)
+router.post('/users/:id/toggle-ban', async (req, res) => {
   try {
     const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      req.session.error = 'User not found.';
+      return res.redirect('/admin/users');
+    }
+
+    if (user.role === 'admin') {
+      req.session.error = 'Cannot ban admin users.';
+      return res.redirect('/admin/users');
+    }
+
+    // Toggle ban status (permanent)
+    const newBannedStatus = !user.isBanned;
+
+    await user.update({
+      isBanned: newBannedStatus
+    });
+
+    req.session.success = `User ${newBannedStatus ? 'banned' : 'unbanned'} successfully.`;
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Toggle ban error:', error);
+    req.session.error = 'Error updating user status.';
+    res.redirect('/admin/users');
+  }
+});
+
+// Suspend user with custom duration
+router.post('/users/:id/suspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { days } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -232,18 +316,151 @@ router.post('/users/:id/toggle-suspend', async (req, res) => {
       return res.redirect('/admin/users');
     }
 
-    await user.update({ isPublic: !user.isPublic });
+    const suspensionDays = parseInt(days) || 7;
+    const suspensionEndDate = new Date();
+    suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
 
-    req.session.success = `User ${user.isPublic ? 'unsuspended' : 'suspended'} successfully.`;
+    await user.update({
+      isSuspended: true,
+      suspensionEndDate: suspensionEndDate,
+      suspensionReason: `Suspended by administrator for ${suspensionDays} days`
+    });
+
+    // Send notification and email to user
+    const suspendTitle = 'Account Suspended';
+    const suspendMessage = `Your account has been suspended for ${suspensionDays} days. Suspension ends on ${suspensionEndDate.toLocaleDateString()}.`;
+    try {
+      await Notification.create({
+        user_id: user.id,
+        title: suspendTitle,
+        message: suspendMessage,
+        status: 'unread'
+      });
+      // Send email notification
+      await sendNotificationEmail({ to: user.email, name: user.name, title: suspendTitle, message: suspendMessage });
+    } catch (e) { console.error('Notification/Email error:', e); }
+
+    req.session.success = `User suspended for ${suspensionDays} days.`;
     res.redirect('/admin/users');
   } catch (error) {
-    console.error('Toggle suspend error:', error);
-    req.session.error = 'Error updating user status.';
+    console.error('Suspend user error:', error);
+    req.session.error = 'Error suspending user.';
     res.redirect('/admin/users');
   }
 });
 
-// Listings management
+// Unsuspend user
+router.post('/users/:id/unsuspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      req.session.error = 'User not found.';
+      return res.redirect('/admin/users');
+    }
+
+    await user.update({
+      isSuspended: false,
+      suspensionEndDate: null,
+      suspensionReason: null
+    });
+
+    // Send notification and email to user
+    const unsuspendTitle = 'Suspension Lifted';
+    const unsuspendMessage = 'Your account suspension has been lifted. You can now use the platform normally.';
+    try {
+      await Notification.create({
+        user_id: user.id,
+        title: unsuspendTitle,
+        message: unsuspendMessage,
+        status: 'unread'
+      });
+      // Send email notification
+      await sendNotificationEmail({ to: user.email, name: user.name, title: unsuspendTitle, message: unsuspendMessage });
+    } catch (e) { console.error('Notification/Email error:', e); }
+
+    req.session.success = 'User unsuspended successfully.';
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Unsuspend user error:', error);
+    req.session.error = 'Error unsuspending user.';
+    res.redirect('/admin/users');
+  }
+});
+
+// Send warning to user
+router.post('/users/:id/warn', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      req.session.error = 'User not found.';
+      return res.redirect('/admin/users');
+    }
+
+    // Increment warning count
+    await user.update({
+      warningCount: (user.warningCount || 0) + 1
+    });
+
+    // Send warning notification and email
+    const warnTitle = 'Official Warning';
+    const warnMessage = message || 'You have received a warning from the administrators. Please review and follow our community guidelines.';
+    await Notification.create({
+      user_id: user.id,
+      title: warnTitle,
+      message: warnMessage,
+      status: 'unread'
+    });
+    // Send email notification
+    await sendNotificationEmail({ to: user.email, name: user.name, title: warnTitle, message: warnMessage });
+
+    req.session.success = `Warning sent to ${user.name}. Total warnings: ${user.warningCount + 1}.`;
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Warn user error:', error);
+    req.session.error = 'Error sending warning.';
+    res.redirect('/admin/users');
+  }
+});
+
+// Get user details (for modal)
+router.get('/users/:id/details', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id, {
+      attributes: { exclude: ['passwordHash', 'resetToken', 'resetTokenExpiry', 'activationToken'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const [sessionCount, listingCount, completedSessions] = await Promise.all([
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }] } }),
+      Listing.count({ where: { userId: id } }),
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'completed' } })
+    ]);
+
+    res.json({
+      ...user.toJSON(),
+      stats: {
+        sessionCount,
+        listingCount,
+        completedSessions
+      }
+    });
+  } catch (error) {
+    console.error('User details error:', error);
+    res.status(500).json({ error: 'Error fetching user details' });
+  }
+});
+
+
 router.get('/listings', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);

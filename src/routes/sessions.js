@@ -2,8 +2,10 @@ const express = require('express');
 const { LearningSession, User, Skill, Rating, UserProgress, Notification, Availability } = require('../models');
 const { Op } = require('sequelize');
 const { validate, schemas } = require('../middlewares/validate');
+const { createNotification } = require('../services/notificationService');
 
 const router = express.Router();
+
 
 // My sessions page
 router.get('/', async (req, res) => {
@@ -169,9 +171,9 @@ router.post('/request', validate(schemas.session), async (req, res) => {
         ? new Date(startAt).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' })
         : 'a proposed time';
 
-      await Notification.create({
-        user_id: teacher.id,
-        title: 'New teaching request',
+      await createNotification({
+        userId: teacher.id,
+        title: 'New Teaching Request',
         message: `${requesterName} requested a session for ${skillName} on ${timeText}.`
       });
     } catch (notificationError) {
@@ -362,11 +364,10 @@ router.post('/:id/confirm', async (req, res) => {
 
     // Notify student
     try {
-      await Notification.create({
-        user_id: session.studentId,
+      await createNotification({
+        userId: session.studentId,
         title: 'Session Confirmed',
-        message: `Your session with ${req.user.name} has been confirmed. Please wait for the start code at the scheduled time.`,
-        status: 'unread'
+        message: `Your session with ${req.user.name} has been confirmed. Please wait for the start code at the scheduled time.`
       });
     } catch (e) { console.error('Notify confirm error:', e); }
 
@@ -479,11 +480,10 @@ router.post('/:id/complete', async (req, res) => {
     // Notify the other party
     try {
       const otherId = req.user.id === session.teacherId ? session.studentId : session.teacherId;
-      await Notification.create({
-        user_id: otherId,
+      await createNotification({
+        userId: otherId,
         title: 'Session Completed',
-        message: `Your session with ${req.user.name} has been marked as completed. Please take a moment to rate it!`,
-        status: 'unread'
+        message: `Your session with ${req.user.name} has been marked as completed. Please take a moment to rate it!`
       });
     } catch (e) { console.error('Notify complete error:', e); }
 
@@ -611,11 +611,10 @@ router.post('/:id/cancel', async (req, res) => {
     // Notify the other party
     try {
       const otherId = req.user.id === session.teacherId ? session.studentId : session.teacherId;
-      await Notification.create({
-        user_id: otherId,
+      await createNotification({
+        userId: otherId,
         title: 'Session Cancelled',
-        message: `Your session has been cancelled by ${req.user.name}.`,
-        status: 'unread'
+        message: `Your session has been cancelled by ${req.user.name}.`
       });
     } catch (e) { console.error('Notify cancel error:', e); }
 
