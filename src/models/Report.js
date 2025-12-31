@@ -36,6 +36,12 @@ const Report = sequelize.define('Report', {
     allowNull: true,
     defaultValue: []
   },
+  // Chat history evidence (array of message objects)
+  chatEvidence: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    field: 'chat_evidence'
+  },
   // Full AI analysis response
   aiAnalysis: {
     type: DataTypes.JSON,

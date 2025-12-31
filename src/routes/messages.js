@@ -5,9 +5,50 @@ const moderationService = require('../services/moderationService');
 
 const router = express.Router();
 
-// List message threads
+// List message threads or start direct conversation
 router.get('/', async (req, res) => {
   try {
+    const { to } = req.query;
+
+    // If ?to=userId, find or create a direct message thread
+    if (to) {
+      const targetUserId = parseInt(to);
+
+      if (targetUserId === req.user.id) {
+        req.session.error = 'You cannot message yourself.';
+        return res.redirect('/messages');
+      }
+
+      const targetUser = await User.findByPk(targetUserId);
+      if (!targetUser) {
+        req.session.error = 'User not found.';
+        return res.redirect('/messages');
+      }
+
+      // Find existing direct thread (listingId is null for direct messages)
+      let thread = await MessageThread.findOne({
+        where: {
+          listingId: null,
+          [require('sequelize').Op.or]: [
+            { creatorId: req.user.id, participantId: targetUserId },
+            { creatorId: targetUserId, participantId: req.user.id }
+          ]
+        }
+      });
+
+      // Create new direct thread if doesn't exist
+      if (!thread) {
+        thread = await MessageThread.create({
+          listingId: null,
+          creatorId: req.user.id,
+          participantId: targetUserId
+        });
+      }
+
+      return res.redirect(`/messages/thread/${thread.id}`);
+    }
+
+    // Otherwise, list all threads
     const threads = await MessageThread.findAll({
       where: {
         [require('sequelize').Op.or]: [
@@ -19,16 +60,23 @@ router.get('/', async (req, res) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name', 'profileImage']
         },
         {
           model: User,
           as: 'participant',
-          attributes: ['id', 'name']
+          attributes: ['id', 'name', 'profileImage']
         },
         {
           model: Listing,
-          attributes: ['id', 'title']
+          attributes: ['id', 'title'],
+          required: false
+        },
+        {
+          model: Message,
+          as: 'messages',
+          limit: 1,
+          order: [['createdAt', 'DESC']]
         }
       ],
       order: [['updatedAt', 'DESC']]
@@ -64,7 +112,8 @@ router.get('/thread/:id', async (req, res) => {
         },
         {
           model: Listing,
-          attributes: ['id', 'title']
+          attributes: ['id', 'title'],
+          required: false
         },
         {
           model: Message,
@@ -90,9 +139,14 @@ router.get('/thread/:id', async (req, res) => {
       return res.redirect('/messages');
     }
 
+    // Determine the other participant for title
+    const otherUser = thread.creatorId === req.user.id ? thread.participant : thread.creator;
+    const threadTitle = thread.Listing ? thread.Listing.title : `Chat with ${otherUser.name}`;
+
     res.render('messages/thread', {
-      title: `Messages - ${thread.Listing.title} - SkillSwap MY`,
-      thread
+      title: `Messages - ${threadTitle} - SkillSwap MY`,
+      thread,
+      otherUser
     });
   } catch (error) {
     console.error('Thread error:', error);
@@ -107,7 +161,9 @@ router.post('/thread/:id', validate(schemas.message), async (req, res) => {
     const { id } = req.params;
     const { content } = req.body;
 
-    const thread = await MessageThread.findByPk(id);
+    const thread = await MessageThread.findByPk(id, {
+      include: [{ model: Listing, attributes: ['id', 'title'], required: false }]
+    });
 
     if (!thread) {
       req.session.error = 'Thread not found.';
@@ -127,7 +183,7 @@ router.post('/thread/:id', validate(schemas.message), async (req, res) => {
       return res.redirect(`/messages/thread/${id}`);
     }
 
-    await Message.create({
+    const message = await Message.create({
       threadId: id,
       senderId: req.user.id,
       content: moderation.content
@@ -136,15 +192,90 @@ router.post('/thread/:id', validate(schemas.message), async (req, res) => {
     // Update thread timestamp
     await thread.update({ updatedAt: new Date() });
 
+    // Emit real-time socket event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`thread_${id}`).emit('new_message', {
+        id: message.id,
+        content: moderation.content,
+        senderId: req.user.id,
+        senderName: req.user.name,
+        createdAt: message.createdAt
+      });
+    }
+
     // Notify the other user about the new message
     const recipientId = thread.creatorId === req.user.id ? thread.participantId : thread.creatorId;
-    await notifyUserForMessageRequest(recipientId, `You have a new message in the thread about ${thread.Listing.title}.`);
+    const threadTitle = thread.Listing ? thread.Listing.title : 'Direct Message';
+    await notifyUserForMessageRequest(recipientId, `You have a new message: ${threadTitle}`);
 
     res.redirect(`/messages/thread/${id}`);
   } catch (error) {
     console.error('Send message error:', error);
     req.session.error = 'Error sending message.';
     res.redirect('/messages');
+  }
+});
+
+// Send message via AJAX (no page reload)
+router.post('/thread/:id/send', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content || typeof content !== 'string' || content.trim().length === 0) {
+      return res.status(400).json({ error: 'Message content is required.' });
+    }
+
+    const thread = await MessageThread.findByPk(id, {
+      include: [{ model: Listing, attributes: ['id', 'title'], required: false }]
+    });
+
+    if (!thread) {
+      return res.status(404).json({ error: 'Thread not found.' });
+    }
+
+    // Check if user is part of this thread
+    if (thread.creatorId !== req.user.id && thread.participantId !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    // Moderate content
+    const moderation = moderationService.validateMessageContent(content);
+    if (!moderation.isValid) {
+      return res.status(400).json({ error: moderation.error });
+    }
+
+    const message = await Message.create({
+      threadId: id,
+      senderId: req.user.id,
+      content: moderation.content
+    });
+
+    // Update thread timestamp
+    await thread.update({ updatedAt: new Date() });
+
+    // Emit real-time socket event
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`thread_${id}`).emit('new_message', {
+        id: message.id,
+        content: moderation.content,
+        senderId: req.user.id,
+        senderName: req.user.name,
+        createdAt: message.createdAt
+      });
+    }
+
+    // Notify the other user
+    const recipientId = thread.creatorId === req.user.id ? thread.participantId : thread.creatorId;
+    const threadTitle = thread.Listing ? thread.Listing.title : 'Direct Message';
+    await notifyUserForMessageRequest(recipientId, `You have a new message: ${threadTitle}`);
+
+    res.json({ success: true, messageId: message.id });
+  } catch (error) {
+    console.error('Send message AJAX error:', error);
+    res.status(500).json({ error: 'Error sending message.' });
   }
 });
 

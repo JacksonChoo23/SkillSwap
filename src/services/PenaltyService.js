@@ -33,9 +33,10 @@ const PENALTY_CONFIG = {
  * @param {string} severity - Severity level (low, medium, high, critical)
  * @param {string} reason - Reason for the penalty
  * @param {number} reportId - Associated report ID
+ * @param {Server} io - Socket.io instance for real-time alerts
  * @returns {Object} Result of the penalty application
  */
-async function applyPenalty(userId, severity, reason, reportId = null) {
+async function applyPenalty(userId, severity, reason, reportId = null, io = null) {
     try {
         const user = await User.findByPk(userId);
         if (!user) {
@@ -55,6 +56,17 @@ async function applyPenalty(userId, severity, reason, reportId = null) {
             severity
         };
 
+        const emitForceLogout = (type, message) => {
+            if (io) {
+                io.to(`user_${userId}`).emit('force_logout', {
+                    type: type,
+                    title: 'Account Action',
+                    message: message,
+                    reason: reason
+                });
+            }
+        };
+
         switch (config.action) {
             case 'warning':
                 // Increment warning count
@@ -65,7 +77,7 @@ async function applyPenalty(userId, severity, reason, reportId = null) {
 
                 // Auto-escalate if too many warnings (3 warnings = suspension)
                 if (user.warningCount + 1 >= 3) {
-                    return applyPenalty(userId, 'medium', 'Automatic escalation due to multiple warnings', reportId);
+                    return applyPenalty(userId, 'medium', 'Automatic escalation due to multiple warnings', reportId, io);
                 }
                 break;
 
@@ -80,6 +92,8 @@ async function applyPenalty(userId, severity, reason, reportId = null) {
                 });
                 penaltyResult.message = `Suspended until ${suspensionEndDate.toLocaleDateString()}`;
                 penaltyResult.suspensionEndDate = suspensionEndDate;
+
+                emitForceLogout('suspended', `Your account has been suspended until ${suspensionEndDate.toLocaleDateString()}.`);
                 break;
 
             case 'ban':
@@ -89,6 +103,8 @@ async function applyPenalty(userId, severity, reason, reportId = null) {
                     suspensionReason: reason
                 });
                 penaltyResult.message = 'Account permanently banned';
+
+                emitForceLogout('banned', 'Your account has been permanently banned.');
                 break;
 
             default:

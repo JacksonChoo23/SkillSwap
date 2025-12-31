@@ -50,12 +50,14 @@
                     <div class="d-flex justify-content-end gap-2">
                       <form method="POST" action="/admin/listings/<%= l.id %>/activate">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="returnTo" value="<%= currentUrl || '' %>">
                         <button class="btn btn-sm btn-outline-success" <%=l.status==='active' ? 'disabled' : '' %>>
                           Activate
                         </button>
                       </form>
                       <form method="POST" action="/admin/listings/<%= l.id %>/close">
                         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                        <input type="hidden" name="returnTo" value="<%= currentUrl || '' %>">
                         <button class="btn btn-sm btn-outline-danger" <%=l.status==='closed' ? 'disabled' : '' %>>
                           Close
                         </button>

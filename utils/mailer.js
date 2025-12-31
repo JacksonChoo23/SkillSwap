@@ -176,7 +176,9 @@ async function sendNotificationEmail({ to, name, title, message }) {
           <p style="margin: 0; color: #666; line-height: 1.6;">${message}</p>
         </div>
         <p style="color: #666; font-size: 14px;">
-          You can view all your notifications by logging into your account.
+          ${title && title.toLowerCase().includes('suspended')
+      ? 'If you have questions about this suspension, please reply to this email to contact the administrator.'
+      : 'You can view all your notifications by logging into your account.'}
         </p>
         <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
         <p style="color: #999; font-size: 12px; margin: 0;">

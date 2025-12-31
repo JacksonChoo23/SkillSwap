@@ -32,6 +32,16 @@ passport.use(new LocalStrategy({
       return done(null, false, { message: 'Invalid email or password.' });
     }
 
+    // Auto-unsuspend cleanup if period has expired
+    if (user.isSuspended && user.suspensionEndDate && new Date() >= new Date(user.suspensionEndDate)) {
+      await user.update({
+        isSuspended: false,
+        suspensionEndDate: null,
+        suspensionReason: null,
+        warningCount: 0
+      });
+    }
+
     return done(null, user);
   } catch (error) {
     return done(error);
@@ -45,17 +55,8 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await User.findByPk(id);
-
-    // If user is banned, don't restore the session
-    if (user && user.isBanned) {
-      return done(null, false);
-    }
-
-    // If user is suspended and suspension is still active, don't restore session
-    if (user && user.isSuspended && user.suspensionEndDate && new Date() < new Date(user.suspensionEndDate)) {
-      return done(null, false);
-    }
-
+    // Always deserialize user (even if banned/suspended)
+    // The middleware will handle the logout and messaging
     done(null, user);
   } catch (error) {
     done(error);

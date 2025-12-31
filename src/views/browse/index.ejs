@@ -42,138 +42,128 @@
   </form>
 
   <% if (_users.length) { %>
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
       <% _users.forEach(u=> {
-        // Calculate profile completion percentage
-        let completion = 0;
-        if (u.name && u.name.trim().length > 0) completion += 20;
-        if (u.bio && u.bio.trim().length > 0) completion += 20;
-        if (u.location && u.location.trim().length > 0) completion += 15;
-        if (u.profileImage) completion += 15;
-        if (Array.isArray(u.userSkills) && u.userSkills.length > 0) completion += 20;
-        if (Array.isArray(u.availabilities) && u.availabilities.length > 0) completion += 10;
-
-        const completionClass = completion >= 80 ? 'bg-success' : completion >= 50 ? 'bg-warning text-dark' :
-        'bg-danger';
-        %>
-        <div class="col">
-          <div class="card h-100">
-            <div class="card-body">
-              <div class="d-flex align-items-start gap-3 mb-2">
-                <% if (u.profileImage) { %>
-                  <img src="<%= u.profileImage %>" alt="<%= u.name %>" class="rounded-circle"
-                    style="width: 50px; height: 50px; object-fit: cover;">
-                  <% } else { %>
-                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
-                      style="width: 50px; height: 50px; min-width: 50px;">
-                      <i class="fas fa-user text-muted"></i>
-                    </div>
-                    <% } %>
-                      <div class="flex-grow-1">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                          <h5 class="card-title m-0">
-                            <%= u.name %>
-                          </h5>
-                          <% if (u.location) { %>
-                            <span class="badge bg-light text-dark border">
-                              <%= u.location %>
-                            </span>
-                            <% } %>
-                        </div>
-                        <span class="badge <%= completionClass %> mt-1" style="font-size: 0.7rem;">
-                          <i class="fas fa-user-check me-1"></i>
-                          <%= completion %>% Complete
-                        </span>
-                      </div>
-              </div>
-
-              <% if (u.bio) { %>
-                <p class="text-muted mt-2 mb-2">
-                  <%= u.bio %>
-                </p>
-                <% } %>
-
-                  <% if (Array.isArray(u.userSkills) && u.userSkills.length) { %>
-                    <div class="small">
-                      <div class="fw-semibold mb-1">Skills</div>
-                      <ul class="list-unstyled mb-0">
-                        <% u.userSkills.slice(0, 5).forEach(us=> { %>
-                          <li class="mb-1">
-                            <% if (us.type==='teach' ) { %>
-                              <span class="badge bg-success">Teaching</span>
-                              <% } else if (us.type==='learn' ) { %>
-                                <span class="badge bg-primary">Learning</span>
-                                <% } %>
-                                  <span class="ms-1">
-                                    <%= us.Skill ? us.Skill.name : '' %>
+        const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+        // Build condensed availability string
+        let availSummary = '';
+        if (Array.isArray(u.availabilities) && u.availabilities.length) {
+        availSummary = u.availabilities.slice(0, 3).map(a => {
+        const day = (typeof a.dayOfWeek === 'number') ? days[a.dayOfWeek % 7] : (a.day_of_week || '');
+        const start = a.startTime || a.start_time || '';
+        const end = a.endTime || a.end_time || '';
+        if (start && end) {
+        const startHr = parseInt(start.split(':')[0]);
+        const endHr = parseInt(end.split(':')[0]);
+        if (startHr < 12 && endHr <=12) return day + ' (Morning)' ; if (startHr>= 12 && startHr < 17) return day
+            + ' (Afternoon)' ; if (startHr>= 17) return day + ' (Evening)';
+            if (startHr <= 9 && endHr>= 17) return day + ' (All day)';
+              return day;
+              }
+              return day;
+              }).join('; ');
+              if (u.availabilities.length > 3) availSummary += ` +${u.availabilities.length - 3} more`;
+              }
+              // Truncate bio
+              const bioText = u.bio ? (u.bio.length > 120 ? u.bio.substring(0, 120) + '...' : u.bio) : '';
+              %>
+              <div class="col">
+                <div class="card h-100 shadow-sm border-0">
+                  <div class="card-body p-4">
+                    <!-- Header: Image + Name/Location/Badge -->
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                      <% if (u.profileImage) { %>
+                        <img src="<%= u.profileImage %>" alt="<%= u.name %>" class="rounded-circle flex-shrink-0"
+                          style="width: 70px; height: 70px; object-fit: cover; border: 3px solid #f0f0f0;">
+                        <% } else { %>
+                          <div
+                            class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width: 70px; height: 70px; border: 3px solid #f0f0f0;">
+                            <i class="fas fa-user fa-2x text-muted"></i>
+                          </div>
+                          <% } %>
+                            <div class="flex-grow-1">
+                              <h5 class="card-title mb-1 fw-bold">
+                                <%= u.name %>
+                              </h5>
+                              <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <% if (u.location) { %>
+                                  <span class="text-muted small">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    <%= u.location %>
                                   </span>
-                                  <% if (us.level) { %><span class="text-muted ms-1">(<%= us.level %>)</span>
-                                    <% } %>
-                                      <% if (us.Skill && us.Skill.Category && us.Skill.Category.name) { %>
-                                        <span class="text-muted ms-1">
-                                          <%= us.Skill.Category.name %>
-                                        </span>
-                                        <% } %>
-                          </li>
-                          <% }) %>
-                      </ul>
-                      <% if (u.userSkills.length> 5) { %>
-                        <div class="text-muted small mt-1">and <%= u.userSkills.length - 5 %> more</div>
-                        <% } %>
-                    </div>
-                    <% } %>
-
-                      <% if (Array.isArray(u.availabilities) && u.availabilities.length) { %>
-                        <hr>
-                        <div class="small">
-                          <div class="fw-semibold mb-1">Availability</div>
-                          <ul class="list-inline mb-0">
-                            <% const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; %>
-                              <% u.availabilities.slice(0, 3).forEach(a=> { %>
-                                <li class="list-inline-item badge bg-light text-dark border">
-                                  <%= (typeof a.dayOfWeek==='number' ) ? days[a.dayOfWeek % 7] : a.day_of_week %>
-                                    <% if (a.startTime || a.start_time) { %>
-                                      <span class="ms-1">
-                                        <%= (a.startTime || a.start_time) %>
-                                          <%= (a.endTime || a.end_time) %>
+                                  <% } %>
+                                    <% if (u.warningCount>= 3) { %>
+                                      <span class="badge bg-warning text-dark high-risk-badge" style="cursor: pointer;"
+                                        data-user-name="<%= u.name %>">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>High-risk
                                       </span>
                                       <% } %>
-                                </li>
-                                <% }) %>
-                          </ul>
-                        </div>
+                              </div>
+                            </div>
+                    </div>
+
+                    <!-- Bio -->
+                    <% if (bioText) { %>
+                      <p class="text-secondary mb-3" style="font-size: 0.9rem; line-height: 1.5;">
+                        <%= bioText %>
+                      </p>
+                      <% } %>
+
+                        <!-- Skills Row -->
+                        <% if (Array.isArray(u.userSkills) && u.userSkills.length) { %>
+                          <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                            <span class="text-muted small"><i class="fas fa-tags me-1"></i>Skills:</span>
+                            <% u.userSkills.slice(0, 2).forEach(us=> { %>
+                              <span
+                                class="badge border rounded-pill <%= us.type === 'teach' ? 'border-success text-success' : 'border-primary text-primary' %>"
+                                style="font-weight: 500;">
+                                <%= us.type==='teach' ? 'Teaching' : 'Learning' %>: <%= us.Skill ? us.Skill.name : '' %>
+                              </span>
+                              <% }) %>
+                                <% if (u.userSkills.length> 2) { %>
+                                  <span class="badge border rounded-pill border-secondary text-secondary"
+                                    style="font-weight: 500;">
+                                    +<%= u.userSkills.length - 2 %> more...
+                                  </span>
+                                  <% } %>
+                          </div>
+                          <% } %>
+
+                            <!-- Availability Row -->
+                            <% if (availSummary) { %>
+                              <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="text-muted small"><i
+                                    class="far fa-calendar-alt me-1"></i>Availability:</span>
+                                <span class="text-dark small">
+                                  <%= availSummary %>
+                                </span>
+                              </div>
+                              <% } %>
+                  </div>
+
+                  <!-- Footer Actions -->
+                  <div class="card-footer bg-white border-top-0 px-4 pb-4 pt-0">
+                    <div class="d-flex align-items-center gap-2">
+                      <button class="btn btn-outline-secondary btn-sm js-tip" data-user-id="<%= u.id %>"
+                        data-user-name="<%= u.name %>">
+                        <i class="far fa-heart me-1"></i>Tip
+                      </button>
+                      <% if (u.whatsapp_number || u.whatsappNumber) { %>
+                        <a class="btn btn-outline-secondary btn-sm" rel="noopener"
+                          href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>"
+                          target="_blank">
+                          <i class="fab fa-whatsapp me-1"></i>WhatsApp
+                        </a>
                         <% } %>
-            </div>
-            <div class="card-footer d-flex justify-content-end gap-2">
-              <button class="btn btn-sm btn-outline-secondary js-tip" data-user-id="<%= u.id %>"
-                data-user-name="<%= u.name %>">Tip</button>
-              <% if (u.whatsapp_number || u.whatsappNumber) { %>
-                <a class="btn btn-sm btn-success" rel="noopener"
-                  href="/go/wa/<%= u.id %>?text=<%- encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>"
-                  target="_blank">WhatsApp</a>
-                <% } else if (u.email) { %>
-                  <% const browseEmailSubject=encodeURIComponent('SkillSwap MY - Let\'s Connect!'); const
-                    userTeachSkills=u.userSkills && u.userSkills.filter(s=> s.type === 'teach');
-                    const teachSkillList = userTeachSkills && userTeachSkills.length > 0
-                    ? userTeachSkills.slice(0, 3).map(s => s.Skill?.name).filter(Boolean).join(', ')
-                    : 'your skills';
-                    const browseEmailBody = encodeURIComponent(
-                    `Hi ${u.name},\n\n` +
-                    `I found your profile on SkillSwap MY and I'm interested in connecting with you!\n\n` +
-                    `I noticed you can teach: ${teachSkillList}\n\n` +
-                    `I would love to discuss setting up a skill exchange session.\n\n` +
-                    `Looking forward to hearing from you!\n\n` +
-                    `Best regards,\n${user ? user.name : 'A SkillSwap member'}`
-                    );
-                    %>
-                    <a class="btn btn-sm btn-outline-primary"
-                      href="mailto:<%= u.email %>?subject=<%= browseEmailSubject %>&body=<%= browseEmailBody %>">Email</a>
-                    <% } %>
-                      <a class="btn btn-sm btn-outline-primary" href="/browse/user/<%= u.id %>">View profile</a>
-            </div>
-          </div>
-        </div>
-        <% }) %>
+                          <a class="btn btn-primary btn-sm ms-auto" href="/browse/user/<%= u.id %>">
+                            VIEW PROFILE <i class="fas fa-chevron-right ms-1"></i>
+                          </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <% }) %>
     </div>
 
     <%# Pagination %>
@@ -183,3 +173,23 @@
             <% } else { %>
               <div class="alert alert-info">No users match your filters.</div>
               <% } %>
+
+                <script>
+                  document.addEventListener('DOMContentLoaded', function () {
+                    document.querySelectorAll('.high-risk-badge').forEach(badge => {
+                      badge.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const userName = this.dataset.userName || 'This user';
+                        Swal.fire({
+                          icon: 'warning',
+                          title: 'High-Risk Account',
+                          html: `<p><strong>${userName}</strong> has been flagged as a high-risk account due to multiple community guideline violations.</p>
+               <p class="text-muted small">Please exercise caution when interacting with this user. Consider reviewing their profile and ratings carefully before engaging.</p>`,
+                          confirmButtonText: 'I Understand',
+                          confirmButtonColor: '#dc3545'
+                        });
+                      });
+                    });
+                  });
+                </script>

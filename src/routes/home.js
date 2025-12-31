@@ -46,4 +46,58 @@ router.get('/', async (req, res) => {
   }
 });
 
+// API endpoint for real-time account status check
+router.get('/api/account-status', async (req, res) => {
+  // If not authenticated, return not-authenticated status
+  if (!req.isAuthenticated() || !req.user) {
+    return res.json({ authenticated: false });
+  }
+
+  try {
+    // Fetch fresh user data from database
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.json({ authenticated: false });
+    }
+
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.json({
+        authenticated: true,
+        terminated: true,
+        type: 'banned',
+        title: 'Account Permanently Banned',
+        message: 'Your account has been permanently banned due to violation of our terms of service.'
+      });
+    }
+
+    // Check if user is suspended
+    if (user.isSuspended && user.suspensionEndDate && new Date() < new Date(user.suspensionEndDate)) {
+      const endDate = new Date(user.suspensionEndDate).toLocaleDateString('en-MY', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      return res.json({
+        authenticated: true,
+        terminated: true,
+        type: 'suspended',
+        title: 'Account Suspended',
+        message: `Your account has been suspended until ${endDate}.`,
+        reason: user.suspensionReason || 'Violation of terms of service'
+      });
+    }
+
+    // Account is fine
+    return res.json({
+      authenticated: true,
+      terminated: false
+    });
+  } catch (error) {
+    console.error('Account status check error:', error);
+    return res.json({ authenticated: true, terminated: false });
+  }
+});
+
 module.exports = router;

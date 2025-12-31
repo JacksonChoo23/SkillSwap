@@ -9,7 +9,7 @@ const MessageThread = sequelize.define('MessageThread', {
   },
   listingId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,  // Allow null for direct messages (no listing)
     field: 'listing_id',
     references: {
       model: 'listings',

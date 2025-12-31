@@ -290,12 +290,24 @@ router.post('/users/:id/toggle-ban', async (req, res) => {
       isBanned: newBannedStatus
     });
 
+    if (newBannedStatus) {
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${user.id}`).emit('force_logout', {
+          type: 'banned',
+          title: 'Account Action',
+          message: 'Your account has been permanently banned.',
+          reason: 'Administrator action'
+        });
+      }
+    }
+
     req.session.success = `User ${newBannedStatus ? 'banned' : 'unbanned'} successfully.`;
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   } catch (error) {
     console.error('Toggle ban error:', error);
     req.session.error = 'Error updating user status.';
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   }
 });
 
@@ -326,6 +338,16 @@ router.post('/users/:id/suspend', async (req, res) => {
       suspensionReason: `Suspended by administrator for ${suspensionDays} days`
     });
 
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`user_${user.id}`).emit('force_logout', {
+        type: 'suspended',
+        title: 'Account Action',
+        message: `Your account has been suspended for ${suspensionDays} days. Suspension ends on ${suspensionEndDate.toLocaleDateString()}.`,
+        reason: `Suspended by administrator for ${suspensionDays} days`
+      });
+    }
+
     // Send notification and email to user
     const suspendTitle = 'Account Suspended';
     const suspendMessage = `Your account has been suspended for ${suspensionDays} days. Suspension ends on ${suspensionEndDate.toLocaleDateString()}.`;
@@ -341,11 +363,11 @@ router.post('/users/:id/suspend', async (req, res) => {
     } catch (e) { console.error('Notification/Email error:', e); }
 
     req.session.success = `User suspended for ${suspensionDays} days.`;
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   } catch (error) {
     console.error('Suspend user error:', error);
     req.session.error = 'Error suspending user.';
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   }
 });
 
@@ -363,7 +385,8 @@ router.post('/users/:id/unsuspend', async (req, res) => {
     await user.update({
       isSuspended: false,
       suspensionEndDate: null,
-      suspensionReason: null
+      suspensionReason: null,
+      warningCount: 0
     });
 
     // Send notification and email to user
@@ -381,11 +404,11 @@ router.post('/users/:id/unsuspend', async (req, res) => {
     } catch (e) { console.error('Notification/Email error:', e); }
 
     req.session.success = 'User unsuspended successfully.';
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   } catch (error) {
     console.error('Unsuspend user error:', error);
     req.session.error = 'Error unsuspending user.';
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   }
 });
 
@@ -401,14 +424,26 @@ router.post('/users/:id/warn', async (req, res) => {
       return res.redirect('/admin/users');
     }
 
+    const newWarningCount = (user.warningCount || 0) + 1;
+
     // Increment warning count
     await user.update({
-      warningCount: (user.warningCount || 0) + 1
+      warningCount: newWarningCount
     });
 
-    // Send warning notification and email
-    const warnTitle = 'Official Warning';
-    const warnMessage = message || 'You have received a warning from the administrators. Please review and follow our community guidelines.';
+    // Send warning notification and email with dynamic message based on warning count
+    const warnTitle = `Official Warning (${newWarningCount} of 3)`;
+    let warnMessage = message || 'You have received an official warning for violating community guidelines.';
+
+    // Add specific consequences based on warning count
+    if (newWarningCount === 1) {
+      warnMessage += ' This is your first warning. Please review our community guidelines to avoid further violations.';
+    } else if (newWarningCount === 2) {
+      warnMessage += ' This is your second warning. One more warning will mark your account as high-risk.';
+    } else if (newWarningCount === 3) {
+      warnMessage += ' This is your third warning. Your account is now marked as HIGH-RISK and visible to other users. Any additional violations will result in automatic account suspension.';
+    }
+
     await Notification.create({
       user_id: user.id,
       title: warnTitle,
@@ -418,12 +453,49 @@ router.post('/users/:id/warn', async (req, res) => {
     // Send email notification
     await sendNotificationEmail({ to: user.email, name: user.name, title: warnTitle, message: warnMessage });
 
-    req.session.success = `Warning sent to ${user.name}. Total warnings: ${user.warningCount + 1}.`;
-    res.redirect('/admin/users');
+    // Auto-suspend if warning count exceeds 3
+    if (newWarningCount > 3) {
+      const suspensionDays = 3;
+      const suspensionEndDate = new Date();
+      suspensionEndDate.setDate(suspensionEndDate.getDate() + suspensionDays);
+
+      await user.update({
+        isSuspended: true,
+        suspensionEndDate: suspensionEndDate,
+        suspensionReason: `Automatic suspension due to ${newWarningCount} warnings`
+      });
+
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`user_${user.id}`).emit('force_logout', {
+          type: 'suspended',
+          title: 'Account Action',
+          message: `Your account has been automatically suspended for ${suspensionDays} days due to receiving ${newWarningCount} warnings.`,
+          reason: `Automatic suspension due to ${newWarningCount} warnings`
+        });
+      }
+
+      // Send suspension notification and email
+      const suspendTitle = 'Account Suspended';
+      const suspendMessage = `Your account has been automatically suspended for ${suspensionDays} days due to receiving ${newWarningCount} warnings. Suspension ends on ${suspensionEndDate.toLocaleDateString()}.`;
+      await Notification.create({
+        user_id: user.id,
+        title: suspendTitle,
+        message: suspendMessage,
+        status: 'unread'
+      });
+      await sendNotificationEmail({ to: user.email, name: user.name, title: suspendTitle, message: suspendMessage });
+
+      req.session.success = `Warning sent to ${user.name}. Total warnings: ${newWarningCount}. User has been automatically suspended for 3 days.`;
+    } else {
+      req.session.success = `Warning sent to ${user.name}. Total warnings: ${newWarningCount}.`;
+    }
+
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   } catch (error) {
     console.error('Warn user error:', error);
     req.session.error = 'Error sending warning.';
-    res.redirect('/admin/users');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/users');
   }
 });
 
@@ -472,11 +544,13 @@ router.get('/listings', async (req, res) => {
       offset
     });
 
+    const pagination = buildPaginationData(count, page, limit, '/admin/listings');
     res.render('admin/listings', {
       layout: 'layouts/admin',
       title: 'Manage Listings',
       listings,
-      ...buildPaginationData(count, page, limit, '/admin/listings')
+      currentUrl: req.originalUrl,
+      ...pagination
     });
   } catch (error) {
     console.error('Listings management error:', error);
@@ -519,11 +593,11 @@ router.post('/listings/:id/:action', async (req, res) => {
     } catch (e) { console.error('Notify listing action error:', e); }
 
     req.session.success = `Listing ${action}d successfully.`;
-    res.redirect('/admin/listings');
+    res.redirect(req.header('Referer') || '/admin/listings');
   } catch (error) {
     console.error('Listing action error:', error);
     req.session.error = 'Error updating listing status.';
-    res.redirect('/admin/listings');
+    res.redirect(req.header('Referer') || '/admin/listings');
   }
 });
 
@@ -569,11 +643,11 @@ router.post('/reports/:id/close', async (req, res) => {
     await report.update({ status: 'resolved' });
 
     req.session.success = 'Report marked as resolved.';
-    res.redirect('/admin/reports');
+    res.redirect(req.header('Referer') || '/admin/reports');
   } catch (error) {
     console.error('Resolve report error:', error);
     req.session.error = 'Error resolving report.';
-    res.redirect('/admin/reports');
+    res.redirect(req.header('Referer') || '/admin/reports');
   }
 });
 
@@ -627,7 +701,8 @@ router.post('/reports/:id/action', async (req, res) => {
         report.targetUserId,
         severity,
         reason,
-        report.id
+        report.id,
+        req.app.get('io')
       );
 
       await report.update({
@@ -641,11 +716,11 @@ router.post('/reports/:id/action', async (req, res) => {
     }
 
     req.session.success = actionMessage;
-    res.redirect('/admin/reports');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/reports');
   } catch (error) {
     console.error('Admin report action error:', error);
     req.session.error = 'Error applying action to report.';
-    res.redirect('/admin/reports');
+    res.redirect(req.body.returnTo || req.header('Referer') || '/admin/reports');
   }
 });
 

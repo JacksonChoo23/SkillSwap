@@ -62,6 +62,7 @@
               <tr>
                 <th class="ps-4">User</th>
                 <th>Status</th>
+                <th class="text-center">Unsuspend In</th>
                 <th class="text-center">Sessions</th>
                 <th class="text-center">Listings</th>
                 <th class="text-center">Warnings</th>
@@ -103,6 +104,25 @@
                         <span class="badge rounded-pill bg-warning text-dark">Suspended</span>
                         <% } else { %>
                           <span class="badge rounded-pill bg-success">Active</span>
+                          <% } %>
+                  </td>
+                  <td class="text-center">
+                    <% if (u.isSuspended && u.suspensionEndDate && !u.isBanned) { const now=new Date(); const end=new
+                      Date(u.suspensionEndDate); const diffMs=end - now; if (diffMs> 0) {
+                      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                      const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                      %>
+                      <span class="badge bg-info text-dark">
+                        <% if (diffDays> 0) { %>
+                          <%= diffDays %>d <%= diffHours %>h
+                              <% } else { %>
+                                <%= diffHours %>h
+                                  <% } %>
+                      </span>
+                      <% } else { %>
+                        <span class="badge bg-secondary">Expired</span>
+                        <% } } else { %>
+                          <span class="text-muted">-</span>
                           <% } %>
                   </td>
                   <td class="text-center">
@@ -327,6 +347,12 @@
             csrfInput.value = csrfToken;
             form.appendChild(csrfInput);
 
+            const returnToInput = document.createElement('input');
+            returnToInput.type = 'hidden';
+            returnToInput.name = 'returnTo';
+            returnToInput.value = window.location.href;
+            form.appendChild(returnToInput);
+
             if (action === 'warn') {
               form.action = `/admin/users/${userId}/warn`;
               const msgInput = document.createElement('input');
@@ -348,6 +374,9 @@
             }
 
             document.body.appendChild(form);
+            // Manually show loader since programmatic form.submit() doesn't trigger submit event
+            const loader = document.getElementById('page-loader');
+            if (loader) loader.classList.remove('hidden');
             form.submit();
           }
         });

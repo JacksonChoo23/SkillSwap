@@ -1,5 +1,7 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const expressLayouts = require('express-ejs-layouts');
 const path = require('path');
 
@@ -145,6 +147,7 @@ app.use((req, res, next) => {
   res.locals.success = messages.success || [];
   res.locals.error = messages.error || [];
   res.locals.info = messages.info || [];
+  res.locals.account_terminated = messages.account_terminated || [];
 
   next();
 });
@@ -177,6 +180,61 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 }
 
+// API endpoint for real-time account status check (before auth-protected routes)
+app.get('/api/account-status', async (req, res) => {
+  // If not authenticated, return not-authenticated status
+  if (!req.isAuthenticated() || !req.user) {
+    return res.json({ authenticated: false });
+  }
+
+  try {
+    // Fetch fresh user data from database
+    const { User } = require('./src/models');
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.json({ authenticated: false });
+    }
+
+    // Check if user is banned
+    if (user.isBanned) {
+      return res.json({
+        authenticated: true,
+        terminated: true,
+        type: 'banned',
+        title: 'Account Permanently Banned',
+        message: 'Your account has been permanently banned due to violation of our terms of service.'
+      });
+    }
+
+    // Check if user is suspended
+    if (user.isSuspended && user.suspensionEndDate && new Date() < new Date(user.suspensionEndDate)) {
+      const endDate = new Date(user.suspensionEndDate).toLocaleDateString('en-MY', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      return res.json({
+        authenticated: true,
+        terminated: true,
+        type: 'suspended',
+        title: 'Account Suspended',
+        message: `Your account has been suspended until ${endDate}.`,
+        reason: user.suspensionReason || 'Violation of terms of service'
+      });
+    }
+
+    // Account is fine
+    return res.json({
+      authenticated: true,
+      terminated: false
+    });
+  } catch (error) {
+    console.error('Account status check error:', error);
+    return res.json({ authenticated: true, terminated: false });
+  }
+});
+
 // Routes
 app.use('/auth', authRoutes);
 app.use('/profile', isAuthenticated, profileRoutes);
@@ -185,8 +243,9 @@ app.use('/browse', browseRoutes);
 app.use('/about', aboutRouter);
 app.use('/match', isAuthenticated, matchRoutes);
 
-// keep /messages but redirect to history
-app.use('/messages', isAuthenticated, (req, res) => res.redirect('/history/messages'));
+// Messages route
+const messagesRoutes = require('./src/routes/messages');
+app.use('/messages', isAuthenticated, messagesRoutes);
 
 app.use('/sessions', isAuthenticated, sessionRoutes);
 app.use('/', isAuthenticated, contactsRoutes);
@@ -258,14 +317,52 @@ app.use((err, req, res, next) => {
 
 
 // Start
-// Start
 async function startServer() {
   const PORT = process.env.PORT || 8080;
 
-  // 先监听端口，保证 Cloud Run 健康检查能通过
-  app.listen(PORT, () => {
+  // Create HTTP server and attach Socket.io
+  const server = http.createServer(app);
+  const io = new Server(server, {
+    cors: {
+      origin: process.env.NODE_ENV === 'production' ? false : '*',
+      methods: ['GET', 'POST']
+    }
+  });
+
+  // Make io accessible to routes via app.locals
+  app.set('io', io);
+
+  // Socket.io connection handler
+  io.on('connection', (socket) => {
+    logger.debug(`Socket connected: ${socket.id}`);
+
+    // Join a specific thread room
+    socket.on('join_thread', (threadId) => {
+      socket.join(`thread_${threadId}`);
+      logger.debug(`Socket ${socket.id} joined thread_${threadId}`);
+    });
+
+    // Join user-specific room for global notifications (e.g. suspension)
+    socket.on('join_user', (userId) => {
+      socket.join(`user_${userId}`);
+      logger.debug(`Socket ${socket.id} joined user_${userId}`);
+    });
+
+    // Leave a thread room
+    socket.on('leave_thread', (threadId) => {
+      socket.leave(`thread_${threadId}`);
+    });
+
+    socket.on('disconnect', () => {
+      logger.debug(`Socket disconnected: ${socket.id}`);
+    });
+  });
+
+  // Start listening
+  server.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV}`);
+    logger.info('Socket.io enabled for real-time messaging');
   });
 
   // 异步尝试连接数据库并同步 session 表

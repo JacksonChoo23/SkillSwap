@@ -98,12 +98,29 @@ router.post('/', upload.array('evidence', 5), csrfProtection, async (req, res) =
     // Get uploaded file paths
     const evidencePaths = req.files ? req.files.map(f => `/uploads/evidence/${f.filename}`) : [];
 
+    // Process chat evidence
+    const chatEvidence = [];
+    if (req.body.chatMessageIds) {
+      const ids = Array.isArray(req.body.chatMessageIds) ? req.body.chatMessageIds : [req.body.chatMessageIds];
+      ids.forEach(id => {
+        if (req.body[`chatContent_${id}`]) {
+          chatEvidence.push({
+            id: id,
+            content: req.body[`chatContent_${id}`],
+            sender: req.body[`chatSender_${id}`],
+            time: req.body[`chatTime_${id}`]
+          });
+        }
+      });
+    }
+
     // Create report with pending_ai status
     const report = await Report.create({
       reporterId: req.user.id,
       targetUserId: targetId,
       reason: reason.trim(),
       evidence: evidencePaths,
+      chatEvidence: chatEvidence,
       status: 'pending_ai',
       aiVerdict: 'pending',
       severity: 'none'
@@ -111,7 +128,14 @@ router.post('/', upload.array('evidence', 5), csrfProtection, async (req, res) =
 
     // Trigger AI analysis asynchronously
     const absolutePaths = evidencePaths.map(p => path.join(process.cwd(), 'public', p));
-    const aiResult = await analyzeReportEvidence(reason.trim(), absolutePaths);
+
+    // Add chat context to AI prompt if available
+    let analysisPrompt = reason.trim();
+    if (chatEvidence.length > 0) {
+      analysisPrompt += `\n\n[Attached Chat Evidence]:\n${chatEvidence.map(m => `[${m.time}] ${m.sender}: ${m.content}`).join('\n')}`;
+    }
+
+    const aiResult = await analyzeReportEvidence(analysisPrompt, absolutePaths);
 
     // Update report with AI analysis
     await report.update({

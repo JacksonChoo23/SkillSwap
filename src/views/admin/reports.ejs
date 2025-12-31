@@ -237,9 +237,15 @@
             notesInput.name = 'adminNotes';
             notesInput.value = adminNotes;
 
+            const returnToInput = document.createElement('input');
+            returnToInput.type = 'hidden';
+            returnToInput.name = 'returnTo';
+            returnToInput.value = window.location.href;
+
             form.appendChild(csrfInput);
             form.appendChild(actionInput);
             form.appendChild(notesInput);
+            form.appendChild(returnToInput);
             document.body.appendChild(form);
             form.submit();
           }

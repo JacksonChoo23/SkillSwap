@@ -1,6 +1,6 @@
 <% var cp=locals.currentPage ? locals.currentPage : 1; var tp=locals.totalPages ? locals.totalPages : 1; var
     total=locals.totalItems ? locals.totalItems : 0; var lim=locals.limit ? locals.limit : 10; var base=locals.baseUrl ?
-    locals.baseUrl : '' ; var startItem=total> 0 ? (cp - 1) * lim + 1 : 0;
+    locals.baseUrl : '?' ; var startItem=total> 0 ? (cp - 1) * lim + 1 : 0;
     var endItem = Math.min(cp * lim, total);
     var startPage = Math.max(1, cp - 2);
     var endPage = Math.min(tp, startPage + 4);
@@ -9,10 +9,10 @@
             <div class="d-flex align-items-center gap-2">
                 <label class="text-muted small mb-0">Rows per page:</label>
                 <select class="form-select form-select-sm pagination-limit-select" style="width: auto;">
-                    <option value="<%= base %>?page=1&limit=5" <% if(lim==5){ %>selected<% } %>>5</option>
-                    <option value="<%= base %>?page=1&limit=10" <% if(lim==10){ %>selected<% } %>>10</option>
-                    <option value="<%= base %>?page=1&limit=25" <% if(lim==25){ %>selected<% } %>>25</option>
-                    <option value="<%= base %>?page=1&limit=50" <% if(lim==50){ %>selected<% } %>>50</option>
+                    <option value="<%= base %>page=1&limit=5" <% if(lim==5){ %>selected<% } %>>5</option>
+                    <option value="<%= base %>page=1&limit=10" <% if(lim==10){ %>selected<% } %>>10</option>
+                    <option value="<%= base %>page=1&limit=25" <% if(lim==25){ %>selected<% } %>>25</option>
+                    <option value="<%= base %>page=1&limit=50" <% if(lim==50){ %>selected<% } %>>50</option>
                 </select>
                 <span class="text-muted small">Showing <%= startItem %>-<%= endItem %> of <%= total %></span>
             </div>
@@ -20,26 +20,26 @@
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item <% if(cp==1){ %>disabled<% } %>">
-                            <a class="page-link" href="<%= base %>?page=1&limit=<%= lim %>"><i
+                            <a class="page-link" href="<%= base %>page=1&limit=<%= lim %>"><i
                                     class="fas fa-angle-double-left"></i></a>
                         </li>
                         <li class="page-item <% if(cp==1){ %>disabled<% } %>">
-                            <a class="page-link" href="<%= base %>?page=<%= cp-1 %>&limit=<%= lim %>"><i
+                            <a class="page-link" href="<%= base %>page=<%= cp-1 %>&limit=<%= lim %>"><i
                                     class="fas fa-angle-left"></i></a>
                         </li>
                         <% for (var i=startPage; i <=endPage; i++) { %>
                             <li class="page-item <% if(i==cp){ %>active<% } %>">
-                                <a class="page-link" href="<%= base %>?page=<%= i %>&limit=<%= lim %>">
+                                <a class="page-link" href="<%= base %>page=<%= i %>&limit=<%= lim %>">
                                     <%= i %>
                                 </a>
                             </li>
                             <% } %>
                                 <li class="page-item <% if(cp==tp){ %>disabled<% } %>">
-                                    <a class="page-link" href="<%= base %>?page=<%= cp+1 %>&limit=<%= lim %>"><i
+                                    <a class="page-link" href="<%= base %>page=<%= cp+1 %>&limit=<%= lim %>"><i
                                             class="fas fa-angle-right"></i></a>
                                 </li>
                                 <li class="page-item <% if(cp==tp){ %>disabled<% } %>">
-                                    <a class="page-link" href="<%= base %>?page=<%= tp %>&limit=<%= lim %>"><i
+                                    <a class="page-link" href="<%= base %>page=<%= tp %>&limit=<%= lim %>"><i
                                             class="fas fa-angle-double-right"></i></a>
                                 </li>
                     </ul>

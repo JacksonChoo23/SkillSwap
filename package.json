@@ -44,6 +44,7 @@
     "passport-local": "^1.0.0",
     "sanitize-html": "^2.11.0",
     "sequelize": "^6.35.1",
+    "socket.io": "^4.8.3",
     "sqlite3": "^5.1.7",
     "stripe": "^20.1.0",
     "sweetalert2": "^11.23.0",
