@@ -4,33 +4,46 @@ A peer skill exchange platform for Malaysia where users can teach and learn skil
 
 ## Features
 
-- **User Authentication**: Secure registration, login, and password reset
-- **Advanced Admin Dashboard**: KPI statistics, growth charts, and AI health monitoring
-- **AI-Powered Suggestions**: Integration with Google Gemini for optimized listing content
-- **Dynamic UI/UX**: Global pre-navigation loader and Apple-style animations
-- **Universal Alerts**: Centered SweetAlert2 notifications across all workflows
-- **Payment & Invoice Tracking**: Simulated transaction management and reporting
-- **Profile Management**: Detailed achievements, badges, and progress export (CSV)
-- **Skill Matching**: Score-based recommendation engine (60% tags, 40% availability)
-- **Messaging System**: Threaded conversations with content moderation
-- **Session Management**: Full workflow from request to rating with start-code verification
-- **WhatsApp Integration**: Direct one-click contact for offline coordination
+### User Features
+- **User Authentication**: Secure registration with email verification, login, and password reset
+- **Profile Management**: Bio, location, WhatsApp contact, profile image, and privacy settings
+- **Skills Management**: Add skills to teach/learn with proficiency levels
+- **Availability Scheduling**: Set weekly time slots for skill exchange
+- **Listing Management**: Create, edit, pause, activate, and delete skill offerings
+- **Matching System**: AI-powered score-based recommendation engine
+- **Session Management**: Full workflow from request → confirm → verify code → complete → rate
+- **Messaging System**: Real-time threaded conversations with Socket.io
+- **Tipping System**: Send tips via Stripe with saved cards and refund support
+- **Report System**: AI-moderated user reports with Gemini integration
+- **Progress Export**: Download session history as PDF
+- **Leaderboard**: View top-rated users in the community
+
+### Admin Features
+- **Dashboard**: KPI statistics, growth charts, category distribution, AI health monitoring
+- **User Management**: Create, warn, suspend, ban, delete users with email notifications
+- **Listing Management**: Activate, pause, close listings
+- **Report Management**: AI-reviewed reports with penalty actions
+- **Category & Skills Management**: CRUD operations for skill taxonomy
+- **Payment Management**: View transactions, process refunds
+- **Match Weights Configuration**: Fine-tune matching algorithm weights
 
 ## Tech Stack
 
-- **Backend**: Node.js 20 + Express
+- **Backend**: Node.js 20 + Express.js
 - **Frontend**: EJS Templating + Bootstrap 5 + SweetAlert2
-- **AI Service**: Google Gemini AI (Generative AI & Moderation)
 - **Database**: MySQL 8 with Sequelize ORM
-- **Security**: Passport.js, Helmet, CSRF protection, Rate limiting
-- **Logging**: Winston (Production) + Morgan (Development)
-- **UI Enhancements**: Custom animations.js & global loader.js
+- **Real-time**: Socket.io for messaging and session updates
+- **AI Service**: Google Gemini AI (Content Generation & Moderation)
+- **Payments**: Stripe API (Payment Intents, Refunds, Saved Cards)
+- **Email**: Nodemailer for transactional emails
+- **Security**: Passport.js, Helmet, CSRF, Rate Limiting, bcrypt
+- **PDF**: PDFKit for progress reports
 
 ## Prerequisites
 
 - Node.js 20 or higher
 - MySQL 8.0 or higher
-- Windows 11 (or compatible OS)
+- Stripe CLI (for local webhook testing)
 
 ## Installation
 
@@ -50,14 +63,28 @@ A peer skill exchange platform for Malaysia where users can teach and learn skil
    copy env.example .env
    ```
    
-   Edit `.env` file with your database credentials and other settings:
+   Edit `.env` with your credentials:
    ```env
    DB_HOST=localhost
    DB_PORT=3306
    DB_NAME=skillswap_my
    DB_USER=root
-   DB_PASSWORD=your_password_here
-   SESSION_SECRET=your_session_secret_here
+   DB_PASSWORD=your_password
+   SESSION_SECRET=your_session_secret
+   
+   # Stripe
+   STRIPE_SECRET_KEY=sk_test_...
+   STRIPE_PUBLISHABLE_KEY=pk_test_...
+   STRIPE_WEBHOOK_SECRET=whsec_...
+   
+   # Google Gemini AI
+   GEMINI_API_KEY=your_gemini_key
+   
+   # Email (SMTP)
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your_email
+   SMTP_PASS=your_app_password
    ```
 
 4. **Create MySQL database**
@@ -75,20 +102,22 @@ A peer skill exchange platform for Malaysia where users can teach and learn skil
    npm run seed
    ```
 
-7. **Start the application**
+7. **Start Stripe webhook listener** (separate terminal)
    ```bash
-   npm start
+   .\stripe.exe listen --forward-to localhost:3000/webhook
    ```
 
-   For development with auto-restart:
+8. **Start the application**
    ```bash
    npm run dev
    ```
 
-## Default Admin Account
+## Default Accounts
 
-- **Email**: admin@skillswap.my
-- **Password**: Admin@123
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@skillswap.my | Admin@123 |
+| User | user1@test.com | Test@123 |
 
 ## Project Structure
 
@@ -96,150 +125,117 @@ A peer skill exchange platform for Malaysia where users can teach and learn skil
 skillswap-my/
 ├── src/
 │   ├── config/          # Database, logger, passport config
-│   ├── models/          # Sequelize models
+│   ├── models/          # Sequelize models (17 models)
 │   ├── migrations/      # Database migrations
 │   ├── seeders/         # Database seeders
-│   ├── routes/          # Express routes
-│   ├── services/        # Business logic services
-│   ├── middlewares/     # Custom middleware
+│   ├── routes/          # Express routes (15 route files)
+│   ├── services/        # Business logic (matching, notifications)
+│   ├── middlewares/     # Auth, validation, rate limiting
 │   └── views/           # EJS templates
 ├── public/              # Static assets (CSS, JS, Images)
+├── uploads/             # User uploaded files
 ├── logs/                # Application logs
-├── tests/               # Validation and verification scripts
-├── academic_class_diagram.md  # UML Documentation
-├── PROJECT_DETAILED_REPORT.md # Comprehensive Project Status
-├── app.js              # Main application entry point
-├── package.json        # Dependencies and scripts
-└── README.md           # This file
+├── tests/               # Test files
+├── utils/               # Utility functions (mailer)
+├── app.js               # Main application entry
+└── package.json         # Dependencies and scripts
 ```
 
-## 📚 Documentation
+## Database Models
 
-For deeper technical insights, please refer to:
-- [Academic Class Diagram](file:///d:/APU_FYP_Code/academic_class_diagram.md) - Detailed UML architecture
-- [Project Detailed Report](file:///d:/APU_FYP_Code/PROJECT_DETAILED_REPORT.md) - Full feature roadmap and implementation status
+| Model | Description |
+|-------|-------------|
+| User | User accounts with auth, profile, moderation fields |
+| Category | Skill categories (Programming, Languages, etc.) |
+| Skill | Individual skills belonging to categories |
+| UserSkill | Junction table for user skills (teach/learn, level) |
+| Availability | Weekly time slots |
+| Listing | Skill offerings with teach/learn skills |
+| LearningSession | Session workflow with verification codes |
+| Rating | 4-criteria ratings (communication, skill, attitude, punctuality) |
+| MessageThread | Conversation containers |
+| Message | Individual messages |
+| Notification | In-app notifications |
+| Transaction | Stripe payment records |
+| Invoice | Generated invoices |
+| Report | User reports with AI moderation |
+| CalculatorWeight | Matching algorithm weights |
 
-## Key Features Explained
+## API Routes
 
-### Matching Algorithm
-The matching system uses a weighted scoring algorithm:
-- **Tag Overlap Score (60%)**: Matches teach/learn skill intersections
-- **Availability Overlap Score (40%)**: Matches weekly time slot overlaps
-- Returns top 20 matches sorted by score
+### Authentication (`/auth`)
+- `POST /register` - Create account with email verification
+- `POST /login` - Authenticate user
+- `GET /logout` - End session
+- `POST /forgot` - Request password reset
+- `POST /reset/:token` - Reset password
+- `GET /activate/:token` - Verify email
 
-### Skill Value Calculator
-Calculates fair time-for-time exchanges using:
-- **Category Weights**: Different skill categories have different base values
-- **Level Weights**: Beginner, intermediate, advanced levels affect value
-- **Formula**: Value = Hours × Category Weight × Level Weight
-- **Fair Exchange**: Suggests adjustments to achieve 1:1 value ratio
+### Profile (`/profile`)
+- `GET /` - View profile with stats
+- `POST /update` - Update profile (with image upload)
+- `POST /skills` - Add skill
+- `DELETE /skills/:id` - Remove skill
+- `POST /availability` - Add availability
+- `DELETE /availability/:id` - Remove availability
+- `GET /progress/export` - Download PDF report
 
-### Content Moderation
-- **HTML Sanitization**: Removes potentially harmful HTML
-- **Bad Word Filter**: Flags inappropriate content for admin review
-- **Input Validation**: Joi schema validation for all forms
-- **CSRF Protection**: Prevents cross-site request forgery
+### Listings (`/listings`)
+- `GET /` - Browse active listings
+- `POST /create` - Create listing
+- `POST /:id/edit` - Update listing
+- `POST /:id/pause` - Pause listing
+- `POST /:id/activate` - Activate listing
+- `POST /:id/delete` - Delete listing
 
-## API Endpoints
+### Sessions (`/sessions`)
+- `GET /` - View all sessions
+- `POST /request` - Request session
+- `POST /quick-request` - Auto-schedule session
+- `POST /:id/confirm` - Accept request (generates code)
+- `POST /:id/verify-code` - Start session with code
+- `POST /:id/end` - End session
+- `POST /:id/cancel` - Cancel session
 
-### Authentication
-- `GET /auth/register` - Registration page
-- `POST /auth/register` - Create account
-- `GET /auth/login` - Login page
-- `POST /auth/login` - Authenticate user
-- `GET /auth/logout` - Logout user
-- `GET /auth/forgot` - Forgot password page
-- `POST /auth/forgot` - Send reset email
-- `GET /auth/reset/:token` - Reset password page
-- `POST /auth/reset/:token` - Update password
+### Tips (`/tips`)
+- `GET /` - Tips history
+- `POST /create-payment-intent` - Initiate payment
+- `POST /quick-pay` - Pay with saved card
+- `GET /saved-cards` - List saved payment methods
 
-### Profile Management
-- `GET /profile` - View/edit profile
-- `POST /profile/update` - Update profile
-- `POST /profile/skills` - Add skill
-- `DELETE /profile/skills/:id` - Remove skill
-- `POST /profile/availability` - Add availability
-- `DELETE /profile/availability/:id` - Remove availability
-- `POST /profile/privacy` - Toggle privacy
-
-### Listings
-- `GET /listings` - Browse listings
-- `GET /listings/create` - Create listing page
-- `POST /listings/create` - Create listing
-- `GET /listings/:id` - View listing
-- `GET /listings/:id/edit` - Edit listing page
-- `POST /listings/:id/edit` - Update listing
-- `DELETE /listings/:id` - Delete listing
-
-### Matching & Browsing
-- `GET /match` - Find matches
-- `GET /browse` - Browse users
-- `GET /browse/user/:id` - View user profile
-
-### Messaging
-- `GET /messages` - Message threads
-- `GET /messages/thread/:id` - View thread
-- `POST /messages/thread/:id` - Send message
-- `POST /messages/start/:listingId` - Start conversation
-
-### Sessions
-- `GET /sessions` - My sessions
-- `POST /sessions/request` - Request session
-- `POST /sessions/:id/confirm` - Confirm session
-- `POST /sessions/:id/complete` - Complete session
-- `POST /sessions/:id/cancel` - Cancel session
-- `GET /sessions/:id` - Session details
-
-### Ratings
-- `POST /ratings/:sessionId` - Rate session
-
-### Calculator
-- `GET /calculator` - Calculator page
-- `POST /calculator/calculate` - Calculate fair exchange
-
-### Admin (Admin only)
-- `GET /admin` - Admin dashboard
-- `GET /admin/users` - Manage users
-- `POST /admin/users/:id/toggle-suspend` - Suspend/unsuspend user
-- `GET /admin/listings` - Manage listings
-- `POST /admin/listings/:id/:action` - Approve/reject listing
-- `GET /admin/reports` - Manage reports
-- `POST /admin/reports/:id/close` - Close report
-- `GET /admin/categories` - Manage categories
-- `POST /admin/categories` - Add category
-- `POST /admin/categories/:id/toggle` - Toggle category
-- `GET /admin/weights` - Manage calculator weights
-- `POST /admin/weights/:id` - Update weight
-
-## Database Schema
-
-### Core Tables
-- `users` - User accounts and profiles
-- `categories` - Skill categories
-- `skills` - Available skills
-- `user_skills` - User skill associations (teach/learn)
-- `availabilities` - Weekly time slots
-- `listings` - Skill listings
-- `message_threads` - Message conversations
-- `messages` - Individual messages
-- `sessions` - Skill exchange sessions
-- `ratings` - Session ratings
-- `reports` - User reports
-- `tip_tokens` - Simulated tipping
-- `calculator_weights` - Skill value weights
+### Admin (`/admin`)
+- `GET /` - Dashboard with KPIs
+- `GET /users` - Manage users
+- `POST /users/:id/suspend` - Suspend user
+- `POST /users/:id/toggle-ban` - Ban/unban user
+- `POST /users/:id/warn` - Send warning
+- `GET /reports` - View reports
+- `POST /reports/:id/action` - Resolve with penalty
+- `GET /categories` - Manage categories
+- `GET /skills` - Manage skills
+- `GET /weights` - Configure match weights
+- `GET /payments` - View transactions
+- `POST /payments/:id/refund` - Process refund
 
 ## Security Features
 
 - **Password Hashing**: bcrypt with 12 rounds
 - **Session Security**: Secure cookies, SameSite strict
 - **CSRF Protection**: All forms protected
-- **Rate Limiting**: Prevents abuse
+- **Rate Limiting**: 5 attempts per 15 minutes for auth
 - **Input Validation**: Joi schema validation
 - **Content Security Policy**: Helmet CSP headers
-- **SQL Injection Protection**: Sequelize ORM
+- **SQL Injection Protection**: Sequelize ORM parameterized queries
 - **XSS Protection**: HTML sanitization
+- **Role-based Access**: Admin middleware for protected routes
+- **Force Logout**: Socket.io for banned/suspended users
 
 ## Development
+
+### Running in Development
+```bash
+npm run dev
+```
 
 ### Running Tests
 ```bash
@@ -248,48 +244,34 @@ npm test
 
 ### Database Operations
 ```bash
+# Run migrations
+npm run migrate
+
+# Seed database
+npm run seed
+
 # Create new migration
 npx sequelize-cli migration:generate --name migration-name
-
-# Create new seeder
-npx sequelize-cli seed:generate --name seeder-name
-
-# Run specific migration
-npx sequelize-cli db:migrate --to migration-name.js
 
 # Undo last migration
 npx sequelize-cli db:migrate:undo
 ```
 
-### Logs
-- Development: Console output with Morgan
-- Production: Winston file logging in `logs/` directory
-
 ## Production Deployment
 
-1. Set `NODE_ENV=production` in environment
-2. Configure production database
-3. Set secure session secret
-4. Configure logging
-5. Set up reverse proxy (nginx recommended)
-6. Use PM2 or similar process manager
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Add tests
-5. Submit pull request
+1. Set `NODE_ENV=production`
+2. Configure production MySQL database
+3. Set secure session secret (32+ characters)
+4. Configure Stripe live keys
+5. Set up SMTP for production emails
+6. Use PM2 or Docker for process management
+7. Configure nginx as reverse proxy
+8. Enable HTTPS with SSL certificate
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Support
-
-For support and questions, please contact the development team.
+MIT License
 
 ---
 
-**SkillSwap MY** - Connecting Malaysians through skill exchange 
+**SkillSwap MY** - Connecting Malaysians through skill exchange 🇲🇾

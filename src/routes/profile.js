@@ -1,5 +1,5 @@
 const express = require('express');
-const { User, UserSkill, Availability, Skill, Category, UserProgress, TipToken } = require('../models');
+const { User, UserSkill, Availability, Skill, Category, UserProgress } = require('../models');
 const { validate, schemas } = require('../middlewares/validate');
 const multer = require('multer');
 const path = require('path');
@@ -209,15 +209,35 @@ router.get('/', async (req, res) => {
     if (teachPoints >= 100) badges.push({ label: 'Mentor', class: 'bg-warning text-dark' });
     if (learnPoints >= 100) badges.push({ label: 'Dedicated Learner', class: 'bg-secondary' });
 
-    // Wallet data - tips received
-    const tipsReceived = await TipToken.findAll({
-      where: { toUserId: req.user.id },
-      include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'profileImage'] }],
+    // Wallet data - Query Transaction table for Stripe tips
+    const { Transaction } = require('../models');
+    const tipsReceived = await Transaction.findAll({
+      where: {
+        recipientUserId: req.user.id,
+        type: 'tip',
+        status: 'succeeded'
+      },
+      include: [{ model: User, as: 'user', attributes: ['id', 'name', 'profileImage'] }],
       order: [['createdAt', 'DESC']],
       limit: 5
     });
-    const totalTipsReceived = await TipToken.count({ where: { toUserId: req.user.id } });
-    const totalTipsAmount = await TipToken.sum('amount', { where: { toUserId: req.user.id } }) || 0;
+
+    const totalTipsReceived = await Transaction.count({
+      where: {
+        recipientUserId: req.user.id,
+        type: 'tip',
+        status: 'succeeded'
+      }
+    });
+
+    const totalTipsAmountResult = await Transaction.sum('amount', {
+      where: {
+        recipientUserId: req.user.id,
+        type: 'tip',
+        status: 'succeeded'
+      }
+    });
+    const totalTipsAmount = totalTipsAmountResult || 0;
 
     res.render('profile/index', {
       title: 'My Profile - SkillSwap MY',

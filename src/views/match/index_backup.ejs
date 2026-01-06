@@ -1,4 +1,4 @@
-<% const hasMatches=Array.isArray(matches) && matches.length> 0;
+﻿<% const hasMatches=Array.isArray(matches) && matches.length> 0;
   const topMatch = hasMatches ? matches[0] : null;
   %>
 
@@ -15,7 +15,7 @@
           <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm">
             <div class="text-uppercase small fw-semibold">Top match score</div>
             <div class="display-6 fw-bold mb-0">
-              <%= Math.min(Math.round(topMatch.score * 100), 99) %>%
+              <%= topMatch.score.toFixed(1) %>
             </div>
             <div class="small text-muted">with <strong>
                 <%= topMatch.user.name %>
@@ -170,7 +170,8 @@
             </a>
             <% if (waNumber) { %>
               <a class="btn btn-outline-success btn-sm" target="_blank" rel="noopener" title="WhatsApp"
-                href="/go/wa/<%= match.user.id %>?text=<%- encodeURIComponent('Hi ' + match.user.name + ', I found you on SkillSwap MY!') %>">
+                href="/go/wa/<%= match.user.id %>?text=<%- encodeURIComponent(' Hi ' + match.user.name + ' , I found
+                              you on SkillSwap MY!') %>">
                               <i class="fab fa-whatsapp"></i>
                               </a>
                               <% } %>

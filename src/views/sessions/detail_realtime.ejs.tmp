@@ -1,0 +1,67 @@
+                          <%= fmt(s.actualEndAt) %>
+                        </span>
+                      </div>
+                      <% } %>
+                  </div>
+                </div>
+                <% } %>
+        </div>
+      </div>
+
+  <!-- Socket.io Real-time Updates -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    (function() {
+      const socket = io();
+      const sessionId = '<%= s.id %>';
+      const userId = '<%= user.id %>';
+
+      // Join session-specific room and user room
+      socket.emit('join_session', sessionId);
+      socket.emit('join_room', `user_${userId}`);
+
+      // Listen for session status changes
+      socket.on('session_status_changed', (data) => {
+        if (data.sessionId == sessionId) {
+          console.log('Session status changed:', data.status);
+          
+          // Show notification toast
+          if (typeof Swal !== 'undefined') {
+            Swal.fire({
+              icon: data.status === 'completed' ? 'success' : 'info',
+              title: data.message || 'Session Updated',
+              text: 'The page will reload automatically...',
+              timer: 2000,
+              showConfirmButton: false,
+              position: 'center'
+            });
+          }
+
+          // Reload page after short delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      });
+
+      // Alternative direct events
+      socket.on('session_started', (data) => {
+        if (data.sessionId == sessionId) {
+          console.log('Session started event received');
+          window.location.reload();
+        }
+      });
+
+      socket.on('session_completed', (data) => {
+        if (data.sessionId == sessionId) {
+          console.log('Session completed event received');
+          window.location.reload();
+        }
+      });
+
+      // Clean up on page unload
+      window.addEventListener('beforeunload', () => {
+        socket.disconnect();
+      });
+    })();
+  </script>

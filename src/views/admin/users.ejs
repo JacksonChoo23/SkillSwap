@@ -1,5 +1,8 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h1 class="h3 mb-0 text-gray-800">Manage Users</h1>
+  <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+    <i class="fas fa-plus me-1"></i> Add User
+  </button>
 </div>
 
 <!-- Search and Filter -->
@@ -54,6 +57,7 @@
             Unsuspend</span>
           <span class="d-flex align-items-center"><i class="bi bi-slash-circle text-danger me-1"></i> Ban</span>
           <span class="d-flex align-items-center"><i class="bi bi-check-circle text-success me-1"></i> Unban</span>
+          <span class="d-flex align-items-center"><i class="bi bi-trash text-danger me-1"></i> Delete</span>
         </div>
 
         <div class="table-responsive">
@@ -90,6 +94,9 @@
                       <div>
                         <div class="fw-bold">
                           <%= u.name %>
+                            <% if (u.role==='admin' ) { %>
+                              <span class="badge bg-primary ms-1">Admin</span>
+                              <% } %>
                         </div>
                         <small class="text-muted">
                           <%= u.email %>
@@ -209,6 +216,13 @@
                                       <i class="bi bi-slash-circle"></i>
                                     </button>
                                     <% } %>
+
+                                      <!-- Delete User -->
+                                      <button type="button" class="btn btn-outline-danger delete-user-btn"
+                                        data-user-id="<%= u.id %>" data-user-name="<%= u.name %>"
+                                        data-csrf="<%= csrfToken %>" data-bs-toggle="tooltip" title="Delete User">
+                                        <i class="bi bi-trash"></i>
+                                      </button>
                     </div>
                   </td>
                 </tr>
@@ -382,6 +396,54 @@
         });
       });
     });
+
+    // Delete user button handlers
+    document.querySelectorAll('.delete-user-btn').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const userId = this.dataset.userId;
+        const userName = this.dataset.userName;
+        const csrfToken = this.dataset.csrf;
+
+        Swal.fire({
+          title: 'Delete User?',
+          html: `<p class="text-danger fw-bold">This action is PERMANENT and cannot be undone!</p>
+                 <p>User: <strong>${userName}</strong></p>
+                 <p>Type <strong>delete</strong> to confirm:</p>`,
+          icon: 'warning',
+          input: 'text',
+          inputPlaceholder: 'Type "delete" to confirm',
+          inputValidator: (value) => {
+            if (value !== 'delete') {
+              return 'Please type "delete" to confirm';
+            }
+          },
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Delete User',
+          cancelButtonText: 'Cancel'
+        }).then((result) => {
+          if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/users/${userId}/delete`;
+            form.style.display = 'none';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_csrf';
+            csrfInput.value = csrfToken;
+            form.appendChild(csrfInput);
+
+            document.body.appendChild(form);
+            const loader = document.getElementById('page-loader');
+            if (loader) loader.classList.remove('hidden');
+            form.submit();
+          }
+        });
+      });
+    });
   });
 
   async function viewUserDetails(userId) {
@@ -466,3 +528,53 @@
     }
   }
 </script>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="addUserModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="POST" action="/admin/users/create">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="addUserModalLabel">
+            <i class="fas fa-user-plus me-2"></i>Add New User
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="userName" class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="userName" name="name" required minlength="2"
+              placeholder="Enter full name">
+          </div>
+          <div class="mb-3">
+            <label for="userEmail" class="form-label fw-bold">Email Address <span class="text-danger">*</span></label>
+            <input type="email" class="form-control" id="userEmail" name="email" required
+              placeholder="Enter email address">
+          </div>
+          <div class="mb-3">
+            <label for="userPassword" class="form-label fw-bold">Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="userPassword" name="password" required minlength="6"
+              placeholder="Enter password (min 6 characters)">
+          </div>
+          <div class="mb-3">
+            <label for="userRole" class="form-label fw-bold">Role <span class="text-danger">*</span></label>
+            <select class="form-select" id="userRole" name="role" required>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <div class="form-text text-muted">
+              <i class="fas fa-info-circle me-1"></i>Admin users have full access to the admin dashboard.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i> Create User
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

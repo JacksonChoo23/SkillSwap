@@ -1,273 +1,425 @@
 <% const me=user || {}; const t=thread || {}; const msgs=Array.isArray(t.messages) ? t.messages : []; const
   partner=(t.creatorId===me.id) ? t.participant : t.creator; const partnerName=partner?.name || 'Partner' ; const
-  listingTitle=t.Listing?.title || null; const csrf=csrfToken || '' ; %>
+  partnerImage=partner?.profileImage || null; const listingTitle=t.Listing?.title || null; const csrf=csrfToken || '' ;
+  %>
 
-  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-    <div class="d-flex align-items-center gap-3">
-      <a class="btn btn-outline-secondary btn-sm" href="/messages">
-        <i class="fas fa-arrow-left me-1"></i>Back
-      </a>
-      <% if (listingTitle) { %>
-        <h1 class="h5 d-inline align-middle mb-0">
-          <%= listingTitle %>
-        </h1>
-        <span class="text-muted ms-2">with <strong>
-            <%= partnerName %>
-          </strong></span>
-        <% } else { %>
-          <h1 class="h5 d-inline align-middle mb-0">Chat with <strong>
-              <%= partnerName %>
-            </strong></h1>
-          <% } %>
-    </div>
-    <div class="d-flex gap-2">
-      <% if (partner && partner.whatsappNumber) { %>
-        <a class="btn btn-success btn-sm" target="_blank" rel="noopener"
-          href="https://wa.me/<%= encodeURIComponent((partner.whatsappNumber || '').replace(/\+/g,'').trim()) %>?text=<%= encodeURIComponent('Hi I saw you on SkillSwap MY') %>">WhatsApp</a>
-        <% } %>
-          <% if (partner) { %>
-            <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
-              data-bs-target="#reportModal">Report</button>
+  <div class="container py-4">
+    <!-- Chat Header Card -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-body py-3">
+        <div
+          class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+          <!-- Left: Back button + Partner info -->
+          <div class="d-flex align-items-center gap-3">
+            <a href="/messages" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-arrow-left me-1"></i>Back
+            </a>
 
-            <!-- Report Modal -->
-            <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title">Report User</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="d-flex align-items-center gap-3">
+              <!-- Partner Avatar -->
+              <% if (partnerImage) { %>
+                <img src="<%= partnerImage %>" alt="<%= partnerName %>" class="rounded-circle border"
+                  style="width: 48px; height: 48px; object-fit: cover;">
+                <% } else { %>
+                  <div
+                    class="rounded-circle bg-primary bg-gradient d-flex align-items-center justify-content-center text-white"
+                    style="width: 48px; height: 48px; font-size: 1.1rem;">
+                    <%= partnerName.charAt(0).toUpperCase() %>
                   </div>
-                  <form action="/reports" method="POST" enctype="multipart/form-data">
-                    <div class="modal-body">
-                      <input type="hidden" name="_csrf" value="<%= csrf %>">
-                      <input type="hidden" name="targetUserId" value="<%= partner.id %>">
+                  <% } %>
 
-                      <div class="mb-3">
-                        <label class="form-label">Why are you reporting this user?</label>
-                        <textarea class="form-control" name="reason" rows="3" required minlength="10"
-                          placeholder="Please describe the issue..."></textarea>
-                      </div>
-
-                      <!-- Chat Evidence Section -->
-                      <div class="mb-3">
-                        <label class="form-label fw-bold">Chat Evidence (Optional)</label>
-                        <p class="small text-muted mb-2">Select messages to include as evidence:</p>
-
-                        <div class="border rounded p-2 bg-light mb-2" style="max-height: 200px; overflow-y: auto;">
-                          <% if (msgs.length> 0) { %>
-                            <% msgs.slice(-10).forEach(m=> { %>
-                              <div class="form-check mb-1">
-                                <input class="form-check-input evidence-check" type="checkbox" name="chatMessageIds[]"
-                                  value="<%= m.id %>" id="msg<%= m.id %>">
-                                <label class="form-check-label small" for="msg<%= m.id %>">
-                                  <strong>
-                                    <%= m.senderId===me.id ? 'You' : partnerName %>:
-                                  </strong>
-                                  <%= m.content.substring(0, 50) %>
-                                    <%= m.content.length> 50 ? '...' : '' %>
-                                      <span class="text-muted" style="font-size: 0.75em;">(<%= new
-                                          Date(m.createdAt).toLocaleTimeString() %>)</span>
-                                </label>
-                                <!-- Hidden input to send actual content if checked -->
-                                <input type="hidden" name="chatContent_<%= m.id %>" value="<%= m.content %>">
-                                <input type="hidden" name="chatSender_<%= m.id %>"
-                                  value="<%= m.senderId === me.id ? 'You' : partnerName %>">
-                                <input type="hidden" name="chatTime_<%= m.id %>"
-                                  value="<%= new Date(m.createdAt).toISOString() %>">
-                              </div>
-                              <% }) %>
-                                <% } else { %>
-                                  <p class="small text-muted fst-italic">No recent messages to attach.</p>
-                                  <% } %>
-                        </div>
-
-                        <div class="alert alert-warning py-2 mb-0" style="font-size: 0.85rem;">
-                          <i class="fas fa-exclamation-triangle me-1"></i>
-                          <strong>Privacy Warning:</strong> By attaching these messages, you consent to sharing this
-                          private conversation with SkillSwap admins for review.
-                        </div>
-                      </div>
-
-                      <div class="mb-3">
-                        <label class="form-label">Attach Screenshots (Optional)</label>
-                        <input type="file" class="form-control form-control-sm" name="evidence" multiple
-                          accept="image/*">
-                      </div>
-
-                      <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" required id="privacyConsent">
-                        <label class="form-check-label small" for="privacyConsent">
-                          I agree to share the selected information for investigation purposes.
-                        </label>
-                      </div>
+                    <!-- Partner Name & Listing -->
+                    <div>
+                      <h5 class="mb-0 fw-semibold">
+                        <%= partnerName %>
+                      </h5>
+                      <% if (listingTitle) { %>
+                        <small class="text-muted">
+                          <i class="fas fa-tag me-1"></i>
+                          <%= listingTitle %>
+                        </small>
+                        <% } %>
                     </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                      <button type="submit" class="btn btn-danger">Submit Report</button>
-                    </div>
-                  </form>
+            </div>
+          </div>
+
+          <!-- Right: Action buttons -->
+          <div class="d-flex gap-2 flex-wrap">
+            <% if (partner && partner.whatsappNumber) { %>
+              <a class="btn btn-success btn-sm" target="_blank" rel="noopener"
+                href="https://wa.me/<%= encodeURIComponent((partner.whatsappNumber || '').replace(/\+/g,'').trim()) %>?text=<%= encodeURIComponent('Hi, I saw you on SkillSwap MY!') %>">
+                <i class="fab fa-whatsapp me-1"></i>WhatsApp
+              </a>
+              <% } %>
+
+                <% if (t.Listing?.id) { %>
+                  <a class="btn btn-outline-primary btn-sm" href="/listings/<%= t.Listing.id %>">
+                    <i class="fas fa-external-link-alt me-1"></i>View Listing
+                  </a>
+                  <% } %>
+
+                    <% if (partner) { %>
+                      <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal"
+                        data-bs-target="#reportModal">
+                        <i class="fas fa-flag me-1"></i>Report
+                      </button>
+                      <% } %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listing Context Card (if applicable) -->
+    <% if (t.Listing) { %>
+      <div class="alert alert-light border d-flex align-items-center gap-3 mb-3">
+        <div class="flex-shrink-0">
+          <i class="fas fa-info-circle text-primary fa-lg"></i>
+        </div>
+        <div class="flex-grow-1">
+          <small class="text-muted d-block">This conversation is about:</small>
+          <strong>
+            <%= t.Listing.title %>
+          </strong>
+        </div>
+        <a href="/listings/<%= t.Listing.id %>" class="btn btn-sm btn-outline-primary flex-shrink-0">
+          View Details
+        </a>
+      </div>
+      <% } %>
+
+        <!-- Chat Messages Card -->
+        <div class="card border-0 shadow-sm">
+          <!-- Messages Area -->
+          <div class="card-body" style="height: 55vh; overflow-y: auto;" id="chatScroll">
+            <% if (msgs.length===0) { %>
+              <div class="text-center text-muted py-5">
+                <div class="mb-3">
+                  <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center"
+                    style="width: 80px; height: 80px;">
+                    <i class="fas fa-comments fa-2x text-muted"></i>
+                  </div>
                 </div>
+                <h6 class="text-muted">No messages yet</h6>
+                <p class="small mb-0">Send the first message to start the conversation!</p>
+              </div>
+              <% } else { %>
+                <div class="d-flex flex-column gap-3" id="messagesContainer">
+                  <% let lastDate=null; msgs.forEach((m, index)=> {
+                    const mine = m.senderId === me.id;
+                    const msgDate = new Date(m.createdAt);
+                    const dateStr = msgDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day:
+                    'numeric' });
+                    const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day:
+                    'numeric' });
+                    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-US', { weekday: 'long',
+                    month: 'short', day: 'numeric' });
+
+                    let displayDate = dateStr;
+                    if (dateStr === today) displayDate = 'Today';
+                    else if (dateStr === yesterday) displayDate = 'Yesterday';
+
+                    // Show date separator if date changed
+                    if (lastDate !== dateStr) {
+                    lastDate = dateStr;
+                    %>
+                    <!-- Date Separator -->
+                    <div class="text-center my-2">
+                      <small class="text-muted bg-light px-3 py-1 rounded-pill">
+                        <%= displayDate %>
+                      </small>
+                    </div>
+                    <% } %>
+
+                      <!-- Message Bubble -->
+                      <div class="d-flex <%= mine ? 'justify-content-end' : 'justify-content-start' %>">
+                        <% if (!mine && partnerImage) { %>
+                          <img src="<%= partnerImage %>" alt="<%= partnerName %>"
+                            class="rounded-circle me-2 flex-shrink-0 align-self-end"
+                            style="width: 32px; height: 32px; object-fit: cover;">
+                          <% } else if (!mine) { %>
+                            <div
+                              class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white me-2 flex-shrink-0 align-self-end"
+                              style="width: 32px; height: 32px; font-size: 0.75rem;">
+                              <%= partnerName.charAt(0).toUpperCase() %>
+                            </div>
+                            <% } %>
+
+                              <div class="<%= mine ? 'bg-primary text-white' : 'bg-light' %> rounded-3 px-3 py-2"
+                                style="max-width: 70%; word-wrap: break-word;">
+                                <div style="white-space: pre-wrap;">
+                                  <%= m.content %>
+                                </div>
+                                <div class="<%= mine ? 'text-white-50' : 'text-muted' %> small text-end mt-1">
+                                  <%= msgDate.toLocaleTimeString([], { hour: '2-digit' , minute: '2-digit' }) %>
+                                </div>
+                              </div>
+                      </div>
+                      <% }) %>
+                </div>
+                <% } %>
+                  <div id="chatEnd"></div>
+          </div>
+
+          <!-- Typing Indicator (hidden by default) -->
+          <div class="px-3 py-2 d-none" id="typingIndicator">
+            <small class="text-muted">
+              <i class="fas fa-ellipsis-h"></i>
+              <%= partnerName %> is typing...
+            </small>
+          </div>
+
+          <!-- Message Input -->
+          <div class="card-footer bg-white border-top">
+            <form id="messageForm">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <div class="input-group">
+                <textarea class="form-control" name="content" id="messageInput" rows="1" required
+                  placeholder="Type your message..." style="resize: none; max-height: 100px;"></textarea>
+                <button class="btn btn-primary px-4" type="submit" id="sendBtn">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+              <small class="text-muted mt-1 d-block">Press Enter to send, Shift+Enter for new line</small>
+            </form>
+          </div>
+        </div>
+  </div>
+
+  <!-- Report Modal -->
+  <% if (partner) { %>
+    <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-flag text-danger me-2"></i>Report User
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <form action="/reports" method="POST" enctype="multipart/form-data">
+            <div class="modal-body">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="targetUserId" value="<%= partner.id %>">
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Why are you reporting this user?</label>
+                <textarea class="form-control" name="reason" rows="3" required minlength="10"
+                  placeholder="Please describe the issue..."></textarea>
+              </div>
+
+              <!-- Chat Evidence Section -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Chat Evidence (Optional)</label>
+                <p class="small text-muted mb-2">Select messages to include as evidence:</p>
+
+                <div class="border rounded p-2 bg-light mb-2" style="max-height: 200px; overflow-y: auto;">
+                  <% if (msgs.length> 0) { %>
+                    <% msgs.slice(-10).forEach(m=> { %>
+                      <div class="form-check mb-1">
+                        <input class="form-check-input evidence-check" type="checkbox" name="chatMessageIds[]"
+                          value="<%= m.id %>" id="msg<%= m.id %>">
+                        <label class="form-check-label small" for="msg<%= m.id %>">
+                          <strong>
+                            <%= m.senderId===me.id ? 'You' : partnerName %>:
+                          </strong>
+                          <%= m.content.substring(0, 50) %>
+                            <%= m.content.length> 50 ? '...' : '' %>
+                              <span class="text-muted" style="font-size: 0.75em;">
+                                (<%= new Date(m.createdAt).toLocaleTimeString() %>)
+                              </span>
+                        </label>
+                        <input type="hidden" name="chatContent_<%= m.id %>" value="<%= m.content %>">
+                        <input type="hidden" name="chatSender_<%= m.id %>"
+                          value="<%= m.senderId === me.id ? 'You' : partnerName %>">
+                        <input type="hidden" name="chatTime_<%= m.id %>"
+                          value="<%= new Date(m.createdAt).toISOString() %>">
+                      </div>
+                      <% }) %>
+                        <% } else { %>
+                          <p class="small text-muted fst-italic mb-0">No recent messages to attach.</p>
+                          <% } %>
+                </div>
+
+                <div class="alert alert-warning py-2 mb-0" style="font-size: 0.85rem;">
+                  <i class="fas fa-exclamation-triangle me-1"></i>
+                  <strong>Privacy Warning:</strong> By attaching these messages, you consent to sharing this
+                  private conversation with SkillSwap admins for review.
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Attach Screenshots (Optional)</label>
+                <input type="file" class="form-control form-control-sm" name="evidence" multiple accept="image/*">
+              </div>
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" required id="privacyConsent">
+                <label class="form-check-label small" for="privacyConsent">
+                  I agree to share the selected information for investigation purposes.
+                </label>
               </div>
             </div>
-            <% } %>
-              <% if (t.Listing?.id) { %>
-                <a class="btn btn-outline-secondary btn-sm" href="/listings/<%= t.Listing.id %>">View listing</a>
-                <% } %>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-body" style="max-height: 60vh; overflow:auto;" id="chatScroll">
-      <% if (msgs.length===0) { %>
-        <div class="text-muted small">No messages yet.</div>
-        <% } else { %>
-          <div class="vstack gap-3">
-            <% msgs.forEach(m=> {
-              const mine = m.senderId === me.id;
-              %>
-              <div class="d-flex <%= mine ? 'justify-content-end' : 'justify-content-start' %>">
-                <div class="p-2 rounded <%= mine ? 'bg-primary text-white' : 'bg-light' %>" style="max-width: 75%;">
-                  <div class="small <%= mine ? 'text-white-50' : 'text-muted' %> mb-1">
-                    <%= m.sender?.name || (mine ? 'You' : 'User' ) %> • <%= new Date(m.createdAt).toLocaleString() %>
-                  </div>
-                  <div style="white-space: pre-wrap;">
-                    <%= m.content %>
-                  </div>
-                </div>
-              </div>
-              <% }) %>
-          </div>
-          <% } %>
-            <div id="chatEnd"></div>
-    </div>
-    <div class="card-footer">
-      <form id="messageForm">
-        <input type="hidden" name="_csrf" value="<%= csrf %>">
-        <div class="input-group">
-          <textarea class="form-control" name="content" id="messageInput" rows="2" required
-            placeholder="Type your message..."></textarea>
-          <button class="btn btn-primary" type="submit" id="sendBtn">Send</button>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-danger">
+                <i class="fas fa-flag me-1"></i>Submit Report
+              </button>
+            </div>
+          </form>
         </div>
-      </form>
+      </div>
     </div>
-  </div>
+    <% } %>
 
-  <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const chatScroll = document.getElementById('chatScroll');
-    const chatEnd = document.getElementById('chatEnd');
-    const messageForm = document.getElementById('messageForm');
-    const messageInput = document.getElementById('messageInput');
-    const sendBtn = document.getElementById('sendBtn');
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        const chatScroll = document.getElementById('chatScroll');
+        const chatEnd = document.getElementById('chatEnd');
+        const messageForm = document.getElementById('messageForm');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const typingIndicator = document.getElementById('typingIndicator');
 
-    // Auto-scroll to latest
-    if (chatEnd) chatEnd.scrollIntoView({ behavior: 'instant', block: 'end' });
+        // Auto-scroll to latest
+        if (chatEnd) chatEnd.scrollIntoView({ behavior: 'instant', block: 'end' });
 
-    // Socket.io real-time messaging
-    const socket = io();
-    const threadId = '<%= t.id %>';
-    const myId = <%= me.id %>;
-    const myName = '<%= me.name %>';
-    const csrfToken = '<%= csrf %>';
-
-    // Join the thread room
-    socket.emit('join_thread', threadId);
-
-    // Function to add a message bubble
-    function addMessageBubble(data, isMine) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = 'd-flex ' + (isMine ? 'justify-content-end' : 'justify-content-start');
-
-      const bubble = document.createElement('div');
-      bubble.className = 'p-2 rounded ' + (isMine ? 'bg-primary text-white' : 'bg-light');
-      bubble.style.maxWidth = '75%';
-
-      const header = document.createElement('div');
-      header.className = 'small ' + (isMine ? 'text-white-50' : 'text-muted') + ' mb-1';
-      header.textContent = data.senderName + ' • ' + new Date(data.createdAt).toLocaleString();
-
-      const content = document.createElement('div');
-      content.style.whiteSpace = 'pre-wrap';
-      content.textContent = data.content;
-
-      bubble.appendChild(header);
-      bubble.appendChild(content);
-      msgDiv.appendChild(bubble);
-
-      // Insert into container
-      let container = chatScroll.querySelector('.vstack');
-      if (!container) {
-        container = document.createElement('div');
-        container.className = 'vstack gap-3';
-        chatScroll.insertBefore(container, chatEnd);
-        // Remove "No messages yet" text
-        const noMsg = chatScroll.querySelector('.text-muted.small');
-        if (noMsg) noMsg.remove();
-      }
-      container.appendChild(msgDiv);
-
-      // Scroll to new message
-      chatEnd.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-
-    // Listen for new messages from other users
-    socket.on('new_message', (data) => {
-      if (data.senderId === myId) return; // Skip our own (we add it immediately)
-      addMessageBubble(data, false);
-    });
-
-    // Handle form submission via AJAX
-    messageForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const content = messageInput.value.trim();
-      if (!content) return;
-
-      // Disable button while sending
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Sending...';
-
-      try {
-        const res = await fetch('/messages/thread/<%= t.id %>/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify({ content })
+        // Auto-resize textarea
+        messageInput.addEventListener('input', function () {
+          this.style.height = 'auto';
+          this.style.height = Math.min(this.scrollHeight, 100) + 'px';
         });
 
-        if (res.ok) {
-          // Add our message immediately
-          addMessageBubble({
-            content: content,
-            senderName: myName,
-            createdAt: new Date().toISOString()
-          }, true);
-          messageInput.value = '';
-        } else {
-          const data = await res.json();
-          alert(data.error || 'Failed to send message');
+        // Socket.io real-time messaging
+        const socket = io();
+        const threadId = '<%= t.id %>';
+        const myId = <%= me.id %>;
+        const myName = '<%= me.name %>';
+        const partnerName = '<%= partnerName %>';
+        const partnerImage = '<%= partnerImage || "" %>';
+        const csrfToken = '<%= csrf %>';
+
+        // Join the thread room
+        socket.emit('join_thread', threadId);
+
+        // Function to add a message bubble
+        function addMessageBubble(data, isMine) {
+          // Create or get container
+          let container = messagesContainer;
+          if (!container) {
+            container = document.createElement('div');
+            container.className = 'd-flex flex-column gap-3';
+            container.id = 'messagesContainer';
+            const emptyState = chatScroll.querySelector('.text-center.text-muted');
+            if (emptyState) emptyState.remove();
+            chatScroll.insertBefore(container, chatEnd);
+          }
+
+          const msgDiv = document.createElement('div');
+          msgDiv.className = 'd-flex ' + (isMine ? 'justify-content-end' : 'justify-content-start');
+
+          let avatarHtml = '';
+          if (!isMine) {
+            if (partnerImage) {
+              avatarHtml = `<img src="${partnerImage}" alt="${partnerName}" class="rounded-circle me-2 flex-shrink-0 align-self-end" style="width: 32px; height: 32px; object-fit: cover;">`;
+            } else {
+              avatarHtml = `<div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white me-2 flex-shrink-0 align-self-end" style="width: 32px; height: 32px; font-size: 0.75rem;">${partnerName.charAt(0).toUpperCase()}</div>`;
+            }
+          }
+
+          const bubble = document.createElement('div');
+          bubble.className = (isMine ? 'bg-primary text-white' : 'bg-light') + ' rounded-3 px-3 py-2';
+          bubble.style.maxWidth = '70%';
+          bubble.style.wordWrap = 'break-word';
+
+          const content = document.createElement('div');
+          content.style.whiteSpace = 'pre-wrap';
+          content.textContent = data.content;
+
+          const time = document.createElement('div');
+          time.className = (isMine ? 'text-white-50' : 'text-muted') + ' small text-end mt-1';
+          time.textContent = new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          bubble.appendChild(content);
+          bubble.appendChild(time);
+
+          msgDiv.innerHTML = avatarHtml;
+          msgDiv.appendChild(bubble);
+          container.appendChild(msgDiv);
+
+          // Scroll to new message
+          chatEnd.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
-      } catch (err) {
-        console.error('Send error:', err);
-        alert('Failed to send message. Please try again.');
-      } finally {
-        sendBtn.disabled = false;
-        sendBtn.textContent = 'Send';
-        messageInput.focus();
-      }
-    });
 
-    // Send on Enter (Shift+Enter for newline)
-    messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        messageForm.dispatchEvent(new Event('submit'));
-      }
-    });
+        // Listen for new messages from other users
+        socket.on('new_message', (data) => {
+          if (data.senderId === myId) return;
+          addMessageBubble(data, false);
+          // Hide typing indicator
+          if (typingIndicator) typingIndicator.classList.add('d-none');
+        });
 
-    // Cleanup on page leave
-    window.addEventListener('beforeunload', () => {
-      socket.emit('leave_thread', threadId);
-    });
-  </script>
+        // Handle form submission via AJAX
+        messageForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const content = messageInput.value.trim();
+          if (!content) return;
+
+          sendBtn.disabled = true;
+          sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+          try {
+            const res = await fetch('/messages/thread/<%= t.id %>/send', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken
+              },
+              body: JSON.stringify({ content })
+            });
+
+            if (res.ok) {
+              addMessageBubble({
+                content: content,
+                senderName: myName,
+                createdAt: new Date().toISOString()
+              }, true);
+              messageInput.value = '';
+              messageInput.style.height = 'auto';
+            } else {
+              const data = await res.json();
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'Failed to send message',
+                confirmButtonColor: '#0d6efd'
+              });
+            }
+          } catch (err) {
+            console.error('Send error:', err);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Failed to send message. Please try again.',
+              confirmButtonColor: '#0d6efd'
+            });
+          } finally {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            messageInput.focus();
+          }
+        });
+
+        // Send on Enter (Shift+Enter for newline)
+        messageInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            messageForm.dispatchEvent(new Event('submit'));
+          }
+        });
+
+        // Cleanup on page leave
+        window.addEventListener('beforeunload', () => {
+          socket.emit('leave_thread', threadId);
+        });
+      </script>

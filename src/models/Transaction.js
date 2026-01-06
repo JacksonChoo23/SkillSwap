@@ -48,6 +48,20 @@ const Transaction = sequelize.define('Transaction', {
         type: DataTypes.STRING(500),
         allowNull: true
     },
+    recipientUserId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'recipient_user_id',
+        references: {
+            model: 'users',
+            key: 'id'
+        }
+    },
+    type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        defaultValue: 'payment'
+    },
     metadata: {
         type: DataTypes.JSON,
         allowNull: true
@@ -57,6 +71,8 @@ const Transaction = sequelize.define('Transaction', {
     timestamps: true,
     indexes: [
         { fields: ['user_id'] },
+        { fields: ['recipient_user_id'] },
+        { fields: ['type'] },
         { fields: ['status'] },
         { fields: ['stripe_payment_intent_id'] }
     ]

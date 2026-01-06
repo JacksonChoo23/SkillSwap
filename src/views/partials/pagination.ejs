@@ -1,18 +1,34 @@
 <% var cp=locals.currentPage ? locals.currentPage : 1; var tp=locals.totalPages ? locals.totalPages : 1; var
-    total=locals.totalItems ? locals.totalItems : 0; var lim=locals.limit ? locals.limit : 10; var base=locals.baseUrl ?
-    locals.baseUrl : '?' ; var startItem=total> 0 ? (cp - 1) * lim + 1 : 0;
+    total=locals.totalItems ? locals.totalItems : 0; var lim=locals.limit ? locals.limit : 10; var
+    rawBase=locals.baseUrl ? locals.baseUrl : '/' ; var base=rawBase; if (base.indexOf('?')===-1) { base=base + '?' ; }
+    else { var lastChar=base.charAt(base.length - 1); if (lastChar !=='?' && lastChar !=='&' ) { base=base + '&' ; } }
+    var startItem=total> 0 ? (cp - 1) * lim + 1 : 0;
     var endItem = Math.min(cp * lim, total);
     var startPage = Math.max(1, cp - 2);
     var endPage = Math.min(tp, startPage + 4);
-    if (endPage - startPage < 4) { startPage=Math.max(1, endPage - 4); } %>
+    if (endPage - startPage < 4) { startPage=Math.max(1, endPage - 4); } var isAdmin=rawBase.indexOf('/admin') !==-1; %>
         <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
             <div class="d-flex align-items-center gap-2">
-                <label class="text-muted small mb-0">Rows per page:</label>
+                <label class="text-muted small mb-0">
+                    <%= isAdmin ? 'Items per page:' : 'Rows per page:' %>
+                </label>
                 <select class="form-select form-select-sm pagination-limit-select" style="width: auto;">
-                    <option value="<%= base %>page=1&limit=5" <% if(lim==5){ %>selected<% } %>>5</option>
-                    <option value="<%= base %>page=1&limit=10" <% if(lim==10){ %>selected<% } %>>10</option>
-                    <option value="<%= base %>page=1&limit=25" <% if(lim==25){ %>selected<% } %>>25</option>
-                    <option value="<%= base %>page=1&limit=50" <% if(lim==50){ %>selected<% } %>>50</option>
+                    <% if (isAdmin) { %>
+                        <option value="<%= base %>page=1&limit=10" <% if(lim==10){ %>selected<% } %>>10</option>
+                        <option value="<%= base %>page=1&limit=25" <% if(lim==25){ %>selected<% } %>>25</option>
+                        <option value="<%= base %>page=1&limit=50" <% if(lim==50){ %>selected<% } %>>50</option>
+                        <% } else { %>
+                            <option value="<%= base %>page=1&limit=3" <% if(lim==3){ %>selected<% } %>>1 row (3)
+                            </option>
+                            <option value="<%= base %>page=1&limit=6" <% if(lim==6){ %>selected<% } %>>2 rows (6)
+                            </option>
+                            <option value="<%= base %>page=1&limit=9" <% if(lim==9){ %>selected<% } %>>3 rows (9)
+                            </option>
+                            <option value="<%= base %>page=1&limit=12" <% if(lim==12){ %>selected<% } %>>4 rows (12)
+                            </option>
+                            <option value="<%= base %>page=1&limit=24" <% if(lim==24){ %>selected<% } %>>8 rows (24)
+                            </option>
+                            <% } %>
                 </select>
                 <span class="text-muted small">Showing <%= startItem %>-<%= endItem %> of <%= total %></span>
             </div>

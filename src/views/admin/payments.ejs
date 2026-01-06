@@ -2,9 +2,42 @@
     <h1 class="h3 mb-0">Manage Payments</h1>
 </div>
 
+<!-- Search and Filter -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <form method="GET" action="/admin/payments" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small text-muted">Search</label>
+                <input type="text" name="search" class="form-control" placeholder="Search by user name or email..."
+                    value="<%= search || '' %>">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="succeeded" <%=status==='succeeded' ? 'selected' : '' %>>Succeeded</option>
+                    <option value="pending" <%=status==='pending' ? 'selected' : '' %>>Pending</option>
+                    <option value="refunded" <%=status==='refunded' ? 'selected' : '' %>>Refunded</option>
+                    <option value="failed" <%=status==='failed' ? 'selected' : '' %>>Failed</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search me-1"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="/admin/payments" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-times me-1"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card border-0 shadow-sm">
     <div class="card-body">
-        <% if (!transactions || transactions.length===0) { %>
+        <% if (!payments || payments.length===0) { %>
             <div class="text-center text-muted py-4">
                 <i class="bi bi-credit-card fs-1 d-block mb-2"></i>
                 <p>No transactions found.</p>
@@ -15,59 +48,89 @@
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
-                                <th>User</th>
+                                <th>Type</th>
+                                <th>From</th>
+                                <th>To</th>
                                 <th>Amount</th>
                                 <th>Status</th>
+                                <th>Description</th>
                                 <th>Date</th>
-                                <th>Invoice</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <% transactions.forEach(t=> { %>
+                            <% payments.forEach(p=> { %>
                                 <tr>
-                                    <td>#<%= t.id %>
+                                    <td>#<%= p.id %>
                                     </td>
                                     <td>
-                                        <strong>
-                                            <%= t.user?.name || '-' %>
-                                        </strong>
-                                        <br><small class="text-muted">
-                                            <%= t.user?.email || '-' %>
-                                        </small>
-                                    </td>
-                                    <td>MYR <%= parseFloat(t.amount).toFixed(2) %>
+                                        <% if (p.type==='transaction' ) { %>
+                                            <span class="badge bg-primary">Stripe</span>
+                                            <% } else { %>
+                                                <span class="badge bg-warning text-dark">Tip</span>
+                                                <% } %>
                                     </td>
                                     <td>
-                                        <% if (t.status==='succeeded' ) { %>
-                                            <span class="badge bg-success">Succeeded</span>
-                                            <% } else if (t.status==='pending' ) { %>
-                                                <span class="badge bg-warning text-dark">Pending</span>
-                                                <% } else if (t.status==='refunded' ) { %>
-                                                    <span class="badge bg-info">Refunded</span>
-                                                    <% } else { %>
-                                                        <span class="badge bg-danger">Failed</span>
-                                                        <% } %>
-                                    </td>
-                                    <td><small>
-                                            <%= new Date(t.createdAt).toLocaleString() %>
-                                        </small></td>
-                                    <td>
-                                        <% if (t.invoice) { %>
-                                            <span class="badge bg-secondary">
-                                                <%= t.invoice.invoiceNumber %>
-                                            </span>
+                                        <% if (p.fromUser) { %>
+                                            <strong>
+                                                <%= p.fromUser.name %>
+                                            </strong>
+                                            <br><small class="text-muted">
+                                                <%= p.fromUser.email %>
+                                            </small>
                                             <% } else { %>
                                                 -
                                                 <% } %>
                                     </td>
                                     <td>
-                                        <% if (t.status==='succeeded' ) { %>
-                                            <form action="/admin/payments/<%= t.id %>/refund" method="POST"
-                                                class="d-inline">
+                                        <% if (p.toUser) { %>
+                                            <strong>
+                                                <%= p.toUser.name %>
+                                            </strong>
+                                            <br><small class="text-muted">
+                                                <%= p.toUser.email %>
+                                            </small>
+                                            <% } else { %>
+                                                -
+                                                <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (p.currency==='Tokens' ) { %>
+                                            <span class="text-warning fw-bold">
+                                                <%= p.amount %> Tokens
+                                            </span>
+                                            <% } else { %>
+                                                MYR <%= p.amount.toFixed(2) %>
+                                                    <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (p.status==='succeeded' ) { %>
+                                            <span class="badge bg-success">Succeeded</span>
+                                            <% } else if (p.status==='pending' ) { %>
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                                <% } else if (p.status==='refunded' ) { %>
+                                                    <span class="badge bg-info">Refunded</span>
+                                                    <% } else { %>
+                                                        <span class="badge bg-danger">Failed</span>
+                                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <span class="d-inline-block text-truncate" style="max-width: 150px;"
+                                            title="<%= p.description %>">
+                                            <%= p.description %>
+                                        </span>
+                                    </td>
+                                    <td><small>
+                                            <%= new Date(p.createdAt).toLocaleString() %>
+                                        </small></td>
+                                    <td>
+                                        <% if (p.type==='transaction' && p.status==='succeeded' ) { %>
+                                            <form action="/admin/payments/<%= p.id %>/refund" method="POST"
+                                                class="refund-form d-inline">
                                                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                    onclick="return confirm('Are you sure you want to refund this transaction?')">
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-refund"
+                                                    data-transaction-id="<%= p.id %>"
+                                                    data-amount="<%= p.amount.toFixed(2) %>">
                                                     <i class="bi bi-arrow-counterclockwise"></i> Refund
                                                 </button>
                                             </form>
@@ -81,26 +144,35 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
-                <% if (totalPages> 1) { %>
-                    <nav class="mt-4">
-                        <ul class="pagination justify-content-center">
-                            <li class="page-item <%= currentPage === 1 ? 'disabled' : '' %>">
-                                <a class="page-link" href="<%= baseUrl %>?page=<%= currentPage - 1 %>">Previous</a>
-                            </li>
-                            <% for (let i=1; i <=totalPages; i++) { %>
-                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
-                                    <a class="page-link" href="<%= baseUrl %>?page=<%= i %>">
-                                        <%= i %>
-                                    </a>
-                                </li>
-                                <% } %>
-                                    <li class="page-item <%= currentPage === totalPages ? 'disabled' : '' %>">
-                                        <a class="page-link" href="<%= baseUrl %>?page=<%= currentPage + 1 %>">Next</a>
-                                    </li>
-                        </ul>
-                    </nav>
-                    <% } %>
-                        <% } %>
+                <div class="p-3 border-top">
+                    <%- include('../partials/pagination') %>
+                </div>
+                <% } %>
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.querySelectorAll('.btn-refund').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const form = this.closest('form');
+            const transactionId = this.dataset.transactionId;
+            const amount = this.dataset.amount;
+
+            Swal.fire({
+                title: 'Refund Transaction?',
+                html: `Are you sure you want to refund this transaction?<br><strong>Amount: RM ${amount}</strong><br><small>This action cannot be undone.</small>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, refund it!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>

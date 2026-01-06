@@ -48,9 +48,9 @@
             </div>
           </div>
 
-          <!-- Right: Stats -->
+          <!-- Right: Stats & Export -->
           <div class="col-lg-6 mt-3 mt-lg-0">
-            <div class="d-flex justify-content-lg-end justify-content-center gap-4">
+            <div class="d-flex justify-content-lg-end justify-content-center align-items-center gap-4">
               <% if (progressSummary) { %>
                 <div class="text-center">
                   <div class="h3 mb-0 text-primary fw-bold">
@@ -71,6 +71,9 @@
                   <div class="text-muted small text-uppercase">Learn</div>
                 </div>
                 <% } %>
+                  <a class="btn btn-outline-primary btn-sm" href="/profile/progress/export" title="Export Progress">
+                    <i class="fas fa-download"></i><span class="d-none d-md-inline ms-1">Export</span>
+                  </a>
             </div>
           </div>
         </div>
@@ -104,11 +107,7 @@
           <span class="badge bg-danger rounded-pill ms-1 d-none" id="notificationCount"></span>
         </button>
       </li>
-      <li class="nav-item">
-        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#settings-tab" type="button">
-          <i class="fas fa-cog me-1 d-none d-sm-inline"></i>Settings
-        </button>
-      </li>
+
     </ul>
 
     <!-- Tab Content -->
@@ -436,24 +435,7 @@
         </div>
       </div>
 
-      <!-- Settings Tab -->
-      <div class="tab-pane fade" id="settings-tab">
-        <div class="row g-3 justify-content-center">
-          <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-              <div class="card-header bg-white py-2">
-                <h6 class="mb-0"><i class="fas fa-download me-2 text-primary"></i>Data Export</h6>
-              </div>
-              <div class="card-body">
-                <p class="small text-muted mb-2">Download your progress data as CSV</p>
-                <a class="btn btn-outline-primary btn-sm" href="/profile/progress/export">
-                  <i class="fas fa-download me-1"></i>Export Progress
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   </div>
 

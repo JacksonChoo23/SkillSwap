@@ -51,7 +51,6 @@ const files = [
   'LearningSession.js',
   'Rating.js',
   'Report.js',
-  'TipToken.js',
   'Notification.js',
   'CalculatorWeight.js',
   'Category.js',
@@ -73,7 +72,7 @@ for (const f of files) {
 // 这里做关联——沿用你原来的写法（现在是"全是模型实例"，不会再把工厂/类误传进来）
 const {
   User, Skill, UserSkill, Availability, Listing, MessageThread, Message,
-  LearningSession, Rating, Report, TipToken, Notification, CalculatorWeight, Category,
+  LearningSession, Rating, Report, Notification, CalculatorWeight, Category,
   UserProgress, ContactHistory, SavedSuggestion, Transaction, Invoice
 } = db;
 
@@ -129,11 +128,6 @@ User.hasMany(Report, { foreignKey: 'targetUserId', as: 'reportsAgainst' });
 Report.belongsTo(User, { foreignKey: 'reporterId', as: 'reporter' });
 Report.belongsTo(User, { foreignKey: 'targetUserId', as: 'targetUser' });
 
-// TipToken
-User.hasMany(TipToken, { foreignKey: 'fromUserId', as: 'sentTips' });
-User.hasMany(TipToken, { foreignKey: 'toUserId', as: 'receivedTips' });
-TipToken.belongsTo(User, { foreignKey: 'fromUserId', as: 'fromUser' });
-TipToken.belongsTo(User, { foreignKey: 'toUserId', as: 'toUser' });
 
 // Notifications
 // Table uses underscored column user_id

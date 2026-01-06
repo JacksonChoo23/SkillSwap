@@ -1,5 +1,5 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h1 class="h3 mb-0 text-gray-800">Match Weights</h1>
+  <h1 class="h3 mb-0 text-gray-800">Skills Weights</h1>
 </div>
 
 <div class="alert alert-light border shadow-sm mb-4">
@@ -12,6 +12,38 @@
         Range is 0.01 to 10.00. Higher values have more impact.
       </p>
     </div>
+  </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <form method="GET" action="/admin/weights" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small text-muted">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Search by category name..."
+          value="<%= search || '' %>">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Level</label>
+        <select name="level" class="form-select">
+          <option value="">All Levels</option>
+          <option value="beginner" <%=level==='beginner' ? 'selected' : '' %>>Beginner</option>
+          <option value="intermediate" <%=level==='intermediate' ? 'selected' : '' %>>Intermediate</option>
+          <option value="advanced" <%=level==='advanced' ? 'selected' : '' %>>Advanced</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search me-1"></i> Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="/admin/weights" class="btn btn-outline-secondary w-100">
+          <i class="fas fa-times me-1"></i> Clear
+        </a>
+      </div>
+    </form>
   </div>
 </div>
 

@@ -1,5 +1,5 @@
 const express = require('express');
-const { User, Listing, Report, Category, Skill, CalculatorWeight, Notification, LearningSession, Transaction, Invoice } = require('../models');
+const { User, Listing, Report, Category, Skill, CalculatorWeight, Notification, LearningSession, Transaction, Invoice, TipToken } = require('../models');
 const { Op, fn, col, literal } = require('sequelize');
 const { sequelize } = require('../config/database');
 const { checkGeminiHealth } = require('../../utils/geminiModeration');
@@ -12,7 +12,7 @@ const router = express.Router();
 // Helper function to get pagination params
 function getPagination(req) {
   const page = Math.max(1, parseInt(req.query.page) || 1);
-  const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 10));
+  const limit = Math.min(50, Math.max(3, parseInt(req.query.limit) || 10));
   const offset = (page - 1) * limit;
   return { page, limit, offset };
 }
@@ -61,18 +61,19 @@ router.get('/', async (req, res) => {
     const totalSessions = await LearningSession.count();
     const completedSessions = await LearningSession.count({ where: { status: 'completed' } });
 
-    const openReports = await Report.count({ where: { status: 'open' } });
+    const openReports = await Report.count({ where: { status: { [Op.in]: ['pending_ai', 'ai_reviewed', 'escalated'] } } });
 
-    // Revenue (from Transaction model if exists)
+    // Categories and Skills count
+    const totalCategories = await Category.count({ where: { isActive: true } });
+    const totalSkills = await Skill.count();
+
+    // Payments count and Revenue
     let totalRevenue = 0;
-    let revenueLastMonth = 0;
+    let totalPayments = 0;
     try {
       const revenueResult = await Transaction.sum('amount', { where: { status: 'succeeded' } });
       totalRevenue = revenueResult || 0;
-      const revenueMonthResult = await Transaction.sum('amount', {
-        where: { status: 'succeeded', createdAt: { [Op.gte]: thirtyDaysAgo } }
-      });
-      revenueLastMonth = revenueMonthResult || 0;
+      totalPayments = await Transaction.count();
     } catch (e) { /* Transaction model may not exist yet */ }
 
     const stats = {
@@ -81,11 +82,11 @@ router.get('/', async (req, res) => {
       userGrowth: usersPrevMonth > 0 ? Math.round(((usersLastMonth - usersPrevMonth) / usersPrevMonth) * 100) : 100,
       totalListings,
       listingsLastMonth,
-      totalSessions,
-      completedSessions,
+      totalCategories,
+      totalSkills,
+      totalPayments,
       openReports,
-      totalRevenue,
-      revenueLastMonth
+      totalRevenue
     };
 
     // ===== Chart Data: User Growth (last 30 days) =====
@@ -202,7 +203,7 @@ router.get('/users', async (req, res) => {
     const { search, status } = req.query;
 
     // Build where clause for search and filter
-    const whereClause = { role: { [Op.ne]: 'admin' } }; // Exclude admins from list by default
+    const whereClause = {}; // Show all users including admins
 
     if (search) {
       whereClause[Op.or] = [
@@ -266,6 +267,130 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// Create new user (from Add User modal)
+router.post('/users/create', async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    // Validate inputs
+    if (!name || name.trim().length < 2) {
+      req.flash('error', 'Name must be at least 2 characters long.');
+      return res.redirect('/admin/users');
+    }
+
+    if (!email || !email.includes('@')) {
+      req.flash('error', 'Please enter a valid email address.');
+      return res.redirect('/admin/users');
+    }
+
+    if (!password || password.length < 6) {
+      req.flash('error', 'Password must be at least 6 characters long.');
+      return res.redirect('/admin/users');
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ where: { email: email.trim().toLowerCase() } });
+    if (existingUser) {
+      req.flash('error', 'A user with this email already exists.');
+      return res.redirect('/admin/users');
+    }
+
+    // Validate role
+    const validRoles = ['user', 'admin'];
+    const userRole = validRoles.includes(role) ? role : 'user';
+
+    // Hash password
+    const bcrypt = require('bcrypt');
+    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS) || 10;
+    const passwordHash = await bcrypt.hash(password, saltRounds);
+
+    // Create user
+    await User.create({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      passwordHash,
+      role: userRole,
+      isVerified: true // Admin-created users are auto-verified
+    });
+
+    req.flash('success', `User "${name}" created successfully with role: ${userRole}`);
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Create user error:', error);
+    req.flash('error', 'Error creating user.');
+    res.redirect('/admin/users');
+  }
+});
+
+// Delete user permanently
+router.post('/users/:id/delete', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByPk(id);
+    if (!user) {
+      req.flash('error', 'User not found.');
+      return res.redirect('/admin/users');
+    }
+
+    // Prevent deleting admin users (extra safety)
+    if (user.role === 'admin') {
+      req.flash('error', 'Cannot delete admin users.');
+      return res.redirect('/admin/users');
+    }
+
+    const userName = user.name;
+    const userEmail = user.email;
+
+    // Send notification email before deletion
+    const deleteTitle = 'Account Deleted';
+    const deleteMessage = `Your SkillSwap MY account has been permanently deleted by an administrator. All your data, including listings, sessions, and reports, have been removed from our system. If you believe this was done in error, please contact our support team.`;
+
+    try {
+      await sendNotificationEmail({
+        to: userEmail,
+        name: userName,
+        title: deleteTitle,
+        message: deleteMessage
+      });
+      console.log(`[ADMIN] Account deletion email sent to ${userEmail}`);
+    } catch (emailErr) {
+      console.error('[ADMIN] Failed to send deletion email:', emailErr.message);
+      // Continue with deletion even if email fails
+    }
+
+    // Delete all related data first (cascading delete)
+    // Delete user's listings
+    await Listing.destroy({ where: { userId: id } });
+
+    // Delete user's sessions (as teacher or student)
+    await LearningSession.destroy({
+      where: {
+        [Op.or]: [{ teacherId: id }, { studentId: id }]
+      }
+    });
+
+    // Delete user's reports (as reporter or target)
+    await Report.destroy({
+      where: {
+        [Op.or]: [{ reporterId: id }, { targetUserId: id }]
+      }
+    });
+
+    // Delete user's notifications
+    await Notification.destroy({ where: { user_id: id } });
+
+    // Finally delete the user
+    await user.destroy();
+
+    req.flash('success', `User "${userName}" has been permanently deleted.`);
+    res.redirect('/admin/users');
+  } catch (error) {
+    console.error('Delete user error:', error);
+    req.flash('error', 'Error deleting user.');
+    res.redirect('/admin/users');
+  }
+});
 
 // Ban/unban user (permanent - use for manage users page)
 router.post('/users/:id/toggle-ban', async (req, res) => {
@@ -536,19 +661,59 @@ router.get('/users/:id/details', async (req, res) => {
 router.get('/listings', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, status } = req.query;
+
+    // Build where clause
+    const whereClause = {};
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Build include with search condition
+    const includeClause = [{
+      model: User,
+      attributes: ['id', 'name'],
+      ...(search ? { where: { name: { [Op.like]: `%${search}%` } }, required: false } : {})
+    }];
+
+    // If searching, also search by title
+    if (search) {
+      whereClause[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } }
+      ];
+    }
 
     const { count, rows: listings } = await Listing.findAndCountAll({
+      where: whereClause,
       include: [{ model: User, attributes: ['id', 'name'] }],
       order: [['createdAt', 'DESC']],
       limit,
       offset
     });
 
-    const pagination = buildPaginationData(count, page, limit, '/admin/listings');
+    // Filter by owner name in JS if search provided (since Sequelize OR across include is complex)
+    let filteredListings = listings;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredListings = listings.filter(l =>
+        l.title.toLowerCase().includes(searchLower) ||
+        (l.User?.name && l.User.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Build base URL with current filters
+    let baseUrl = '/admin/listings?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (status) baseUrl += `status=${status}&`;
+
+    const pagination = buildPaginationData(count, page, limit, baseUrl);
     res.render('admin/listings', {
       layout: 'layouts/admin',
       title: 'Manage Listings',
-      listings,
+      listings: filteredListings,
+      search: search || '',
+      status: status || '',
       currentUrl: req.originalUrl,
       ...pagination
     });
@@ -605,8 +770,21 @@ router.post('/listings/:id/:action', async (req, res) => {
 router.get('/reports', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, status } = req.query;
+
+    // Build where clause
+    const whereClause = {};
+    if (status) {
+      // 'resolved' filter includes both 'resolved' and 'auto_penalized'
+      if (status === 'resolved') {
+        whereClause.status = { [Op.in]: ['resolved', 'auto_penalized'] };
+      } else {
+        whereClause.status = status;
+      }
+    }
 
     const { count, rows: reports } = await Report.findAndCountAll({
+      where: whereClause,
       include: [
         { model: User, as: 'reporter', attributes: ['id', 'name'] },
         { model: User, as: 'targetUser', attributes: ['id', 'name'] }
@@ -616,11 +794,28 @@ router.get('/reports', async (req, res) => {
       offset
     });
 
+    // Filter by reporter/target name in JS if search provided
+    let filteredReports = reports;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredReports = reports.filter(r =>
+        (r.reporter?.name && r.reporter.name.toLowerCase().includes(searchLower)) ||
+        (r.targetUser?.name && r.targetUser.name.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Build base URL with current filters
+    let baseUrl = '/admin/reports?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (status) baseUrl += `status=${status}&`;
+
     res.render('admin/reports', {
       layout: 'layouts/admin',
       title: 'Manage Reports',
-      reports,
-      ...buildPaginationData(count, page, limit, '/admin/reports')
+      reports: filteredReports,
+      search: search || '',
+      status: status || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
     });
   } catch (error) {
     console.error('Reports management error:', error);
@@ -728,19 +923,39 @@ router.post('/reports/:id/action', async (req, res) => {
 router.get('/categories', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, status } = req.query;
+
+    // Build where clause
+    const whereClause = {};
+    if (search) {
+      whereClause.name = { [Op.like]: `%${search}%` };
+    }
+    if (status === 'active') {
+      whereClause.isActive = true;
+    } else if (status === 'inactive') {
+      whereClause.isActive = false;
+    }
 
     const { count, rows: categories } = await Category.findAndCountAll({
-      include: [{ model: Skill, as: 'skills', attributes: ['id', 'name'] }],
+      where: whereClause,
+      include: [{ model: Skill, as: 'skills', attributes: ['id', 'name', 'categoryId'] }],
       order: [['name', 'ASC']],
       limit,
       offset
     });
 
+    // Build base URL with current filters
+    let baseUrl = '/admin/categories?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (status) baseUrl += `status=${status}&`;
+
     res.render('admin/categories', {
       layout: 'layouts/admin',
       title: 'Manage Categories',
       categories,
-      ...buildPaginationData(count, page, limit, '/admin/categories')
+      search: search || '',
+      status: status || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
     });
   } catch (error) {
     console.error('Categories management error:', error);
@@ -947,9 +1162,24 @@ router.post('/skills/:id/delete', async (req, res) => {
 router.get('/weights', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, level } = req.query;
+
+    // Build where clause
+    const whereClause = {};
+    if (level) {
+      whereClause.level = level;
+    }
+
+    // Build include clause with search
+    const includeClause = {
+      model: Category,
+      attributes: ['id', 'name'],
+      ...(search ? { where: { name: { [Op.like]: `%${search}%` } } } : {})
+    };
 
     const { count, rows: weights } = await CalculatorWeight.findAndCountAll({
-      include: [{ model: Category, attributes: ['id', 'name'] }],
+      where: whereClause,
+      include: [includeClause],
       order: [['categoryId', 'ASC'], ['level', 'ASC']],
       limit,
       offset
@@ -960,12 +1190,19 @@ router.get('/weights', async (req, res) => {
       order: [['name', 'ASC']]
     });
 
+    // Build base URL with current filters
+    let baseUrl = '/admin/weights?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (level) baseUrl += `level=${level}&`;
+
     res.render('admin/weights', {
       layout: 'layouts/admin',
-      title: 'Match Weights',
+      title: 'Skills Weights',
       weights,
       categories,
-      ...buildPaginationData(count, page, limit, '/admin/weights')
+      search: search || '',
+      level: level || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
     });
   } catch (error) {
     console.error('Weights management error:', error);
@@ -1009,32 +1246,115 @@ router.post('/weights/:id', async (req, res) => {
 router.get('/payments', async (req, res) => {
   try {
     const { page, limit, offset } = getPagination(req);
+    const { search, status, type } = req.query;
 
-    let transactions = [];
-    let count = 0;
+    let allPayments = [];
 
-    try {
-      const result = await Transaction.findAndCountAll({
-        include: [
-          { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
-          { model: Invoice, as: 'invoice' }
-        ],
-        order: [['createdAt', 'DESC']],
-        limit,
-        offset
-      });
-      transactions = result.rows;
-      count = result.count;
-    } catch (dbError) {
-      // Table may not exist yet
-      console.log('Transaction table not ready:', dbError.message);
+    // Fetch Stripe Transactions
+    if (!type || type === 'transaction') {
+      try {
+        const whereClause = {};
+        if (status && status !== 'all') {
+          whereClause.status = status;
+        }
+
+        const transactions = await Transaction.findAll({
+          where: whereClause,
+          include: [
+            { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+            { model: Invoice, as: 'invoice' }
+          ],
+          order: [['createdAt', 'DESC']]
+        });
+
+        transactions.forEach(t => {
+          allPayments.push({
+            id: t.id,
+            type: 'transaction',
+            fromUser: t.user,
+            toUser: null,
+            amount: parseFloat(t.amount),
+            currency: 'MYR',
+            status: t.status,
+            description: t.description || 'Stripe Payment',
+            invoice: t.invoice,
+            createdAt: t.createdAt,
+            stripePaymentIntentId: t.stripePaymentIntentId
+          });
+        });
+      } catch (dbError) {
+        console.log('Transaction table not ready:', dbError.message);
+      }
     }
+
+    // Fetch Tip Tokens
+    if (!type || type === 'tip') {
+      try {
+        const tips = await TipToken.findAll({
+          include: [
+            { model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] },
+            { model: User, as: 'toUser', attributes: ['id', 'name', 'email'] }
+          ],
+          order: [['createdAt', 'DESC']]
+        });
+
+        tips.forEach(t => {
+          allPayments.push({
+            id: t.id,
+            type: 'tip',
+            fromUser: t.fromUser,
+            toUser: t.toUser,
+            amount: t.amount,
+            currency: 'Tokens',
+            status: 'succeeded',
+            description: t.note || 'Tip Token Transfer',
+            invoice: null,
+            createdAt: t.createdAt,
+            stripePaymentIntentId: null
+          });
+        });
+      } catch (dbError) {
+        console.log('TipToken table not ready:', dbError.message);
+      }
+    }
+
+    // Sort all payments by date
+    allPayments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Filter by search
+    if (search) {
+      const searchLower = search.toLowerCase();
+      allPayments = allPayments.filter(p =>
+        (p.fromUser?.name && p.fromUser.name.toLowerCase().includes(searchLower)) ||
+        (p.fromUser?.email && p.fromUser.email.toLowerCase().includes(searchLower)) ||
+        (p.toUser?.name && p.toUser.name.toLowerCase().includes(searchLower)) ||
+        (p.toUser?.email && p.toUser.email.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Filter by status for transactions only
+    if (status && type === 'transaction') {
+      allPayments = allPayments.filter(p => p.status === status);
+    }
+
+    // Paginate
+    const count = allPayments.length;
+    const paginatedPayments = allPayments.slice(offset, offset + limit);
+
+    // Build base URL with filters
+    let baseUrl = '/admin/payments?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (status) baseUrl += `status=${status}&`;
+    if (type) baseUrl += `type=${type}&`;
 
     res.render('admin/payments', {
       layout: 'layouts/admin',
       title: 'Manage Payments',
-      transactions,
-      ...buildPaginationData(count, page, limit, '/admin/payments')
+      payments: paginatedPayments,
+      search: search || '',
+      status: status || '',
+      type: type || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
     });
   } catch (error) {
     console.error('Admin payments error:', error);
@@ -1114,6 +1434,110 @@ router.post('/profile', async (req, res) => {
     console.error('Update admin profile error:', error);
     req.flash('error', 'Error updating profile.');
     res.redirect('/admin/profile');
+  }
+});
+
+module.exports = router;
+
+
+// GET /admin/payments - Payments management page
+router.get('/payments', async (req, res) => {
+  try {
+    const { page, limit, offset } = getPagination(req);
+    const { search, type, status } = req.query;
+
+    const whereClause = {};
+    if (status) whereClause.status = status;
+
+    let userWhereClause = {};
+    if (search) {
+      userWhereClause = {
+        [Op.or]: [
+          { name: { [Op.like]: `%${search}%` } },
+          { email: { [Op.like]: `%${search}%` } }
+        ]
+      };
+    }
+
+    const { count, rows: transactions } = await Transaction.findAndCountAll({
+      where: whereClause,
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'], where: Object.keys(userWhereClause).length > 0 ? userWhereClause : undefined, required: false },
+        { model: User, as: 'recipient', attributes: ['id', 'name', 'email'], required: false }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit, offset
+    });
+
+    const payments = transactions.map(t => ({
+      id: t.id, type: t.type || 'transaction', fromUser: t.user, toUser: t.recipient,
+      amount: t.amount, currency: t.currency, status: t.status,
+      description: t.description, createdAt: t.createdAt, stripePaymentIntentId: t.stripePaymentIntentId
+    }));
+
+    let baseUrl = '/admin/payments?';
+    if (search) baseUrl += `search=${encodeURIComponent(search)}&`;
+    if (type) baseUrl += `type=${type}&`;
+    if (status) baseUrl += `status=${status}&`;
+
+    res.render('admin/payments', {
+      layout: 'layouts/admin', title: 'Manage Payments', payments,
+      search: search || '', type: type || '', status: status || '',
+      ...buildPaginationData(count, page, limit, baseUrl)
+    });
+  } catch (error) {
+    console.error('Payments management error:', error);
+    req.flash('error', 'Error loading payments.');
+    res.redirect('/admin');
+  }
+});
+
+router.post('/payments/:id/refund', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const stripe = require('../config/stripe');
+
+    const transaction = await Transaction.findByPk(id, {
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+        { model: User, as: 'recipient', attributes: ['id', 'name'] }
+      ]
+    });
+
+    if (!transaction) {
+      req.flash('error', 'Transaction not found.');
+      return res.redirect('/admin/payments');
+    }
+    if (transaction.status !== 'succeeded') {
+      req.flash('error', 'Only succeeded transactions can be refunded.');
+      return res.redirect('/admin/payments');
+    }
+
+    const refund = await stripe.refunds.create({
+      payment_intent: transaction.stripePaymentIntentId,
+      metadata: { refundedBy: `admin_${req.user.id}`, reason: 'admin_refund' }
+    });
+
+    await transaction.update({ status: 'refunded' });
+
+    await createNotification({
+      userId: transaction.userId, title: 'Payment Refunded',
+      message: `Your payment of RM${transaction.amount} has been refunded by admin.`
+    });
+
+    if (transaction.type === 'tip' && transaction.recipientUserId) {
+      await createNotification({
+        userId: transaction.recipientUserId, title: 'Tip Refunded',
+        message: `A tip of RM${transaction.amount} has been refunded by admin.`
+      });
+    }
+
+    req.flash('success', `Transaction #${id} refunded successfully.`);
+    res.redirect('/admin/payments');
+  } catch (error) {
+    console.error('Refund error:', error);
+    req.flash('error', `Error processing refund: ${error.message}`);
+    res.redirect('/admin/payments');
   }
 });
 

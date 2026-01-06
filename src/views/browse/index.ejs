@@ -187,7 +187,11 @@
                           html: `<p><strong>${userName}</strong> has been flagged as a high-risk account due to multiple community guideline violations.</p>
                <p class="text-muted small">Please exercise caution when interacting with this user. Consider reviewing their profile and ratings carefully before engaging.</p>`,
                           confirmButtonText: 'I Understand',
-                          confirmButtonColor: '#dc3545'
+                          confirmButtonColor: '#dc3545',
+                          position: 'center',
+                          customClass: {
+                            container: 'swal2-centered-container'
+                          }
                         });
                       });
                     });

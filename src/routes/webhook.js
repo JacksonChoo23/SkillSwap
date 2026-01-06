@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const stripe = require('../config/stripe');
-const { Transaction, Invoice, User, TipToken, Notification, sequelize } = require('../models');
+const { Transaction, Invoice, User, Notification, sequelize } = require('../models');
 
 // Helper: Generate Invoice Number
 function generateInvoiceNumber(prefix = 'INV') {
@@ -81,20 +81,14 @@ async function handleTipPayment(paymentIntent, metadata, amount) {
         // Create Transaction record
         const transaction = await Transaction.create({
             userId: fromUserId,
+            recipientUserId: toUserId,
+            type: 'tip',
             amount: amount,
             currency: 'MYR',
             status: 'succeeded',
             description: `Tip to ${recipientName}`,
             stripePaymentIntentId: paymentIntent.id,
             metadata: paymentIntent
-        }, { transaction: t });
-
-        // Create TipToken record
-        await TipToken.create({
-            fromUserId: fromUserId,
-            toUserId: toUserId,
-            amount: Math.round(amount), // Store as integer tokens (1 RM = 1 token for display)
-            note: note
         }, { transaction: t });
 
         // Generate Invoice

@@ -57,11 +57,14 @@
                     SkillSwap MY
                 </a>
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <!-- Mobile Toggle Button - triggers offcanvas -->
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="offcanvas"
+                    data-bs-target="#mobileNav" aria-controls="mobileNav">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Desktop Navigation (hidden on mobile) -->
+                <div class="collapse navbar-collapse d-none d-lg-flex" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item">
                             <a class="nav-link <%= title === 'My Dashboard - SkillSwap MY' ? 'active' : '' %>"
@@ -116,7 +119,7 @@
                                     <i class="fas fa-user me-1"></i>
                                     <%= user.name %>
                                 </a>
-                                <ul class="dropdown-menu">
+                                <ul class="dropdown-menu dropdown-menu-end">
                                     <li><a class="dropdown-item" href="/profile">My Profile</a></li>
                                     <li>
                                         <hr class="dropdown-divider">
@@ -137,44 +140,151 @@
             </div>
         </nav>
 
-        <!-- Flash Messages -->
-        <% (Array.isArray(success) ? success : []).forEach(function(msg){ %>
-            <script>Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
-            <% }); %>
+        <!-- Mobile Offcanvas Side Navigation -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+            <div class="offcanvas-header bg-primary text-white">
+                <h5 class="offcanvas-title" id="mobileNavLabel">
+                    <i class="fas fa-bars me-2"></i>Menu
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"
+                    aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <!-- User Info (if authenticated) -->
+                <% if (isAuthenticated) { %>
+                    <div class="bg-light p-3 border-bottom">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                                style="width: 48px; height: 48px; font-size: 1.25rem;">
+                                <%= user.name.charAt(0).toUpperCase() %>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-semibold">
+                                    <%= user.name %>
+                                </h6>
+                                <small class="text-muted">
+                                    <%= user.email %>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
 
-                <% (Array.isArray(error) ? error : []).forEach(function(msg){ %>
-                    <script>Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
-                    <% }); %>
+                        <!-- Navigation Links -->
+                        <div class="list-group list-group-flush">
+                            <a href="/" class="list-group-item list-group-item-action py-3" data-bs-dismiss="offcanvas">
+                                <i class="fas fa-home me-3 text-primary"></i>Home
+                            </a>
+                            <a href="/about" class="list-group-item list-group-item-action py-3"
+                                data-bs-dismiss="offcanvas">
+                                <i class="fas fa-info-circle me-3 text-primary"></i>About
+                            </a>
 
-                        <% (Array.isArray(info) ? info : []).forEach(function(msg){ %>
-                            <script>Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });</script>
-                            <% }); %>
+                            <% if (isAuthenticated) { %>
+                                <div class="list-group-item py-2 bg-light">
+                                    <small class="text-uppercase text-muted fw-semibold">Browse</small>
+                                </div>
+                                <a href="/listings" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-list me-3 text-primary"></i>Browse Listings
+                                </a>
+                                <a href="/browse" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-users me-3 text-primary"></i>Browse Users
+                                </a>
 
-                                <!-- Main Content -->
-                                <main class="container my-4 flex-grow-1 w-100">
-                                    <%- body %>
-                                        <% if (isAuthenticated) { %>
-                                            <%- include('../partials/tip_modal') %>
-                                                <%- include('../partials/report_modal') %>
-                                                    <%- include('../partials/request_session_modal') %>
-                                                        <% } %>
-                                </main>
+                                <div class="list-group-item py-2 bg-light">
+                                    <small class="text-uppercase text-muted fw-semibold">Features</small>
+                                </div>
+                                <a href="/match" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-handshake me-3 text-primary"></i>Find Matches
+                                </a>
+                                <a href="/messages" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-comments me-3 text-primary"></i>Messages
+                                </a>
+                                <a href="/sessions" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-calendar me-3 text-primary"></i>My Sessions
+                                </a>
+                                <a href="/leaderboard" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-trophy me-3 text-primary"></i>Leaderboard
+                                </a>
+                                <a href="/calculator" class="list-group-item list-group-item-action py-3 ps-4"
+                                    data-bs-dismiss="offcanvas">
+                                    <i class="fas fa-calculator me-3 text-primary"></i>Calculator
+                                </a>
 
-                                <!-- Footer -->
-                                <footer class="bg-light py-4 border-top mt-auto w-100">
-                                    <div class="container">
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <h5>SkillSwap MY</h5>
-                                                <p class="text-muted">Connecting Malaysians through skill exchange</p>
-                                            </div>
-                                            <div class="col-md-6 text-md-end">
-                                                <p class="text-muted">&copy; 2024 SkillSwap MY. All rights reserved.</p>
-                                                <a href="/about" class="text-decoration-none">About</a>
-                                            </div>
-                                        </div>
+                                <% if (isAdmin) { %>
+                                    <div class="list-group-item py-2 bg-light">
+                                        <small class="text-uppercase text-muted fw-semibold">Admin</small>
                                     </div>
-                                </footer>
+                                    <a href="/admin" class="list-group-item list-group-item-action py-3 ps-4"
+                                        data-bs-dismiss="offcanvas">
+                                        <i class="fas fa-cog me-3 text-danger"></i>Admin Panel
+                                    </a>
+                                    <% } %>
+
+                                        <div class="list-group-item py-2 bg-light">
+                                            <small class="text-uppercase text-muted fw-semibold">Account</small>
+                                        </div>
+                                        <a href="/profile" class="list-group-item list-group-item-action py-3 ps-4"
+                                            data-bs-dismiss="offcanvas">
+                                            <i class="fas fa-user me-3 text-primary"></i>My Profile
+                                        </a>
+                                        <a href="/auth/logout"
+                                            class="list-group-item list-group-item-action py-3 ps-4 text-danger"
+                                            data-bs-dismiss="offcanvas">
+                                            <i class="fas fa-sign-out-alt me-3"></i>Logout
+                                        </a>
+                                        <% } else { %>
+                                            <div class="list-group-item py-2 bg-light">
+                                                <small class="text-uppercase text-muted fw-semibold">Account</small>
+                                            </div>
+                                            <a href="/auth/login"
+                                                class="list-group-item list-group-item-action py-3 ps-4"
+                                                data-bs-dismiss="offcanvas">
+                                                <i class="fas fa-sign-in-alt me-3 text-primary"></i>Login
+                                            </a>
+                                            <a href="/auth/register"
+                                                class="list-group-item list-group-item-action py-3 ps-4"
+                                                data-bs-dismiss="offcanvas">
+                                                <i class="fas fa-user-plus me-3 text-primary"></i>Register
+                                            </a>
+                                            <% } %>
+                        </div>
+            </div>
+        </div>
+
+
+
+        <!-- Main Content -->
+        <main class="container my-4 flex-grow-1 w-100">
+            <%- body %>
+                <% if (isAuthenticated) { %>
+                    <%- include('../partials/tip_modal') %>
+                        <%- include('../partials/report_modal') %>
+                            <%- include('../partials/request_session_modal') %>
+                                <% } %>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-light py-4 border-top mt-auto w-100">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>SkillSwap MY</h5>
+                        <p class="text-muted">Connecting Malaysians through skill exchange</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <p class="text-muted">&copy; 2024 SkillSwap MY. All rights reserved.</p>
+                        <a href="/about" class="text-decoration-none">About</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
     <!-- End Main Content Wrapper -->
 
@@ -231,6 +341,21 @@
             })();
         </script>
         <% } %>
+
+            <!-- Flash Messages - placed at end to ensure proper centering -->
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+        <% (Array.isArray(success) ? success : []).forEach(function (msg) { %>
+                    Swal.fire({ icon: 'success', title: 'Success', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });
+        <% }); %>
+        <% (Array.isArray(error) ? error : []).forEach(function (msg) { %>
+                        Swal.fire({ icon: 'error', title: 'Error', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });
+        <% }); %>
+        <% (Array.isArray(info) ? info : []).forEach(function (msg) { %>
+                            Swal.fire({ icon: 'info', title: 'Info', text: '<%= msg %>', showConfirmButton: true, position: 'center', timer: null, timerProgressBar: false, allowOutsideClick: false });
+        <% }); %>
+    });
+            </script>
 </body>
 
 </html>

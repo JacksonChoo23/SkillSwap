@@ -443,6 +443,19 @@ router.post('/:id/verify-code', validate(schemas.sessionCode), async (req, res) 
     // Start session
     if (!session.actualStartAt) {
       await session.update({ actualStartAt: new Date(), status: 'in_progress' });
+
+      // Emit socket event to both teacher and student
+      const io = req.app.get('io');
+      if (io) {
+        io.to(`session_${id}`).emit('session_status_changed', {
+          sessionId: id,
+          status: 'in_progress',
+          message: 'Session has started'
+        });
+        // Also emit to individual user rooms
+        io.to(`user_${session.teacherId}`).emit('session_started', { sessionId: id });
+        io.to(`user_${session.studentId}`).emit('session_started', { sessionId: id });
+      }
     }
     req.session.success = 'Session started.';
     res.redirect(`/sessions/${id}`);
@@ -540,6 +553,19 @@ router.post('/:id/end', async (req, res) => {
     }
     // record actual end time and finalize the session
     await session.update({ actualEndAt: new Date(), status: 'completed' });
+
+    // Emit socket event to both teacher and student
+    const io = req.app.get('io');
+    if (io) {
+      io.to(`session_${id}`).emit('session_status_changed', {
+        sessionId: id,
+        status: 'completed',
+        message: 'Session has been completed'
+      });
+      // Also emit to individual user rooms
+      io.to(`user_${session.teacherId}`).emit('session_completed', { sessionId: id });
+      io.to(`user_${session.studentId}`).emit('session_completed', { sessionId: id });
+    }
 
     // Notify student
     try {

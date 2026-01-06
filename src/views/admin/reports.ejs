@@ -2,6 +2,39 @@
   <h1 class="h3 mb-0 text-gray-800">Manage Reports</h1>
 </div>
 
+<!-- Search and Filter -->
+<div class="card shadow-sm border-0 mb-4">
+  <div class="card-body">
+    <form method="GET" action="/admin/reports" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small text-muted">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Search by reporter or target..."
+          value="<%= search || '' %>">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small text-muted">Status</label>
+        <select name="status" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="pending_ai" <%=status==='pending_ai' ? 'selected' : '' %>>Pending AI</option>
+          <option value="ai_reviewed" <%=status==='ai_reviewed' ? 'selected' : '' %>>AI Reviewed</option>
+          <option value="escalated" <%=status==='escalated' ? 'selected' : '' %>>Escalated</option>
+          <option value="resolved" <%=status==='resolved' ? 'selected' : '' %>>Resolved</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-search me-1"></i> Filter
+        </button>
+      </div>
+      <div class="col-md-2">
+        <a href="/admin/reports" class="btn btn-outline-secondary w-100">
+          <i class="fas fa-times me-1"></i> Clear
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div class="card shadow-sm border-0">
   <div class="card-body p-0">
     <% if (!reports || reports.length===0) { %>
@@ -31,7 +64,6 @@
                 <th>Reporter</th>
                 <th>Target</th>
                 <th>Reason</th>
-                <th>Context</th>
                 <th>Status</th>
                 <th>Created</th>
                 <th class="text-center">Actions</th>
@@ -53,15 +85,6 @@
                     <span class="d-inline-block text-truncate" style="max-width: 250px;">
                       <%= r.reason %>
                     </span>
-                  </td>
-                  <td class="small text-muted">
-                    <% if (r.listingId) { %>Listing #<%= r.listingId %><br>
-                        <% } %>
-                          <% if (r.sessionId) { %>Session #<%= r.sessionId %><br>
-                              <% } %>
-                                <% if (r.messageThreadId) { %>Thread #<%= r.messageThreadId %>
-                                    <% } %>
-                                      <% if (!r.listingId && !r.sessionId && !r.messageThreadId) { %>-<% } %>
                   </td>
                   <td>
                     <% if (r.status==='escalated' ) { %>

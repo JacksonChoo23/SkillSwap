@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
 
     // Pagination params
     const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.min(50, Math.max(5, parseInt(req.query.limit) || 12));
+    const limit = Math.min(50, Math.max(3, parseInt(req.query.limit) || 12));
     const offset = (page - 1) * limit;
 
     // Build where clause for users

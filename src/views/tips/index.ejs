@@ -55,7 +55,8 @@
       <div class="card bg-warning bg-opacity-10 border-warning border-opacity-25 h-100">
         <div class="card-body text-center py-2 px-1">
           <div class="h4 mb-0 text-warning">
-            +<%= received ? received.reduce((sum, t)=> sum + (t.amount || 0), 0) : 0 %>
+            +<%= received ? received.filter(t=> t.status === 'succeeded').reduce((sum, t)=> sum + parseFloat(t.amount ||
+              0), 0).toFixed(2) : '0.00' %>
           </div>
           <small class="text-muted d-none d-sm-inline">Total Received</small>
           <small class="text-muted d-sm-none" style="font-size:0.65rem">+RM</small>
@@ -66,7 +67,8 @@
       <div class="card bg-secondary bg-opacity-10 border-secondary border-opacity-25 h-100">
         <div class="card-body text-center py-2 px-1">
           <div class="h4 mb-0 text-secondary">
-            -<%= sent ? sent.reduce((sum, t)=> sum + (t.amount || 0), 0) : 0 %>
+            -<%= sent ? sent.filter(t=> t.status === 'succeeded').reduce((sum, t)=> sum + parseFloat(t.amount || 0),
+              0).toFixed(2) : '0.00' %>
           </div>
           <small class="text-muted d-none d-sm-inline">Total Sent</small>
           <small class="text-muted d-sm-none" style="font-size:0.65rem">-RM</small>
@@ -112,7 +114,11 @@
                               year: 'numeric' }) %>
                           </small>
                     </div>
-                    <span class="badge bg-success fs-6">+RM <%= t.amount %></span>
+                    <% if (t.status==='refunded' ) { %>
+                      <span class="badge bg-secondary fs-6">Refunded</span>
+                      <% } else { %>
+                        <span class="badge bg-success fs-6">+RM <%= parseFloat(t.amount).toFixed(2) %></span>
+                        <% } %>
                   </div>
                   <% }) %>
               </div>
@@ -159,7 +165,11 @@
                               year: 'numeric' }) %>
                           </small>
                     </div>
-                    <span class="badge bg-secondary fs-6">-RM <%= t.amount %></span>
+                    <% if (t.status==='refunded' ) { %>
+                      <span class="badge bg-secondary fs-6">Refunded</span>
+                      <% } else { %>
+                        <span class="badge bg-secondary fs-6">-RM <%= parseFloat(t.amount).toFixed(2) %></span>
+                        <% } %>
                   </div>
                   <% }) %>
               </div>
