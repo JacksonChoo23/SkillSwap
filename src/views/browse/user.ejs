@@ -10,12 +10,12 @@
       <div class="d-flex align-items-start gap-4 flex-wrap">
         <!-- Profile Image -->
         <% if (u.profileImage) { %>
-          <img src="<%= u.profileImage %>" alt="<%= u.name %>" class="rounded-circle flex-shrink-0"
-            style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #f0f0f0;">
+          <img src="<%= u.profileImage %>" alt="<%= u.name %>" class="rounded-circle border border-4 border-white shadow-sm flex-shrink-0"
+            style="width: 100px; height: 100px; object-fit: cover;">
           <% } else { %>
-            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
-              style="width: 100px; height: 100px; border: 4px solid #f0f0f0;">
-              <i class="fas fa-user fa-3x text-muted"></i>
+            <div class="rounded-circle bg-primary-subtle border border-4 border-white shadow-sm d-flex align-items-center justify-content-center text-primary flex-shrink-0"
+              style="width: 100px; height: 100px;">
+              <i class="fas fa-user fa-3x text-primary opacity-50"></i>
             </div>
             <% } %>
 
@@ -26,13 +26,13 @@
                     <%= u.name || 'User' %>
                   </h1>
                   <% if (u.warningCount>= 3) { %>
-                    <span class="badge bg-warning text-dark high-risk-badge" style="cursor: pointer;"
+                    <span class="badge bg-warning-subtle text-warning border border-warning border-opacity-10 py-1 high-risk-badge" style="cursor: pointer;"
                       data-user-name="<%= u.name %>">
                       <i class="fas fa-exclamation-triangle me-1"></i>High-risk
                     </span>
                     <% } %>
                       <% if (u.isPublic===false) { %>
-                        <span class="badge bg-secondary">Private</span>
+                        <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-10 py-1">Private</span>
                         <% } %>
                 </div>
 
@@ -53,19 +53,19 @@
               <!-- Action Buttons (Desktop) -->
               <div class="d-none d-md-flex flex-column gap-2">
                 <% if (isAuthenticated) { %>
-                  <a class="btn btn-primary" href="/messages?to=<%= u.id %>">
+                  <a class="btn btn-primary rounded-pill shadow-sm px-4" href="/messages?to=<%= u.id %>">
                     <i class="fas fa-comment me-1"></i>Message
                   </a>
                   <% if (u.whatsappNumber) { %>
-                    <a class="btn btn-success" target="_blank" rel="noopener"
+                    <a class="btn btn-success rounded-pill shadow-sm px-4" target="_blank" rel="noopener"
                       href="https://wa.me/<%= String(u.whatsappNumber).replace(/\D/g, '') %>?text=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY!') %>">
                       <i class="fab fa-whatsapp me-1"></i>WhatsApp
                     </a>
                     <% } %>
                       <% } else { %>
-                        <a class="btn btn-primary" href="/auth/login">Login to message</a>
+                        <a class="btn btn-primary rounded-pill shadow-sm px-4" href="/auth/login">Login to message</a>
                         <% } %>
-                          <a class="btn btn-outline-secondary btn-sm" href="javascript:history.back()">
+                          <a class="btn btn-outline-secondary btn-sm rounded-pill shadow-sm px-4" href="javascript:history.back()">
                             <i class="fas fa-arrow-left me-1"></i>Back
                           </a>
               </div>
@@ -85,17 +85,19 @@
           <% if (teachSkills.length) { %>
             <div class="d-flex flex-wrap gap-2">
               <% teachSkills.forEach(us=> { %>
-                <span class="badge border border-success text-success rounded-pill px-3 py-2"
+                <span class="badge bg-success-subtle border border-success border-opacity-10 text-success rounded-pill px-3 py-2"
                   style="font-size: 0.85rem;">
                   <%= us.Skill ? us.Skill.name : '' %>
                     <% if (us.level) { %>
-                      <span class="text-muted">· <%= us.level %></span>
+                      <span class="text-success opacity-75">· <%= us.level %></span>
                       <% } %>
                 </span>
                 <% }) %>
             </div>
             <% } else { %>
-              <p class="text-muted mb-0 small">No teaching skills listed</p>
+              <div class="text-center py-4 bg-light rounded-4 border-2 border-dashed mx-auto my-3" style="max-width: 300px;">
+                <p class="text-muted mb-0 small fw-bold">No teaching skills listed</p>
+              </div>
               <% } %>
         </div>
       </div>
@@ -111,17 +113,19 @@
           <% if (learnSkills.length) { %>
             <div class="d-flex flex-wrap gap-2">
               <% learnSkills.forEach(us=> { %>
-                <span class="badge border border-primary text-primary rounded-pill px-3 py-2"
+                <span class="badge bg-primary-subtle border border-primary border-opacity-10 text-primary rounded-pill px-3 py-2"
                   style="font-size: 0.85rem;">
                   <%= us.Skill ? us.Skill.name : '' %>
                     <% if (us.level) { %>
-                      <span class="text-muted">· <%= us.level %></span>
+                      <span class="text-primary opacity-75">· <%= us.level %></span>
                       <% } %>
                 </span>
                 <% }) %>
             </div>
             <% } else { %>
-              <p class="text-muted mb-0 small">No learning skills listed</p>
+              <div class="text-center py-4 bg-light rounded-4 border-2 border-dashed mx-auto my-3" style="max-width: 300px;">
+                <p class="text-muted mb-0 small fw-bold">No learning skills listed</p>
+              </div>
               <% } %>
         </div>
       </div>
@@ -303,12 +307,15 @@
                 </div>
 
                 <% } else { %>
-                  <div class="text-center py-5">
-                    <div class="mb-3">
-                      <i class="fas fa-star text-muted opacity-25" style="font-size: 4rem;"></i>
+                  <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed m-3">
+                    <div class="mb-4">
+                      <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
+                        style="width: 80px; height: 80px;">
+                        <i class="fas fa-star fa-2x text-muted opacity-25"></i>
+                      </div>
                     </div>
-                    <h5 class="text-muted">No reviews yet</h5>
-                    <p class="text-muted small">Be the first to leave a review for this user!</p>
+                    <h6 class="text-dark fw-bold">No reviews yet</h6>
+                    <p class="text-muted small mb-0">Be the first to leave a review for this user!</p>
                   </div>
                   <% } %>
         </div>
@@ -317,19 +324,19 @@
       <!-- Mobile Action Buttons -->
       <div class="d-md-none mt-4 d-grid gap-2">
         <% if (isAuthenticated) { %>
-          <a class="btn btn-primary btn-lg" href="/messages?to=<%= u.id %>">
+          <a class="btn btn-primary btn-lg rounded-pill shadow-sm" href="/messages?to=<%= u.id %>">
             <i class="fas fa-comment me-1"></i>Message
           </a>
           <% if (u.whatsappNumber) { %>
-            <a class="btn btn-success btn-lg" target="_blank" rel="noopener"
+            <a class="btn btn-success btn-lg rounded-pill shadow-sm" target="_blank" rel="noopener"
               href="https://wa.me/<%= String(u.whatsappNumber).replace(/\D/g, '') %>?text=<%- encodeURIComponent('Hi ' + (u.name || '') + ', I found your profile on SkillSwap MY!') %>">
               <i class="fab fa-whatsapp me-1"></i>WhatsApp
             </a>
             <% } %>
               <% } else { %>
-                <a class="btn btn-primary btn-lg" href="/auth/login">Login to message</a>
+                <a class="btn btn-primary btn-lg rounded-pill shadow-sm" href="/auth/login">Login to message</a>
                 <% } %>
-                  <a class="btn btn-outline-secondary" href="javascript:history.back()">
+                  <a class="btn btn-outline-secondary rounded-pill shadow-sm" href="javascript:history.back()">
                     <i class="fas fa-arrow-left me-1"></i>Back
                   </a>
       </div>

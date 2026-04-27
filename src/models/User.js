@@ -47,7 +47,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(20),
     allowNull: true,
     field: 'whatsapp_number',
-    validate: { is: /^\+[1-9]\d{1,14}$/ } // E.164；不想严格可以去掉
+    validate: {
+      // Accept: +60xxxxxxxxx (E.164), 60xxxxxxxxx, 01xxxxxxxxx, etc.
+      is: /^(\+?6?0)?[0-9]{8,12}$/
+    }
   },
 
   // DB: profile_image

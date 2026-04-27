@@ -1,5 +1,5 @@
 const express = require('express');
-const { Listing, User, Skill, UserSkill, SavedSuggestion } = require('../models');
+const { Listing, User, Skill, UserSkill, SavedSuggestion, LearningSession, Rating } = require('../models');
 const { Op } = require('sequelize');
 const { validate, schemas } = require('../middlewares/validate');
 const { isAuthenticated } = require('../middlewares/auth');
@@ -302,6 +302,120 @@ router.post('/create', isAuthenticated, async (req, res) => {
   }
 });
 
+// =====================================
+// SAVED SUGGESTIONS ROUTES
+// These must be defined BEFORE /:id to prevent route conflict
+// =====================================
+
+// Save AI suggestion
+router.post('/save-suggestion', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.session?.user?.id;
+    const { title, description, suggestion_type, skill_category, notes } = req.body;
+
+    if (!title || !description || !suggestion_type) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const savedSuggestion = await SavedSuggestion.create({
+      user_id: userId,
+      title,
+      description,
+      suggestion_type,
+      skill_category,
+      notes: Array.isArray(notes) ? notes : []
+    });
+
+    res.json({
+      success: true,
+      message: 'Suggestion saved successfully',
+      suggestion: savedSuggestion
+    });
+  } catch (error) {
+    console.error('Save suggestion error:', error);
+    res.status(500).json({ error: 'Error saving suggestion' });
+  }
+});
+
+// Get saved suggestions
+router.get('/saved-suggestions', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.session?.user?.id;
+    const { type, favorites_only } = req.query;
+
+    const where = { user_id: userId };
+    if (type && ['teach', 'learn'].includes(type)) {
+      where.suggestion_type = type;
+    }
+    if (favorites_only === 'true') {
+      where.is_favorite = true;
+    }
+
+    const suggestions = await SavedSuggestion.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+      limit: 20
+    });
+
+    res.json({ suggestions });
+  } catch (error) {
+    console.error('Get saved suggestions error:', error);
+    res.status(500).json({ error: 'Error fetching saved suggestions' });
+  }
+});
+
+// Toggle favorite status
+router.patch('/saved-suggestions/:id/favorite', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.session?.user?.id;
+    const { id } = req.params;
+
+    const suggestion = await SavedSuggestion.findOne({
+      where: { id, user_id: userId }
+    });
+
+    if (!suggestion) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+
+    suggestion.is_favorite = !suggestion.is_favorite;
+    await suggestion.save();
+
+    res.json({
+      success: true,
+      is_favorite: suggestion.is_favorite
+    });
+  } catch (error) {
+    console.error('Toggle favorite error:', error);
+    res.status(500).json({ error: 'Error updating favorite status' });
+  }
+});
+
+// Delete saved suggestion
+router.delete('/saved-suggestions/:id', isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user?.id || req.session?.user?.id;
+    const { id } = req.params;
+
+    const result = await SavedSuggestion.destroy({
+      where: { id, user_id: userId }
+    });
+
+    if (result === 0) {
+      return res.status(404).json({ error: 'Suggestion not found' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete suggestion error:', error);
+    res.status(500).json({ error: 'Error deleting suggestion' });
+  }
+});
+
+// =====================================
+// END SAVED SUGGESTIONS ROUTES
+// =====================================
+
 // 详情页
 router.get('/:id', async (req, res) => {
   try {
@@ -325,9 +439,43 @@ router.get('/:id', async (req, res) => {
       return res.redirect('/listings');
     }
 
+    // Fetch session count for the listing owner (completed sessions)
+    const sessionCount = await LearningSession.count({
+      where: {
+        [Op.or]: [
+          { teacherId: listing.userId },
+          { studentId: listing.userId }
+        ],
+        status: 'completed'
+      }
+    });
+
+    // Fetch average rating for the listing owner
+    const ratings = await Rating.findAll({
+      where: { ratee_id: listing.userId },
+      raw: true
+    });
+
+    let avgRating = 0;
+    if (ratings && ratings.length > 0) {
+      const totalSum = ratings.reduce((sum, r) => {
+        const comm = r.communication || 0;
+        const sk = r.skill || 0;
+        const att = r.attitude || 0;
+        const punc = r.punctuality || 0;
+        return sum + (comm + sk + att + punc) / 4;
+      }, 0);
+      avgRating = (totalSum / ratings.length).toFixed(1);
+    }
+
+    console.log(`[Listing ${id}] User ${listing.userId}: Sessions=${sessionCount}, Ratings=${ratings.length}, AvgRating=${avgRating}`);
+
     res.render('listings/detail', {
       title: `${listing.title} - SkillSwap MY`,
-      listing
+      listing,
+      sessionCount,
+      avgRating,
+      ratingCount: ratings.length
     });
   } catch (error) {
     console.error('Listing detail error:', error);
@@ -460,111 +608,6 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error('Delete listing error:', error);
     res.status(500).json({ error: 'Error deleting listing.' });
-  }
-});
-
-// Save AI suggestion
-router.post('/save-suggestion', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user?.id || req.session?.user?.id;
-    const { title, description, suggestion_type, skill_category, notes } = req.body;
-
-    if (!title || !description || !suggestion_type) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    const savedSuggestion = await SavedSuggestion.create({
-      user_id: userId,
-      title,
-      description,
-      suggestion_type,
-      skill_category,
-      notes: Array.isArray(notes) ? notes : []
-    });
-
-    res.json({
-      success: true,
-      message: 'Suggestion saved successfully',
-      suggestion: savedSuggestion
-    });
-  } catch (error) {
-    console.error('Save suggestion error:', error);
-    res.status(500).json({ error: 'Error saving suggestion' });
-  }
-});
-
-// Get saved suggestions
-router.get('/saved-suggestions', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user?.id || req.session?.user?.id;
-    const { type, favorites_only } = req.query;
-
-    const where = { user_id: userId };
-    if (type && ['teach', 'learn'].includes(type)) {
-      where.suggestion_type = type;
-    }
-    if (favorites_only === 'true') {
-      where.is_favorite = true;
-    }
-
-    const suggestions = await SavedSuggestion.findAll({
-      where,
-      order: [['created_at', 'DESC']],
-      limit: 20
-    });
-
-    res.json({ suggestions });
-  } catch (error) {
-    console.error('Get saved suggestions error:', error);
-    res.status(500).json({ error: 'Error fetching saved suggestions' });
-  }
-});
-
-// Toggle favorite status
-router.patch('/saved-suggestions/:id/favorite', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user?.id || req.session?.user?.id;
-    const { id } = req.params;
-
-    const suggestion = await SavedSuggestion.findOne({
-      where: { id, user_id: userId }
-    });
-
-    if (!suggestion) {
-      return res.status(404).json({ error: 'Suggestion not found' });
-    }
-
-    suggestion.is_favorite = !suggestion.is_favorite;
-    await suggestion.save();
-
-    res.json({
-      success: true,
-      is_favorite: suggestion.is_favorite
-    });
-  } catch (error) {
-    console.error('Toggle favorite error:', error);
-    res.status(500).json({ error: 'Error updating favorite status' });
-  }
-});
-
-// Delete saved suggestion
-router.delete('/saved-suggestions/:id', isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.user?.id || req.session?.user?.id;
-    const { id } = req.params;
-
-    const result = await SavedSuggestion.destroy({
-      where: { id, user_id: userId }
-    });
-
-    if (result === 0) {
-      return res.status(404).json({ error: 'Suggestion not found' });
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Delete suggestion error:', error);
-    res.status(500).json({ error: 'Error deleting suggestion' });
   }
 });
 

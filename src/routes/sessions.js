@@ -27,7 +27,7 @@ router.get('/', async (req, res) => {
         { model: User, as: 'student', attributes: ['id', 'name', 'whatsapp_number'] },
         { model: Skill, attributes: ['id', 'name'] }
       ],
-      order: [['startAt', 'DESC']]
+      order: [['createdAt', 'DESC']]
     });
 
     const learningSessions = await LearningSession.findAll({
@@ -36,13 +36,20 @@ router.get('/', async (req, res) => {
         { model: User, as: 'teacher', attributes: ['id', 'name', 'whatsapp_number'] },
         { model: Skill, attributes: ['id', 'name'] }
       ],
-      order: [['startAt', 'DESC']]
+      order: [['createdAt', 'DESC']]
+    });
+
+    // Get all skills for the dropdown
+    const skills = await Skill.findAll({
+      attributes: ['id', 'name'],
+      order: [['name', 'ASC']]
     });
 
     res.render('sessions/index', {
       title: 'My Sessions - SkillSwap MY',
       teachingSessions,
-      learningSessions
+      learningSessions,
+      skills
     });
   } catch (error) {
     console.error('Sessions error:', error);
@@ -189,10 +196,105 @@ router.post('/request', validate(schemas.session), async (req, res) => {
   }
 });
 
-// Quick session request - auto-finds matching availability
+// Get overlapping availability slots between teacher and student
+router.post('/get-availability-slots', async (req, res) => {
+  try {
+    const { teacherId } = req.body;
+    const studentId = req.user.id;
+
+    if (!teacherId) {
+      return res.json({ success: false, message: 'Missing teacher ID.' });
+    }
+
+    const teacher = await User.findByPk(teacherId, {
+      include: [{ model: Availability, as: 'availabilities' }]
+    });
+
+    if (!teacher) {
+      return res.json({ success: false, message: 'Teacher not found.' });
+    }
+
+    const student = await User.findByPk(studentId, {
+      include: [{ model: Availability, as: 'availabilities' }]
+    });
+
+    const teacherAvail = teacher.availabilities || [];
+    const studentAvail = student.availabilities || [];
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const slots = [];
+
+    for (const ta of teacherAvail) {
+      for (const sa of studentAvail) {
+        if (ta.dayOfWeek === sa.dayOfWeek) {
+          const tStart = ta.startTime;
+          const tEnd = ta.endTime;
+          const sStart = sa.startTime;
+          const sEnd = sa.endTime;
+
+          const overlapStart = tStart > sStart ? tStart : sStart;
+          const overlapEnd = tEnd < sEnd ? tEnd : sEnd;
+
+          if (overlapStart < overlapEnd) {
+            // Calculate next occurrence
+            const now = new Date();
+            let targetDate = new Date();
+            const currentDay = now.getDay();
+            let daysUntil = ta.dayOfWeek - currentDay;
+            if (daysUntil <= 0) daysUntil += 7;
+            targetDate.setDate(now.getDate() + daysUntil);
+
+            const dateStr = targetDate.toLocaleDateString('en-MY', {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric'
+            });
+
+            slots.push({
+              dayOfWeek: ta.dayOfWeek,
+              dayName: dayNames[ta.dayOfWeek],
+              startTime: overlapStart,
+              endTime: overlapEnd,
+              dateStr,
+              label: `${dateStr} — ${overlapStart} to ${overlapEnd}`
+            });
+          }
+        }
+      }
+    }
+
+    if (slots.length === 0) {
+      const contactMethod = teacher.whatsapp_number || teacher.whatsappNumber
+        ? `WhatsApp: ${teacher.whatsapp_number || teacher.whatsappNumber}`
+        : teacher.email
+          ? `Email: ${teacher.email}`
+          : 'their profile';
+
+      return res.json({
+        success: false,
+        noMatch: true,
+        message: `No matching availability found. Please contact ${teacher.name} to discuss a suitable time.`,
+        contact: contactMethod,
+        teacherName: teacher.name
+      });
+    }
+
+    return res.json({
+      success: true,
+      slots,
+      teacherName: teacher.name
+    });
+
+  } catch (error) {
+    console.error('Get availability slots error:', error);
+    return res.json({ success: false, message: 'Error fetching availability.' });
+  }
+});
+
+// Quick session request - uses selected slot or auto-finds matching availability
 router.post('/quick-request', async (req, res) => {
   try {
-    const { teacherId, skillId } = req.body;
+    const { teacherId, skillId, selectedSlot } = req.body;
     const studentId = req.user.id;
 
     if (!teacherId || !skillId) {
@@ -211,40 +313,46 @@ router.post('/quick-request', async (req, res) => {
       include: [{ model: Availability, as: 'availabilities' }]
     });
 
-    // Find overlapping availability
-    const teacherAvail = teacher.availabilities || [];
-    const studentAvail = student.availabilities || [];
-
     let matchingSlot = null;
 
-    for (const ta of teacherAvail) {
-      for (const sa of studentAvail) {
-        if (ta.dayOfWeek === sa.dayOfWeek) {
-          // Check time overlap
-          const tStart = ta.startTime;
-          const tEnd = ta.endTime;
-          const sStart = sa.startTime;
-          const sEnd = sa.endTime;
+    // If user selected a specific slot, use it
+    if (selectedSlot && selectedSlot.dayOfWeek !== undefined && selectedSlot.startTime && selectedSlot.endTime) {
+      matchingSlot = {
+        dayOfWeek: parseInt(selectedSlot.dayOfWeek),
+        startTime: selectedSlot.startTime,
+        endTime: selectedSlot.endTime
+      };
+    } else {
+      // Find overlapping availability automatically
+      const teacherAvail = teacher.availabilities || [];
+      const studentAvail = student.availabilities || [];
 
-          // Find overlap: max(tStart, sStart) to min(tEnd, sEnd)
-          const overlapStart = tStart > sStart ? tStart : sStart;
-          const overlapEnd = tEnd < sEnd ? tEnd : sEnd;
+      for (const ta of teacherAvail) {
+        for (const sa of studentAvail) {
+          if (ta.dayOfWeek === sa.dayOfWeek) {
+            const tStart = ta.startTime;
+            const tEnd = ta.endTime;
+            const sStart = sa.startTime;
+            const sEnd = sa.endTime;
 
-          if (overlapStart < overlapEnd) {
-            matchingSlot = {
-              dayOfWeek: ta.dayOfWeek,
-              startTime: overlapStart,
-              endTime: overlapEnd
-            };
-            break;
+            const overlapStart = tStart > sStart ? tStart : sStart;
+            const overlapEnd = tEnd < sEnd ? tEnd : sEnd;
+
+            if (overlapStart < overlapEnd) {
+              matchingSlot = {
+                dayOfWeek: ta.dayOfWeek,
+                startTime: overlapStart,
+                endTime: overlapEnd
+              };
+              break;
+            }
           }
         }
+        if (matchingSlot) break;
       }
-      if (matchingSlot) break;
     }
 
     if (!matchingSlot) {
-      // No matching availability
       const contactMethod = teacher.whatsapp_number || teacher.whatsappNumber
         ? `WhatsApp: ${teacher.whatsapp_number || teacher.whatsappNumber}`
         : teacher.email

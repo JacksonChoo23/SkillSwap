@@ -6,46 +6,46 @@
 <!-- Quick Stats Row -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-primary text-white">
-            <div class="card-body text-center">
+        <div class="card border-0 shadow-sm h-100 bg-primary-subtle text-primary border border-primary border-opacity-10 transition-all">
+            <div class="card-body text-center py-4">
                 <i class="fas fa-calendar-check fa-2x mb-2"></i>
-                <div class="h3 mb-0">
+                <div class="h3 mb-0 fw-bold">
                     <%= stats.totalSessions %>
                 </div>
-                <small>Total Sessions</small>
+                <small class="fw-semibold">Total Sessions</small>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-success text-white">
-            <div class="card-body text-center">
+        <div class="card border-0 shadow-sm h-100 bg-success-subtle text-success border border-success border-opacity-10 transition-all">
+            <div class="card-body text-center py-4">
                 <i class="fas fa-check-circle fa-2x mb-2"></i>
-                <div class="h3 mb-0">
+                <div class="h3 mb-0 fw-bold">
                     <%= stats.completedSessions %>
                 </div>
-                <small>Completed</small>
+                <small class="fw-semibold">Completed</small>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-warning text-dark">
-            <div class="card-body text-center">
+        <div class="card border-0 shadow-sm h-100 bg-warning-subtle text-warning border border-warning border-opacity-10 transition-all">
+            <div class="card-body text-center py-4">
                 <i class="fas fa-clock fa-2x mb-2"></i>
-                <div class="h3 mb-0">
+                <div class="h3 mb-0 fw-bold">
                     <%= stats.upcomingSessions %>
                 </div>
-                <small>Upcoming</small>
+                <small class="fw-semibold">Upcoming</small>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card border-0 shadow-sm h-100 bg-info text-white">
-            <div class="card-body text-center">
+        <div class="card border-0 shadow-sm h-100 bg-info-subtle text-info border border-info border-opacity-10 transition-all">
+            <div class="card-body text-center py-4">
                 <i class="fas fa-star fa-2x mb-2"></i>
-                <div class="h3 mb-0">
+                <div class="h3 mb-0 fw-bold">
                     <%= stats.averageRating || 'N/A' %>
                 </div>
-                <small>Avg Rating (<%= stats.ratingsCount %>)</small>
+                <small class="fw-semibold">Avg Rating (<%= stats.ratingsCount %>)</small>
             </div>
         </div>
     </div>
@@ -174,9 +174,13 @@
             </div>
             <div class="card-body p-0">
                 <% if (!upcomingSessionsList || upcomingSessionsList.length===0) { %>
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-calendar-times fa-2x mb-2"></i>
-                        <p class="mb-0">No upcoming sessions</p>
+                    <div class="text-center py-4 bg-light rounded-4 border-2 border-dashed m-3">
+                        <div class="mb-2">
+                           <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                               <i class="fas fa-calendar-times fa-lg text-muted opacity-25"></i>
+                           </div>
+                        </div>
+                        <p class="mb-0 small fw-bold text-muted">No upcoming sessions</p>
                     </div>
                     <% } else { %>
                         <ul class="list-group list-group-flush">
@@ -224,10 +228,14 @@
             </div>
             <div class="card-body p-0">
                 <% if (!mySkills || mySkills.length===0) { %>
-                    <div class="text-center text-muted py-4">
-                        <i class="fas fa-lightbulb fa-2x mb-2"></i>
-                        <p class="mb-0">No skills added yet</p>
-                        <a href="/profile" class="btn btn-sm btn-primary mt-2">Add Skills</a>
+                    <div class="text-center py-4 bg-light rounded-4 border-2 border-dashed m-3">
+                        <div class="mb-2">
+                           <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                               <i class="fas fa-lightbulb fa-lg text-muted opacity-25"></i>
+                           </div>
+                        </div>
+                        <p class="mb-2 small fw-bold text-muted">No skills added yet</p>
+                        <a href="/profile" class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">Add Skills</a>
                     </div>
                     <% } else { %>
                         <ul class="list-group list-group-flush">
@@ -235,9 +243,9 @@
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
                                         <% if (us.type==='teach' ) { %>
-                                            <span class="badge bg-success me-2">Teaching</span>
+                                            <span class="badge bg-success-subtle text-success border border-success border-opacity-10 py-1 me-2">Teaching</span>
                                             <% } else { %>
-                                                <span class="badge bg-primary me-2">Learning</span>
+                                                <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-10 py-1 me-2">Learning</span>
                                                 <% } %>
                                                     <%= us.Skill?.name || 'Skill' %>
                                                         <% if (us.Skill?.Category?.name) { %>

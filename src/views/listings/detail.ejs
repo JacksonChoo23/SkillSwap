@@ -186,12 +186,16 @@
           <div class="card-body p-4 bg-white">
             <div class="d-flex justify-content-around text-center border-bottom pb-4 mb-4">
               <div>
-                <div class="h5 fw-bold mb-0">--</div>
+                <div class="h5 fw-bold mb-0">
+                  <%= typeof sessionCount !=='undefined' ? sessionCount : 0 %>
+                </div>
                 <div class="small text-muted">Sessions</div>
               </div>
               <div class="border-start opacity-25"></div>
               <div>
-                <div class="h5 fw-bold mb-0">--</div>
+                <div class="h5 fw-bold mb-0">
+                  <%= typeof avgRating !=='undefined' && avgRating> 0 ? avgRating : 'N/A' %>
+                </div>
                 <div class="small text-muted">Rating</div>
               </div>
             </div>

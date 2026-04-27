@@ -1,195 +1,229 @@
-﻿<% const teaching=Array.isArray(teachingSessions) ? teachingSessions : []; const
+<% const teaching=Array.isArray(teachingSessions) ? teachingSessions : []; const
   learning=Array.isArray(learningSessions) ? learningSessions : []; const fmt=d=> d ? new Date(d).toLocaleString() : '';
 
-  const badge = (status) => {
-  if (status === 'requested') return 'bg-warning text-dark';
-  if (status === 'confirmed') return 'bg-primary text-white';
-  if (status === 'in_progress') return 'bg-info text-dark';
-  if (status === 'completed') return 'bg-success text-white';
-  if (status === 'cancelled') return 'bg-secondary text-white';
-  if (status === 'expired') return 'bg-danger text-white';
-  return 'bg-light text-dark';
-  };
+  const badgeClass = (status) => {
+    let color = 'light';
+    if (status === 'requested') color = 'warning';
+    else if (status === 'confirmed') color = 'primary';
+    else if (status === 'in_progress') color = 'info';
+    else if (status === 'completed') color = 'success';
+    else if (status === 'cancelled') color = 'secondary';
+    else if (status === 'expired') color = 'danger';
 
-  const badgeStyle = (status) => {
-  if (status === 'requested') return 'background-color: #ffc107 !important; color: #212529 !important;';
-  if (status === 'confirmed') return 'background-color: #0d6efd !important; color: #fff !important;';
-  if (status === 'in_progress') return 'background-color: #0dcaf0 !important; color: #212529 !important;';
-  if (status === 'completed') return 'background-color: #198754 !important; color: #fff !important;';
-  if (status === 'cancelled') return 'background-color: #6c757d !important; color: #fff !important;';
-  if (status === 'expired') return 'background-color: #dc3545 !important; color: #fff !important;';
-  return 'background-color: #f8f9fa !important; color: #212529 !important;';
+    return `bg-${color}-subtle text-${color} border border-${color} border-opacity-10`;
   };
 
   const badgeLabel = (session) => {
-  if (!session || !session.status) return 'UNKNOWN';
-  if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'EXPIRED' ; if
-    (session.status==='completed' ) return 'COMPLETED' ; if (session.status==='in_progress' ) return 'IN PROGRESS' ; if
-    (session.status==='confirmed' ) return 'CONFIRMED' ; if (session.status==='requested' ) return 'PENDING' ; if
-    (session.status==='cancelled' ) return 'CANCELLED' ; return session.status.toUpperCase().replace('_', ' ' ); };
-    const badgeClass=(session)=> {
-    if (!session || !session.status) return 'bg-light text-dark';
-    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'bg-danger' ; return
-      badge(session.status); }; %>
+    if (!session || !session.status) return 'UNKNOWN';
+    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return 'EXPIRED';
+    if (session.status === 'completed') return 'COMPLETED';
+    if (session.status === 'in_progress') return 'IN PROGRESS';
+    if (session.status === 'confirmed') return 'CONFIRMED';
+    if (session.status === 'requested') return 'PENDING';
+    if (session.status === 'cancelled') return 'CANCELLED';
+    return session.status.toUpperCase().replace('_', ' ');
+  };
 
-      <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-        <h1 class="h4 mb-0">My Sessions</h1>
+  const getSessionBadge = (session) => {
+    if (!session || !session.status) return badgeClass('light');
+    if (session.status === 'cancelled' && new Date(session.startAt) < new Date()) return badgeClass('expired');
+    return badgeClass(session.status);
+  };
+%>
+
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <h1 class="h4 m-0"><i class="fas fa-calendar-alt me-2 text-primary"></i>My Sessions</h1>
+</div>
+
+<!-- Request a Session -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-4">
+    <div class="d-flex align-items-center mb-3">
+      <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+        <i class="fas fa-plus text-primary"></i>
       </div>
+      <h2 class="h6 mb-0 fw-bold">Request a Session</h2>
+    </div>
+    <form method="POST" action="/sessions/request" class="row g-3">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold text-muted">User ID</label>
+        <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold text-muted">Skill Selection</label>
+        <select class="form-select" name="skillId" required>
+          <option value="">Select a skill...</option>
+          <% (skills || []).forEach(skill=> { %>
+            <option value="<%= skill.id %>">
+              <%= skill.name %> (ID: <%= skill.id %>)
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold text-muted">Start Time</label>
+        <input type="datetime-local" class="form-control" name="startAt" required>
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold text-muted">End Time</label>
+        <input type="datetime-local" class="form-control" name="endAt" required>
+      </div>
+      <div class="col-12 mt-3 text-end">
+        <button class="btn btn-primary px-4 shadow-sm rounded-pill"><i class="fas fa-paper-plane me-1"></i> Send Request</button>
+      </div>
+    </form>
+    <div class="form-text mt-3 bg-light p-2 rounded">
+      <i class="fas fa-info-circle text-muted me-1"></i><strong>Tip:</strong> Use Browse to find a user and note their User ID. Select the skill they teach from the dropdown.
+    </div>
+  </div>
+</div>
 
-      <!-- Request a Session (manual IDs for now) -->
-      <div class="card mb-4">
-        <div class="card-body">
-          <h2 class="h6 text-muted mb-3">Request a Session</h2>
-          <form method="POST" action="/sessions/request" class="row g-2">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="col-12 col-md-3">
-              <label class="form-label">Teacher ID</label>
-              <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
-            </div>
-            <div class="col-12 col-md-3">
-              <label class="form-label">Skill ID</label>
-              <input type="number" class="form-control" name="skillId" placeholder="e.g. 5" required>
-            </div>
-            <div class="col-12 col-md-3">
-              <label class="form-label">Start</label>
-              <input type="datetime-local" class="form-control" name="startAt" required>
-            </div>
-            <div class="col-12 col-md-3">
-              <label class="form-label">End</label>
-              <input type="datetime-local" class="form-control" name="endAt" required>
-            </div>
-            <div class="col-12 mt-1 d-grid d-md-block">
-              <button class="btn btn-primary">Request</button>
-            </div>
-          </form>
-          <div class="form-text mt-2">
-            Tip: Use Browse to find a teacher and note their ID and skill.
+<div class="row g-4">
+  <!-- Teaching -->
+  <div class="col-12 col-lg-6">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <i class="fas fa-chalkboard-teacher text-primary fa-lg"></i>
+      <h2 class="h5 m-0 fw-bold">Teaching</h2>
+      <span class="badge bg-primary rounded-pill"><%= teaching.length %></span>
+    </div>
+
+    <% if (teaching.length === 0) { %>
+      <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed">
+        <div class="mb-3">
+          <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+            <i class="fas fa-chalkboard opacity-25 fa-2x"></i>
           </div>
         </div>
+        <h6 class="text-dark fw-bold">No Teaching Sessions</h6>
+        <p class="text-muted small mb-0">You are not teaching any sessions yet.</p>
       </div>
-
-      <div class="row g-4">
-        <!-- Teaching -->
-        <div class="col-12 col-lg-6">
-          <div class="card">
-            <div class="card-body">
-              <h2 class="h6 text-muted mb-3">Teaching</h2>
-
-              <% if (teaching.length===0) { %>
-                <div class="text-muted small">No sessions.</div>
-                <% } else { %>
-                  <div class="list-group">
-                    <% teaching.forEach(s=> { %>
-                      <div class="list-group-item">
-                        <div class="d-flex justify-content-between">
-                          <div class="me-3">
-                            <div class="d-flex align-items-center">
-                              <span class="badge <%= badgeClass(s) %> me-2" style="<%= badgeStyle(s.status) %>">
-                                <%= badgeLabel(s) %>
-                              </span>
-                              <strong>
-                                <%= s.Skill?.name || 'Skill' %>
-                              </strong>
-                            </div>
-                            <div class="small text-muted mt-1">
-                              With learner: <%= s.student?.name || 'User' %>
-                            </div>
-                            <div class="small text-muted">
-                              <%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
-                            </div>
-                          </div>
-                          <div class="text-end">
-                            <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
-                            <div>
-                              <% if (s.status==='requested' ) { %>
-                                <form method="POST" action="/sessions/<%= s.id %>/confirm" class="d-inline">
-                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                  <button class="btn btn-primary btn-sm">Confirm</button>
-                                </form>
-                                <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                  <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                                </form>
-                                <% } else if (s.status==='confirmed' ) { %>
-                                  <form method="POST" action="/sessions/<%= s.id %>/generate-code" class="d-inline">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button class="btn btn-primary btn-sm">Generate Code</button>
-                                  </form>
-                                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                                  </form>
-                                  <% } else if (s.status==='in_progress' ) { %>
-                                    <form method="POST" action="/sessions/<%= s.id %>/end" class="d-inline">
-                                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                      <button class="btn btn-success btn-sm">End Session</button>
-                                    </form>
-                                    <% } %>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <% }) %>
+    <% } else { %>
+      <div class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+        <% teaching.forEach(s=> { %>
+          <div class="card border-0 shadow-sm transition-all h-100">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between">
+                <div class="me-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge py-1 <%= getSessionBadge(s) %> me-2">
+                      <%= badgeLabel(s) %>
+                    </span>
                   </div>
-                  <% } %>
-            </div>
-          </div>
-        </div>
-
-        <!-- Learning -->
-        <div class="col-12 col-lg-6">
-          <div class="card">
-            <div class="card-body">
-              <h2 class="h6 text-muted mb-3">Learning</h2>
-
-              <% if (learning.length===0) { %>
-                <div class="text-muted small">No sessions.</div>
-                <% } else { %>
-                  <div class="list-group">
-                    <% learning.forEach(s=> { %>
-                      <div class="list-group-item">
-                        <div class="d-flex justify-content-between">
-                          <div class="me-3">
-                            <div class="d-flex align-items-center">
-                              <span class="badge <%= badgeClass(s) %> me-2" style="<%= badgeStyle(s.status) %>">
-                                <%= badgeLabel(s) %>
-                              </span>
-                              <strong>
-                                <%= s.Skill?.name || 'Skill' %>
-                              </strong>
-                            </div>
-                            <div class="small text-muted mt-1">
-                              With teacher: <%= s.teacher?.name || 'User' %>
-                            </div>
-                            <div class="small text-muted">
-                              <%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
-                            </div>
-                          </div>
-                          <div class="text-end">
-                            <a class="btn btn-outline-secondary btn-sm mb-1" href="/sessions/<%= s.id %>">View</a>
-                            <div>
-                              <% if (s.status==='requested' ) { %>
-                                <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                  <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                                </form>
-                                <% } else if (s.status==='confirmed' ) { %>
-                                  <!-- Enter code on session detail page -->
-                                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="d-inline">
-                                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                                    <button class="btn btn-outline-danger btn-sm">Cancel</button>
-                                  </form>
-                                  <% } else if (s.status==='in_progress' ) { %>
-                                    <span class="badge bg-info text-dark">In progress</span>
-                                    <% } %>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <% }) %>
+                  <h6 class="fw-bold mb-1">
+                    <%= s.Skill?.name || 'Skill' %>
+                  </h6>
+                  <div class="small text-muted mb-1">
+                    <i class="fas fa-user-graduate opacity-75 me-1"></i>Learner: <strong><%= s.student?.name || 'User' %></strong>
                   </div>
-                  <% } %>
+                  <div class="small text-muted">
+                    <i class="far fa-clock opacity-75 me-1"></i><%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer bg-light bg-opacity-50 border-0 p-3 mt-auto rounded-bottom-3 d-flex justify-content-between align-items-center">
+              <a class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm" href="/sessions/<%= s.id %>">
+                <i class="fas fa-eye me-1"></i>View
+              </a>
+              <div class="d-flex gap-2">
+                <% if (s.status==='requested' ) { %>
+                  <form method="POST" action="/sessions/<%= s.id %>/confirm" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-primary btn-sm rounded-pill shadow-sm"><i class="fas fa-check me-1"></i>Confirm</button>
+                  </form>
+                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-times me-1"></i>Cancel</button>
+                  </form>
+                <% } else if (s.status==='confirmed' ) { %>
+                  <form method="POST" action="/sessions/<%= s.id %>/generate-code" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-primary btn-sm rounded-pill shadow-sm"><i class="fas fa-key me-1"></i>Generate Code</button>
+                  </form>
+                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-times me-1"></i>Cancel</button>
+                  </form>
+                <% } else if (s.status==='in_progress' ) { %>
+                  <form method="POST" action="/sessions/<%= s.id %>/end" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-success btn-sm rounded-pill shadow-sm"><i class="fas fa-flag-checkered me-1"></i>End</button>
+                  </form>
+                <% } %>
+              </div>
             </div>
           </div>
-        </div>
+        <% }) %>
       </div>
+    <% } %>
+  </div>
+
+  <!-- Learning -->
+  <div class="col-12 col-lg-6">
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <i class="fas fa-user-graduate text-info fa-lg"></i>
+      <h2 class="h5 m-0 fw-bold">Learning</h2>
+      <span class="badge bg-info-subtle text-info border border-info border-opacity-10 rounded-pill"><%= learning.length %></span>
+    </div>
+
+    <% if (learning.length === 0) { %>
+      <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed">
+        <div class="mb-3">
+          <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+            <i class="fas fa-book-reader opacity-25 fa-2x text-muted"></i>
+          </div>
+        </div>
+        <h6 class="text-dark fw-bold">No Learning Sessions</h6>
+        <p class="text-muted small mb-0">You are not learning any skills right now.</p>
+      </div>
+    <% } else { %>
+      <div class="d-flex flex-column gap-3" style="max-height: 500px; overflow-y: auto;">
+        <% learning.forEach(s=> { %>
+          <div class="card border-0 shadow-sm transition-all h-100">
+            <div class="card-body p-4">
+              <div class="d-flex justify-content-between">
+                <div class="me-3">
+                  <div class="d-flex align-items-center mb-2">
+                    <span class="badge py-1 <%= getSessionBadge(s) %> me-2">
+                      <%= badgeLabel(s) %>
+                    </span>
+                  </div>
+                  <h6 class="fw-bold mb-1">
+                    <%= s.Skill?.name || 'Skill' %>
+                  </h6>
+                  <div class="small text-muted mb-1">
+                    <i class="fas fa-chalkboard-teacher opacity-75 me-1"></i>Teacher: <strong><%= s.teacher?.name || 'User' %></strong>
+                  </div>
+                  <div class="small text-muted">
+                    <i class="far fa-clock opacity-75 me-1"></i><%= fmt(s.startAt) %> - <%= fmt(s.endAt) %>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer bg-light bg-opacity-50 border-0 p-3 mt-auto rounded-bottom-3 d-flex justify-content-between align-items-center">
+              <a class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm" href="/sessions/<%= s.id %>">
+                <i class="fas fa-eye me-1"></i>View
+              </a>
+              <div class="d-flex gap-2">
+                <% if (s.status==='requested' ) { %>
+                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-times me-1"></i>Cancel</button>
+                  </form>
+                <% } else if (s.status==='confirmed' ) { %>
+                  <form method="POST" action="/sessions/<%= s.id %>/cancel" class="m-0">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button class="btn btn-outline-danger btn-sm rounded-pill"><i class="fas fa-times me-1"></i>Cancel</button>
+                  </form>
+                <% } else if (s.status==='in_progress' ) { %>
+                  <span class="badge bg-info-subtle text-info border border-info border-opacity-10 py-2"><i class="fas fa-play-circle me-1"></i>In progress</span>
+                <% } %>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+  </div>
+</div>

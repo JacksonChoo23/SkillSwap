@@ -469,11 +469,13 @@ async function loadSuggestions(type) {
             listContainer.innerHTML = '<div class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2"></i><p>No saved suggestions found.</p></div>';
         }
 
-        // Update active filter button
-        document.querySelectorAll('#savedSuggestionsModal .btn-outline-primary, #savedSuggestionsModal .btn-outline-warning').forEach(btn => {
+        // Update active filter button based on type parameter
+        document.querySelectorAll('#savedSuggestionsModal [data-filter-type]').forEach(btn => {
             btn.classList.remove('active');
+            if (btn.getAttribute('data-filter-type') === type) {
+                btn.classList.add('active');
+            }
         });
-        event.target.classList.add('active');
 
     } catch (error) {
         console.error('Load suggestions error:', error);

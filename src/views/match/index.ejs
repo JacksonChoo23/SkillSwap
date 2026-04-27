@@ -2,17 +2,16 @@
   const topMatch = hasMatches ? matches[0] : null;
   %>
 
-  <div class="card bg-primary text-white border-0 rounded-4 shadow-sm mb-4">
+  <div class="card bg-primary-subtle text-primary border border-primary border-opacity-10 rounded-4 shadow-sm mb-4">
     <div class="card-body p-4 p-md-5">
       <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
         <div>
-          <p class="text-white-50 text-uppercase small mb-1">SkillSwap assistant</p>
-          <h1 class="h3 mb-2">Find Your Ideal SkillSwap Partner</h1>
-          <p class="mb-0 text-white-50">Matches consider what you can teach, what you want to learn, and when you are
-            both available.</p>
+          <p class="text-primary text-uppercase small fw-bold mb-1 opacity-75">SkillSwap Assistant</p>
+          <h1 class="h3 mb-2 fw-bold">Find Your Ideal SkillSwap Partner</h1>
+          <p class="mb-0 text-dark opacity-75 fw-medium">Matches consider what you can teach, what you want to learn, and when you are both available.</p>
         </div>
         <% if (topMatch) { %>
-          <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm">
+          <div class="bg-white text-primary rounded-4 px-4 py-3 text-md-end shadow-sm border border-primary border-opacity-10">
             <div class="text-uppercase small fw-semibold">Top match score</div>
             <div class="display-6 fw-bold mb-0">
               <%= Math.min(Math.round(topMatch.score * 100), 99) %>%
@@ -68,12 +67,12 @@
               <div class="d-flex align-items-start gap-3 mb-3">
                 <% if (match.user.profileImage || match.user.profile_image) { %>
                   <img src="<%= match.user.profileImage || match.user.profile_image %>" alt="<%= match.user.name %>"
-                    class="rounded-circle flex-shrink-0"
-                    style="width: 56px; height: 56px; object-fit: cover; border: 2px solid #e9ecef;">
+                    class="rounded-circle border border-2 border-white shadow-sm flex-shrink-0"
+                    style="width: 56px; height: 56px; object-fit: cover;">
                   <% } else { %>
-                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0"
-                      style="width: 56px; height: 56px; border: 2px solid #e9ecef;">
-                      <i class="fas fa-user fa-lg text-muted"></i>
+                    <div class="rounded-circle bg-primary-subtle border border-2 border-white shadow-sm d-flex align-items-center justify-content-center text-primary flex-shrink-0"
+                      style="width: 56px; height: 56px; font-weight: bold;">
+                      <i class="fas fa-user text-primary opacity-50"></i>
                     </div>
                     <% } %>
                       <div class="flex-grow-1 min-width-0">
@@ -82,8 +81,7 @@
                             <%= match.user.name %>
                           </h5>
                           <span
-                            class="badge rounded-pill flex-shrink-0 <%= matchPercent >= 70 ? 'bg-success' : (matchPercent >= 40 ? 'bg-primary' : 'bg-secondary') %>"
-                            style="font-size: 0.8rem; padding: 0.4em 0.8em;">
+                            class="badge rounded-pill py-1 flex-shrink-0 <%= matchPercent >= 70 ? 'bg-success-subtle text-success border border-success border-opacity-10' : (matchPercent >= 40 ? 'bg-primary-subtle text-primary border border-primary border-opacity-10' : 'bg-secondary-subtle text-secondary border border-secondary border-opacity-10') %>">
                             <%= matchPercent %>% Match
                           </span>
                         </div>
@@ -111,33 +109,30 @@
                     </p>
                     <% } %>
 
-                      <!-- Skills: Teach & Learn -->
                       <div class="mb-3">
                         <% if (teachSkillNames.length> 0) { %>
                           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                            <span class="text-success" style="font-size: 0.85rem;" title="Can teach"><i
-                                class="fas fa-graduation-cap"></i></span>
+                            <span class="text-success" style="font-size: 0.85rem;" title="Can teach"><i class="fas fa-graduation-cap"></i></span>
                             <% teachSkillNames.forEach(name=> { %>
-                              <span class="badge bg-success-subtle text-success border-0" style="font-weight: 500;">
+                              <span class="badge bg-success-subtle text-success border border-success border-opacity-10 py-1" style="font-weight: 500;">
                                 <%= name %>
                               </span>
                               <% }) %>
                                 <% if ((match.teachSkills || []).length> 3) { %>
-                                  <span class="text-muted small">+<%= match.teachSkills.length - 3 %></span>
+                                  <span class="badge border border-secondary text-secondary rounded-pill py-1">+<%= match.teachSkills.length - 3 %></span>
                                   <% } %>
                           </div>
                           <% } %>
                             <% if (learnSkillNames.length> 0) { %>
                               <div class="d-flex align-items-center gap-2 flex-wrap">
-                                <span class="text-primary" style="font-size: 0.85rem;" title="Wants to learn"><i
-                                    class="fas fa-seedling"></i></span>
+                                <span class="text-primary" style="font-size: 0.85rem;" title="Wants to learn"><i class="fas fa-seedling"></i></span>
                                 <% learnSkillNames.forEach(name=> { %>
-                                  <span class="badge bg-primary-subtle text-primary border-0" style="font-weight: 500;">
+                                  <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-10 py-1" style="font-weight: 500;">
                                     <%= name %>
                                   </span>
                                   <% }) %>
                                     <% if ((match.learnSkills || []).length> 3) { %>
-                                      <span class="text-muted small">+<%= match.learnSkills.length - 3 %></span>
+                                      <span class="badge border border-secondary text-secondary rounded-pill py-1">+<%= match.learnSkills.length - 3 %></span>
                                       <% } %>
                               </div>
                               <% } %>
@@ -157,37 +152,44 @@
         </div>
 
         <!-- Footer Actions -->
-        <div class="card-footer bg-white border-top px-4 py-3">
-          <div class="d-flex align-items-center gap-2">
-            <button class="btn btn-primary btn-sm flex-grow-1 js-quick-request"
+        <div class="card-footer bg-white border-0 px-4 py-3 d-flex align-items-center gap-2">
+            <button class="btn btn-primary btn-sm flex-grow-1 js-quick-request rounded-pill shadow-sm"
               data-user="<%= match.user.id %>"
-              data-skill="<%= match.teachSkills && match.teachSkills[0] ? match.teachSkills[0].id : '' %>"
+              data-skills=' <%=JSON.stringify((match.teachSkills || []).map(s=> ({id: s.id, name: s.name}))) %>'
               data-name="<%= match.user.name %>">
-              <i class="fas fa-bolt me-1"></i> Quick Request
+                <i class="fas fa-bolt me-1"></i> Quick Request
             </button>
-            <a class="btn btn-outline-secondary btn-sm" href="/browse/user/<%= match.user.id %>?from=match" title="View Profile">
+            <a class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm"
+              href="/browse/user/<%= match.user.id %>?from=match" title="View Profile">
               <i class="fas fa-user"></i>
             </a>
             <% if (waNumber) { %>
-              <a class="btn btn-outline-success btn-sm" target="_blank" rel="noopener" title="WhatsApp"
+              <a class="btn btn-outline-success btn-sm rounded-pill px-3 shadow-sm" target="_blank" rel="noopener"
+                title="WhatsApp"
                 href="/go/wa/<%= match.user.id %>?text=<%- encodeURIComponent('Hi ' + match.user.name + ', I found you on SkillSwap MY!') %>">
-                              <i class="fab fa-whatsapp"></i>
-                              </a>
-                              <% } %>
-                                <button class="btn btn-outline-danger btn-sm js-tip" data-user-id="<%= match.user.id %>"
-                                  data-user-name="<%= match.user.name %>" title="Send Tip">
-                                  <i class="far fa-heart"></i>
-                                </button>
-                        </div>
-            </div>
+                <i class="fab fa-whatsapp"></i>
+              </a>
+              <% } %>
+                <button class="btn btn-outline-danger btn-sm js-tip rounded-pill px-3 shadow-sm"
+                  data-user-id="<%= match.user.id %>" data-user-name="<%= match.user.name %>"
+                  title="Send Tip">
+                  <i class="far fa-heart"></i>
+                </button>
+        </div>
           </div>
         </div>
         <% }); %>
     </div>
     <% } else { %>
-      <div class="alert alert-warning text-center" role="alert">
-        <i class="fas fa-circle-info me-2"></i>No matches found yet. Try adding more skills or updating your
-        availability.
+      <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed m-3">
+        <div class="mb-4">
+          <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center"
+            style="width: 80px; height: 80px;">
+            <i class="fas fa-robot fa-2x text-muted opacity-25"></i>
+          </div>
+        </div>
+        <h6 class="text-dark fw-bold">No matches found yet</h6>
+        <p class="text-muted small mb-0">Try adding more skills or updating your availability.</p>
       </div>
       <% } %>
 
@@ -197,10 +199,16 @@
             document.querySelectorAll('.js-quick-request').forEach(btn => {
               btn.addEventListener('click', async function () {
                 const teacherId = this.dataset.user;
-                const skillId = this.dataset.skill;
                 const teacherName = this.dataset.name;
+                let skills = [];
 
-                if (!skillId) {
+                try {
+                  skills = JSON.parse(this.dataset.skills || '[]');
+                } catch (e) {
+                  skills = [];
+                }
+
+                if (!skills || skills.length === 0) {
                   Swal.fire({
                     icon: 'warning',
                     title: 'No Skills Available',
@@ -211,10 +219,148 @@
                   return;
                 }
 
-                // Show loading
-                this.disabled = true;
-                const originalText = this.innerHTML;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Checking...';
+                let selectedSkillId;
+                let selectedSkillName;
+
+                // Step 1: Select skill
+                if (skills.length > 1) {
+                  const skillOptions = skills.map((s, index) =>
+                    `<div class="form-check text-start mb-2">
+                       <input class="form-check-input" type="radio" name="skillChoice" id="skill_${s.id}" value="${s.id}" data-name="${s.name}" ${index === 0 ? 'checked' : ''}>
+                       <label class="form-check-label" for="skill_${s.id}">${s.name}</label>
+                     </div>`
+                  ).join('');
+
+                  const skillResult = await Swal.fire({
+                    icon: 'question',
+                    title: 'Step 1: Choose a Skill',
+                    html: `<p class="text-muted mb-3">Select which skill you'd like to learn from ${teacherName}:</p>
+                           <div class="px-3">${skillOptions}</div>`,
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-arrow-right me-1"></i> Next: Choose Time',
+                    cancelButtonText: 'Cancel',
+                    confirmButtonColor: '#0d6efd',
+                    position: 'center',
+                    customClass: { container: 'swal2-centered-container' },
+                    preConfirm: () => {
+                      const selected = document.querySelector('input[name="skillChoice"]:checked');
+                      if (!selected) {
+                        Swal.showValidationMessage('Please select a skill');
+                        return false;
+                      }
+                      return { id: selected.value, name: selected.dataset.name };
+                    }
+                  });
+
+                  if (!skillResult.isConfirmed) return;
+                  selectedSkillId = skillResult.value.id;
+                  selectedSkillName = skillResult.value.name;
+                } else {
+                  selectedSkillId = skills[0].id;
+                  selectedSkillName = skills[0].name;
+                }
+
+                // Step 2: Fetch available time slots
+                const originalBtn = this;
+                originalBtn.disabled = true;
+                const originalText = originalBtn.innerHTML;
+                originalBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Loading...';
+
+                let slotsData;
+                try {
+                  const slotsResponse = await fetch('/sessions/get-availability-slots', {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRF-Token': '<%= csrfToken %>'
+                    },
+                    body: JSON.stringify({ teacherId })
+                  });
+                  slotsData = await slotsResponse.json();
+                } catch (error) {
+                  originalBtn.disabled = false;
+                  originalBtn.innerHTML = originalText;
+                  Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Could not fetch available times. Please try again.',
+                    position: 'center'
+                  });
+                  return;
+                }
+
+                originalBtn.disabled = false;
+                originalBtn.innerHTML = originalText;
+
+                if (!slotsData.success) {
+                  if (slotsData.noMatch) {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'No Matching Time',
+                      html: `<p>${slotsData.message}</p><p class="text-muted small mt-2">${slotsData.contact}</p>`,
+                      confirmButtonText: 'Got it',
+                      position: 'center'
+                    });
+                  } else {
+                    Swal.fire({
+                      icon: 'error',
+                      title: 'Error',
+                      text: slotsData.message,
+                      position: 'center'
+                    });
+                  }
+                  return;
+                }
+
+                const slots = slotsData.slots || [];
+
+                // Step 3: Select time slot
+                const slotOptions = slots.map((slot, index) =>
+                  `<div class="form-check text-start mb-2">
+                     <input class="form-check-input" type="radio" name="slotChoice" id="slot_${index}" 
+                       value="${index}" 
+                       data-day="${slot.dayOfWeek}" 
+                       data-start="${slot.startTime}" 
+                       data-end="${slot.endTime}" 
+                       ${index === 0 ? 'checked' : ''}>
+                     <label class="form-check-label" for="slot_${index}">
+                       <i class="far fa-calendar me-1 text-primary"></i> ${slot.label}
+                     </label>
+                   </div>`
+                ).join('');
+
+                const timeResult = await Swal.fire({
+                  icon: 'clock',
+                  iconColor: '#0d6efd',
+                  title: 'Step 2: Choose a Time',
+                  html: `<p class="text-muted mb-3">Select when you'd like to learn <strong>${selectedSkillName}</strong> from ${teacherName}:</p>
+                         <div class="px-3" style="max-height: 300px; overflow-y: auto;">${slotOptions}</div>`,
+                  showCancelButton: true,
+                  confirmButtonText: '<i class="fas fa-paper-plane me-1"></i> Request Session',
+                  cancelButtonText: 'Back',
+                  confirmButtonColor: '#198754',
+                  position: 'center',
+                  customClass: { container: 'swal2-centered-container' },
+                  preConfirm: () => {
+                    const selected = document.querySelector('input[name="slotChoice"]:checked');
+                    if (!selected) {
+                      Swal.showValidationMessage('Please select a time slot');
+                      return false;
+                    }
+                    return {
+                      dayOfWeek: selected.dataset.day,
+                      startTime: selected.dataset.start,
+                      endTime: selected.dataset.end
+                    };
+                  }
+                });
+
+                if (!timeResult.isConfirmed) return;
+                const selectedSlot = timeResult.value;
+
+                // Step 4: Submit request
+                originalBtn.disabled = true;
+                originalBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Requesting...';
 
                 try {
                   const response = await fetch('/sessions/quick-request', {
@@ -223,7 +369,11 @@
                       'Content-Type': 'application/json',
                       'X-CSRF-Token': '<%= csrfToken %>'
                     },
-                    body: JSON.stringify({ teacherId, skillId })
+                    body: JSON.stringify({
+                      teacherId,
+                      skillId: selectedSkillId,
+                      selectedSlot
+                    })
                   });
 
                   const data = await response.json();
@@ -268,8 +418,8 @@
                 }
 
                 // Reset button
-                this.disabled = false;
-                this.innerHTML = originalText;
+                originalBtn.disabled = false;
+                originalBtn.innerHTML = originalText;
               });
             });
           });

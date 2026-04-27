@@ -12,12 +12,14 @@
             </div>
 
             <% if (!reports || reports.length===0) { %>
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <i class="bi bi-inbox text-muted" style="font-size: 4rem;"></i>
-                        <h5 class="mt-3">No Reports Yet</h5>
-                        <p class="text-muted">You haven't submitted any reports.</p>
+                <div class="text-center py-5 bg-light rounded-4 border-2 border-dashed m-3">
+                    <div class="mb-4">
+                       <div class="bg-white rounded-circle shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                           <i class="fas fa-flag fa-2x text-muted opacity-25"></i>
+                       </div>
                     </div>
+                    <h6 class="text-dark fw-bold">No Reports Yet</h6>
+                    <p class="text-muted small mb-0">You haven't submitted any reports.</p>
                 </div>
                 <% } else { %>
                     <div class="card border-0 shadow-sm">
@@ -52,7 +54,17 @@
                         report.status === 'escalated' ? 'warning' :
                         report.status === 'dismissed' ? 'secondary' :
                         report.status === 'pending_ai' ? 'info' : 'primary'
-                      %>">
+                      %>-subtle text-<%= 
+                        report.status === 'resolved' || report.status === 'auto_penalized' ? 'success' :
+                        report.status === 'escalated' ? 'warning' :
+                        report.status === 'dismissed' ? 'secondary' :
+                        report.status === 'pending_ai' ? 'info' : 'primary'
+                      %> border border-<%= 
+                        report.status === 'resolved' || report.status === 'auto_penalized' ? 'success' :
+                        report.status === 'escalated' ? 'warning' :
+                        report.status === 'dismissed' ? 'secondary' :
+                        report.status === 'pending_ai' ? 'info' : 'primary'
+                      %> border-opacity-10 py-1">
                                                     <%= report.status.replace('_', ' ' ) %>
                                                 </span>
                                             </td>
@@ -61,7 +73,15 @@
                         report.aiVerdict === 'violation' ? 'danger' :
                         report.aiVerdict === 'harmless' ? 'success' :
                         report.aiVerdict === 'pending' ? 'secondary' : 'warning'
-                      %>">
+                      %>-subtle text-<%= 
+                        report.aiVerdict === 'violation' ? 'danger' :
+                        report.aiVerdict === 'harmless' ? 'success' :
+                        report.aiVerdict === 'pending' ? 'secondary' : 'warning'
+                      %> border border-<%= 
+                        report.aiVerdict === 'violation' ? 'danger' :
+                        report.aiVerdict === 'harmless' ? 'success' :
+                        report.aiVerdict === 'pending' ? 'secondary' : 'warning'
+                      %> border-opacity-10 py-1">
                                                     <%= report.aiVerdict %>
                                                 </span>
                                             </td>
@@ -71,7 +91,15 @@
                           report.severity === 'critical' ? 'danger' :
                           report.severity === 'high' ? 'warning' :
                           report.severity === 'medium' ? 'warning' : 'info'
-                        %> text-uppercase">
+                        %>-subtle text-<%= 
+                          report.severity === 'critical' ? 'danger' :
+                          report.severity === 'high' ? 'warning' :
+                          report.severity === 'medium' ? 'warning' : 'info'
+                        %> border border-<%= 
+                          report.severity === 'critical' ? 'danger' :
+                          report.severity === 'high' ? 'warning' :
+                          report.severity === 'medium' ? 'warning' : 'info'
+                        %> border-opacity-10 text-uppercase py-1">
                                                         <%= report.severity %>
                                                     </span>
                                                     <% } else { %>
@@ -103,27 +131,27 @@
                                 <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-2"></i>Status Guide</h6>
                                 <div class="row g-2">
                                     <div class="col-md-4">
-                                        <span class="badge bg-info me-2">pending ai</span>
+                                        <span class="badge bg-info-subtle text-info border border-info border-opacity-10 py-1 me-2">pending ai</span>
                                         <small class="text-muted">Being analyzed</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="badge bg-primary me-2">ai reviewed</span>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary border-opacity-10 py-1 me-2">ai reviewed</span>
                                         <small class="text-muted">Awaiting your decision</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="badge bg-warning me-2">escalated</span>
+                                        <span class="badge bg-warning-subtle text-warning border border-warning border-opacity-10 py-1 me-2">escalated</span>
                                         <small class="text-muted">Sent to human review</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="badge bg-success me-2">resolved</span>
+                                        <span class="badge bg-success-subtle text-success border border-success border-opacity-10 py-1 me-2">resolved</span>
                                         <small class="text-muted">Completed</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="badge bg-success me-2">auto penalized</span>
+                                        <span class="badge bg-success-subtle text-success border border-success border-opacity-10 py-1 me-2">auto penalized</span>
                                         <small class="text-muted">Penalty applied</small>
                                     </div>
                                     <div class="col-md-4">
-                                        <span class="badge bg-secondary me-2">dismissed</span>
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary border-opacity-10 py-1 me-2">dismissed</span>
                                         <small class="text-muted">No action</small>
                                     </div>
                                 </div>

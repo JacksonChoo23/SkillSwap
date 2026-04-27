@@ -637,18 +637,35 @@ router.get('/users/:id/details', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const [sessionCount, listingCount, completedSessions] = await Promise.all([
+    // Get detailed session counts by status
+    const [
+      totalSessions,
+      pendingSessions,
+      confirmedSessions,
+      inProgressSessions,
+      completedSessions,
+      cancelledSessions,
+      listingCount
+    ] = await Promise.all([
       LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }] } }),
-      Listing.count({ where: { userId: id } }),
-      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'completed' } })
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'requested' } }),
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'confirmed' } }),
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'in_progress' } }),
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'completed' } }),
+      LearningSession.count({ where: { [Op.or]: [{ teacherId: id }, { studentId: id }], status: 'cancelled' } }),
+      Listing.count({ where: { userId: id } })
     ]);
 
     res.json({
       ...user.toJSON(),
       stats: {
-        sessionCount,
-        listingCount,
-        completedSessions
+        totalSessions,
+        pendingSessions,
+        confirmedSessions,
+        inProgressSessions,
+        completedSessions,
+        cancelledSessions,
+        listingCount
       }
     });
   } catch (error) {

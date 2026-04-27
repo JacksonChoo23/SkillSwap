@@ -159,8 +159,8 @@
                   <td class="text-center">
                     <div class="btn-group btn-group-sm" role="group">
                       <!-- View Details -->
-                      <button type="button" class="btn btn-outline-primary" data-bs-toggle="tooltip"
-                        title="View Details" onclick="viewUserDetails(<%= u.id %>)">
+                      <button type="button" class="btn btn-outline-primary view-details-btn" data-bs-toggle="tooltip"
+                        title="View Details" data-user-id="<%= u.id %>">
                         <i class="bi bi-eye"></i>
                       </button>
 
@@ -444,6 +444,15 @@
         });
       });
     });
+
+    // View Details button handlers
+    document.querySelectorAll('.view-details-btn').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const userId = this.dataset.userId;
+        viewUserDetails(userId);
+      });
+    });
   });
 
   async function viewUserDetails(userId) {
@@ -490,26 +499,50 @@
             <tr><th>Joined</th><td>${new Date(user.createdAt).toLocaleDateString()}</td></tr>
           </table>
           
-          <h6 class="text-muted mb-3 mt-4">Statistics</h6>
-          <div class="row text-center">
+          <h6 class="text-muted mb-3 mt-4">Session Statistics</h6>
+          <div class="row text-center g-2">
             <div class="col-4">
-              <div class="border rounded p-3">
-                <h4 class="mb-0">${user.stats.sessionCount}</h4>
-                <small class="text-muted">Sessions</small>
+              <div class="border rounded p-2 bg-light">
+                <h5 class="mb-0">${user.stats.totalSessions}</h5>
+                <small class="text-muted">Total</small>
               </div>
             </div>
             <div class="col-4">
-              <div class="border rounded p-3">
-                <h4 class="mb-0">${user.stats.completedSessions}</h4>
-                <small class="text-muted">Completed</small>
+              <div class="border rounded p-2" style="background-color: #fff3cd;">
+                <h5 class="mb-0">${user.stats.pendingSessions}</h5>
+                <small class="text-warning">Pending</small>
               </div>
             </div>
             <div class="col-4">
-              <div class="border rounded p-3">
-                <h4 class="mb-0">${user.stats.listingCount}</h4>
-                <small class="text-muted">Listings</small>
+              <div class="border rounded p-2" style="background-color: #cfe2ff;">
+                <h5 class="mb-0">${user.stats.confirmedSessions}</h5>
+                <small class="text-primary">Confirmed</small>
               </div>
             </div>
+            <div class="col-4">
+              <div class="border rounded p-2" style="background-color: #cff4fc;">
+                <h5 class="mb-0">${user.stats.inProgressSessions}</h5>
+                <small class="text-info">In Progress</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="border rounded p-2" style="background-color: #d1e7dd;">
+                <h5 class="mb-0">${user.stats.completedSessions}</h5>
+                <small class="text-success">Completed</small>
+              </div>
+            </div>
+            <div class="col-4">
+              <div class="border rounded p-2" style="background-color: #e2e3e5;">
+                <h5 class="mb-0">${user.stats.cancelledSessions}</h5>
+                <small class="text-secondary">Cancelled</small>
+              </div>
+            </div>
+          </div>
+          
+          <h6 class="text-muted mb-3 mt-4">Listings</h6>
+          <div class="border rounded p-3 text-center bg-light">
+            <h4 class="mb-0">${user.stats.listingCount}</h4>
+            <small class="text-muted">Active Listings</small>
           </div>
           
           ${user.bio ? `<h6 class="text-muted mb-2 mt-4">Bio</h6><p class="mb-0">${user.bio}</p>` : ''}

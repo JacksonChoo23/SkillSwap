@@ -68,7 +68,8 @@ app.use(
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
-        formAction: ["'self'"]
+        formAction: ["'self'"],
+        upgradeInsecureRequests: isDev ? null : []  // Disable in dev to prevent HTTP->HTTPS upgrade errors
       }
     },
     crossOriginEmbedderPolicy: false
@@ -348,6 +349,17 @@ async function startServer() {
       logger.debug(`Socket ${socket.id} joined user_${userId}`);
     });
 
+    // Join session-specific room for real-time session updates
+    socket.on('join_session', (sessionId) => {
+      socket.join(`session_${sessionId}`);
+      logger.debug(`Socket ${socket.id} joined session_${sessionId}`);
+    });
+
+    // Leave a session room
+    socket.on('leave_session', (sessionId) => {
+      socket.leave(`session_${sessionId}`);
+    });
+
     // Leave a thread room
     socket.on('leave_thread', (threadId) => {
       socket.leave(`thread_${threadId}`);
@@ -388,11 +400,15 @@ async function startServer() {
     }
   })();
 
-  process.on('unhandledRejection', (reason) => {
-    logger.error('Unhandled Rejection:', reason && reason.stack ? reason.stack : reason);
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise);
+    console.error('Reason:', reason);
+    logger.error('Unhandled Rejection:', reason && reason.stack ? reason.stack : JSON.stringify(reason));
   });
-  process.on('uncaughtException', (err) => {
-    logger.error('Uncaught Exception:', err && err.stack ? err.stack : err);
+  process.on('uncaughtException', (err, origin) => {
+    console.error('Uncaught Exception:', err);
+    console.error('Origin:', origin);
+    logger.error('Uncaught Exception:', err && err.stack ? err.stack : JSON.stringify(err));
   });
 }
 
