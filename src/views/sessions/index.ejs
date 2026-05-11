@@ -48,17 +48,12 @@
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <div class="col-12 col-md-3">
         <label class="form-label small fw-semibold text-muted">User ID</label>
-        <input type="number" class="form-control" name="teacherId" placeholder="e.g. 12" required>
+        <input type="number" class="form-control" name="teacherId" id="reqTeacherIdInput" placeholder="e.g. 12" required>
       </div>
       <div class="col-12 col-md-3">
         <label class="form-label small fw-semibold text-muted">Skill Selection</label>
-        <select class="form-select" name="skillId" required>
+        <select class="form-select" name="skillId" id="reqSkillSelect" required disabled>
           <option value="">Select a skill...</option>
-          <% (skills || []).forEach(skill=> { %>
-            <option value="<%= skill.id %>">
-              <%= skill.name %> (ID: <%= skill.id %>)
-            </option>
-          <% }) %>
         </select>
       </div>
       <div class="col-12 col-md-3">
@@ -78,6 +73,69 @@
     </div>
   </div>
 </div>
+
+<script>
+  (function () {
+    const teacherInput = document.getElementById('reqTeacherIdInput');
+    const skillSelect = document.getElementById('reqSkillSelect');
+    let lastTeacherId = '';
+
+    function setSkillOptions(skills, selectedSkillId) {
+      skillSelect.innerHTML = '';
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = skills.length ? 'Select a skill...' : 'No teaching skills found';
+      skillSelect.appendChild(placeholder);
+
+      skills.forEach(skill => {
+        const opt = document.createElement('option');
+        opt.value = String(skill.id);
+        opt.textContent = skill.name + ' (ID: ' + skill.id + ')';
+        if (selectedSkillId && String(skill.id) === String(selectedSkillId)) {
+          opt.selected = true;
+        }
+        skillSelect.appendChild(opt);
+      });
+
+      skillSelect.disabled = skills.length === 0;
+    }
+
+    async function loadTeacherSkills(teacherId, selectedSkillId) {
+      if (!teacherId) {
+        setSkillOptions([]);
+        return;
+      }
+
+      try {
+        const res = await fetch('/sessions/teacher/' + teacherId + '/skills');
+        const data = await res.json();
+        setSkillOptions(Array.isArray(data.skills) ? data.skills : [], selectedSkillId);
+      } catch (error) {
+        setSkillOptions([]);
+      }
+    }
+
+    if (teacherInput && skillSelect) {
+      const urlParams = new URLSearchParams(window.location.search || '');
+      const presetTeacherId = urlParams.get('teacherId');
+      const presetSkillId = urlParams.get('skillId');
+
+      if (presetTeacherId) {
+        teacherInput.value = presetTeacherId;
+        teacherInput.readOnly = true;
+        lastTeacherId = presetTeacherId;
+        loadTeacherSkills(presetTeacherId, presetSkillId);
+      }
+
+      teacherInput.addEventListener('input', () => {
+        const teacherId = teacherInput.value.trim();
+        if (teacherId === lastTeacherId) return;
+        lastTeacherId = teacherId;
+        loadTeacherSkills(teacherId);
+      });
+    }
+  })();
+</script>
 
 <div class="row g-4">
   <!-- Teaching -->

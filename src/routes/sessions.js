@@ -1,5 +1,5 @@
 const express = require('express');
-const { LearningSession, User, Skill, Rating, UserProgress, Notification, Availability } = require('../models');
+const { LearningSession, User, Skill, UserSkill, Rating, UserProgress, Notification, Availability } = require('../models');
 const { Op } = require('sequelize');
 const { validate, schemas } = require('../middlewares/validate');
 const { createNotification } = require('../services/notificationService');
@@ -55,6 +55,31 @@ router.get('/', async (req, res) => {
     console.error('Sessions error:', error);
     req.session.error = 'Error loading sessions.';
     res.redirect('/');
+  }
+});
+
+// Get teacher skills for request form
+router.get('/teacher/:id/skills', async (req, res) => {
+  try {
+    const teacherId = parseInt(req.params.id, 10);
+    if (!teacherId) {
+      return res.json({ skills: [] });
+    }
+
+    const teacherSkills = await UserSkill.findAll({
+      where: { userId: teacherId, type: 'teach' },
+      include: [{ model: Skill, attributes: ['id', 'name'] }],
+      order: [[Skill, 'name', 'ASC']]
+    });
+
+    const skills = teacherSkills
+      .map(us => us.Skill && { id: us.Skill.id, name: us.Skill.name })
+      .filter(Boolean);
+
+    return res.json({ skills });
+  } catch (error) {
+    console.error('Teacher skills error:', error);
+    return res.status(500).json({ skills: [] });
   }
 });
 

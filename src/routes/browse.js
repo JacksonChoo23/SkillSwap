@@ -21,6 +21,15 @@ router.get('/', async (req, res) => {
       userWhere.location = { [Op.like]: `%${location}%` };
     }
 
+    let categorySkillIds = null;
+    if (category) {
+      const categorySkills = await Skill.findAll({
+        where: { categoryId: category },
+        attributes: ['id']
+      });
+      categorySkillIds = categorySkills.map(skill => skill.id);
+    }
+
     // Build include clause for skills
     const skillInclude = {
       model: UserSkill,
@@ -37,19 +46,21 @@ router.get('/', async (req, res) => {
     };
 
     if (category || level || type) {
-      skillInclude.where = {};
+      const skillFilters = {};
+
       if (type) {
-        skillInclude.where.type = type;
+        skillFilters.type = type;
       }
       if (level) {
-        skillInclude.where.level = level;
+        skillFilters.level = level;
       }
       if (category) {
-        // Use Sequelize.literal to properly reference the joined table
-        skillInclude.include[0].where = { categoryId: category };
-        skillInclude.include[0].required = true;
-        skillInclude.required = true;
+        const ids = Array.isArray(categorySkillIds) && categorySkillIds.length ? categorySkillIds : [0];
+        skillFilters.skillId = { [Op.in]: ids };
       }
+
+      skillInclude.where = skillFilters;
+      skillInclude.required = true;
     }
 
     // Generate cache key for browse queries

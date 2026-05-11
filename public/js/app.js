@@ -35,6 +35,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // WhatsApp integration
     setupWhatsAppIntegration();
+
+    // Mobile navigation offcanvas
+    setupMobileNavOffcanvas();
 });
 
 // Set active navigation link
@@ -235,6 +238,43 @@ function setupWhatsAppIntegration() {
                 const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
             }
+        });
+    });
+}
+
+function setupMobileNavOffcanvas() {
+    const toggle = document.getElementById('mobileNavToggle');
+    const offcanvasEl = document.getElementById('mobileNav');
+
+    if (!toggle || !offcanvasEl || !window.bootstrap || !bootstrap.Offcanvas) {
+        return;
+    }
+
+    toggle.addEventListener('click', () => {
+        const instance = bootstrap.Offcanvas.getOrCreateInstance(offcanvasEl);
+        instance.toggle();
+    });
+
+    offcanvasEl.querySelectorAll('a[href]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#' || link.target === '_blank') return;
+
+            e.preventDefault();
+
+            const instance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+            if (!instance) {
+                window.location.href = href;
+                return;
+            }
+
+            const navigate = () => {
+                offcanvasEl.removeEventListener('hidden.bs.offcanvas', navigate);
+                window.location.href = href;
+            };
+
+            offcanvasEl.addEventListener('hidden.bs.offcanvas', navigate);
+            instance.hide();
         });
     });
 }
